@@ -1,0 +1,142 @@
+image: php:8.1-cli
+
+definitions:
+  caches:
+    composer: ~/.composer/cache
+
+  steps:
+    - step: &install
+        name: Install
+        caches:
+          - composer
+        script:
+          - apt-get update -qq && apt-get install -y -qq git zip unzip libzip-dev && docker-php-ext-install zip
+          - curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+          - composer install --no-interaction --prefer-dist
+        artifacts:
+          - vendor/**
+
+    - step: &cs
+        name: Code Style (php-cs-fixer)
+        script:
+          - vendor/bin/php-cs-fixer check --diff --ansi
+
+    - step: &phpstan
+        name: Static Analysis (PHPStan)
+        script:
+          - vendor/bin/phpstan analyse --memory-limit=512M
+
+    - step: &test
+        name: Unit Tests (PHPUnit)
+        script:
+          - vendor/bin/phpunit --colors=always
+
+    - step: &audit
+        name: Security Audit
+        script:
+          - composer audit || echo "⚠️ audit found advisories (warn-only — does not block merge; resolved via /pr-status)"
+
+    - step: &sonar
+        name: Analyze on SonarCloud
+        size: 2x
+        services:
+          - docker2x
+        clone:
+          depth: full
+        script:
+          - pipe: sonarsource/sonarcloud-scan:4.1.0
+            variables:
+              SONAR_SCANNER_OPTS: -Xmx2560m
+              EXTRA_ARGS: -Dsonar.projectKey=gp-gopay_gopay-php-api-v4
+                -Dsonar.organization=gp-gopay
+                -Dsonar.sources=src
+                -Dsonar.exclusions=src/Generated/**
+                -Dsonar.tests=tests
+                -Dsonar.php.coverage.reportPaths=coverage.xml
+          - pipe: sonarsource/sonarcloud-quality-gate:0.2.0
+
+    - step: &release-preview
+        name: Release Preview (dry-run)
+        clone:
+          depth: full
+        script:
+          - apt-get update -qq && apt-get install -y -qq git nodejs npm
+          - npx semantic-release --dry-run --no-ci
+
+    - step: &release
+        name: Release
+        deployment: production
+        clone:
+          depth: full
+        script:
+          - apt-get update -qq && apt-get install -y -qq git nodejs npm
+          - git remote set-url origin https://gopay-release-bot:$BITBUCKET_BOT_PUSH_TOKEN@bitbucket.org/$BITBUCKET_REPO_FULL_NAME.git
+          - npx semantic-release
+        artifacts:
+          - CHANGELOG.md
+
+  agents:
+    readme-consistency:
+      provider: claude
+      prompt: |
+        Review this PHP SDK PR for README/docs consistency:
+        - README.md code examples must use GoPayClient, not old gopay/payments-sdk class names
+        - Migration guide (MIGRATION.md) must cover all v3→v4 breaking changes listed in the Jira analysis
+        - CLAUDE.md must document the composer codegen command and the gw_url do-not-use rule
+        - Module method signatures in README must match actual src/Module/*.php signatures
+        Post a PR comment summarising any inconsistencies found, with inline references.
+
+    spec-consistency:
+      provider: claude
+      prompt: |
+        Review this PHP SDK PR for API spec consistency:
+        - Check that every endpoint in spec/payments.yaml is covered by a method in src/GoPayClient.php
+        - Check that request array keys in README examples match the spec's required fields
+        - Verify that MIGRATION.md's "no v4 equivalent" list matches the v4 spec (refunds, capture/void, EET, etc.)
+        Post a PR comment summarising any gaps or mismatches found.
+
+  services:
+    docker2x:
+      type: docker
+      memory: 4096
+
+pipelines:
+  pull-requests:
+    '**':
+      - step: *install
+      - parallel:
+          - step: *cs
+          - step: *phpstan
+          - step: *test
+      - step: *audit
+      - step: *sonar
+      - step:
+          name: Readme Consistency (Claude)
+          auth:
+            system:
+              scopes:
+                - read:repository:bitbucket
+                - write:pullrequest:bitbucket
+          script:
+            - agent: readme-consistency
+      - step:
+          name: Spec Consistency (Claude)
+          auth:
+            system:
+              scopes:
+                - read:repository:bitbucket
+                - write:pullrequest:bitbucket
+          script:
+            - agent: spec-consistency
+      - step: *release-preview
+
+  branches:
+    master:
+      - step: *install
+      - parallel:
+          - step: *cs
+          - step: *phpstan
+          - step: *test
+      - step: *audit
+      - step: *sonar
+      - step: *release

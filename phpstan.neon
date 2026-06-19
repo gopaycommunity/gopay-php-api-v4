@@ -1,0 +1,13 @@
+includes:
+    - vendor/phpstan/phpstan-strict-rules/rules.neon
+
+parameters:
+    level: 10
+    phpVersion: 80100
+    paths:
+        - src
+        - tests
+    excludePaths:
+        - src/Generated
+    checkGenericClassInNonGenericObjectType: false
+    treatPhpDocTypesAsCertain: false

@@ -1,0 +1,54 @@
+{
+    "name": "gopay/payments-sdk",
+    "description": "GoPay PHP SDK for server-side use — wraps the GoPay Payments API v4.0",
+    "type": "library",
+    "license": "MIT",
+    "keywords": ["gopay", "payment", "sdk", "php"],
+    "require": {
+        "php": ">=8.1",
+        "psr/http-client": "^1.0",
+        "psr/http-factory": "^1.0",
+        "psr/http-message": "^1.0 || ^2.0",
+        "php-http/discovery": "^1.14"
+    },
+    "require-dev": {
+        "phpstan/phpstan": "^1.12",
+        "phpstan/phpstan-strict-rules": "^1.6",
+        "friendsofphp/php-cs-fixer": "^3.65",
+        "phpunit/phpunit": "^10.5",
+        "php-http/mock-client": "^1.6",
+        "guzzlehttp/guzzle": "^7.9",
+        "guzzlehttp/psr7": "^2.7",
+        "captainhook/captainhook": "^5.22"
+    },
+    "autoload": {
+        "psr-4": {
+            "GoPay\\Payments\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "GoPay\\Payments\\Tests\\": "tests/"
+        }
+    },
+    "config": {
+        "platform": {
+            "php": "8.1"
+        },
+        "sort-packages": true,
+        "allow-plugins": {
+            "captainhook/captainhook": true,
+            "php-http/discovery": true
+        }
+    },
+    "scripts": {
+        "codegen": ["bash scripts/codegen.sh"],
+        "phpstan": ["phpstan analyse --memory-limit=512M"],
+        "cs": ["php-cs-fixer check --diff --ansi"],
+        "cs:fix": ["php-cs-fixer fix --ansi"],
+        "test": ["phpunit"],
+        "ci": ["@cs", "@phpstan", "@test"],
+        "post-install-cmd": ["captainhook install --force -s || true"],
+        "post-update-cmd": ["captainhook install --force -s || true"]
+    }
+}
