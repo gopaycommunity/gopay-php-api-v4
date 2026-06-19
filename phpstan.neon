@@ -18,3 +18,8 @@ parameters:
         -
             message: '#Dynamic call to static method PHPUnit\\Framework\\Assert::#'
             path: tests
+        # assertInstanceOf() verifies runtime DTO hydration; PHPStan considers
+        # them redundant because it trusts the declared return type.
+        -
+            message: '#assertInstanceOf\(\) with .+ will always evaluate to true#'
+            path: tests
