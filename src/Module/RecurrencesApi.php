@@ -31,13 +31,14 @@ final class RecurrencesApi
      * POST /eshops/{goid}/recurrences
      *
      * @param array<string, mixed> $params Recurrence creation parameters (type, schedule, payment data…).
+     *
      * @throws GoPaySdkException
      */
     public function createRecurrence(string $goid, array $params): RecurrenceDetails
     {
-        $this->requireNonEmpty($goid, 'goid');
+        $gid = $this->requireNonEmpty($goid, 'goid');
 
-        return $this->client->post("/eshops/{$goid}/recurrences", $params, RecurrenceDetails::class);
+        return $this->client->post("/eshops/{$gid}/recurrences", $params, RecurrenceDetails::class);
     }
 
     /**
@@ -76,6 +77,7 @@ final class RecurrencesApi
      * POST /recurrences/{rec_id}/start
      *
      * @param array<string, mixed>|null $params Optional payment overrides (amount, order_number, callback…).
+     *
      * @throws GoPaySdkException
      */
     public function startRecurrence(string $recId, ?array $params = null): PaymentDetails
@@ -92,6 +94,7 @@ final class RecurrencesApi
      * POST /recurrences/{rec_id}/next
      *
      * @param array<string, mixed>|null $params Optional payment overrides (amount, order_number, callback…).
+     *
      * @throws GoPaySdkException
      */
     public function recurrenceNext(string $recId, ?array $params = null): PaymentDetails

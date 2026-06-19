@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace GoPay\Payments;
 
-use GoPay\Payments\Exception\GoPayHttpException;
 use GoPay\Payments\Exception\GoPaySdkException;
 use GoPay\Payments\Generated\Model\LinkDetails;
 use GoPay\Payments\Generated\Model\PaymentChargeResponse;
@@ -126,8 +125,9 @@ final class GoPayClient
      * Pass the result to the browser page; it is safe to expose in HTML/JS.
      * Never exposes the client_secret.
      *
-     * @return array{shareable_key: string, client_id: string}
      * @throws GoPaySdkException
+     *
+     * @return array{shareable_key: string, client_id: string}
      */
     public function getBrowserKeys(): array
     {
@@ -148,6 +148,7 @@ final class GoPayClient
      * always: createPayment() → chargePayment().
      *
      * @param array<string, mixed> $params
+     *
      * @throws GoPaySdkException
      */
     public function createPayment(string $goid, array $params): PaymentDetails
@@ -173,6 +174,7 @@ final class GoPayClient
      * POST /payments/{payment_id}/charge
      *
      * @param array<string, mixed> $params
+     *
      * @throws GoPaySdkException
      */
     public function chargePayment(string $paymentId, array $params): PaymentChargeResponse
@@ -197,8 +199,9 @@ final class GoPayClient
      *
      * GET /payments/{payment_id}/google-pay/info
      *
-     * @return array<string, mixed>
      * @throws GoPaySdkException
+     *
+     * @return array<string, mixed>
      */
     public function getGooglePayInfo(string $paymentId): array
     {
@@ -210,8 +213,9 @@ final class GoPayClient
      *
      * GET /payments/{payment_id}/apple-pay/info
      *
-     * @return array<string, mixed>
      * @throws GoPaySdkException
+     *
+     * @return array<string, mixed>
      */
     public function getApplePayInfo(string $paymentId): array
     {
@@ -226,8 +230,10 @@ final class GoPayClient
      * POST /payments/{payment_id}/apple-pay/validate
      *
      * @param array<string, mixed>|null $body
-     * @return array<string, mixed>
+     *
      * @throws GoPaySdkException
+     *
+     * @return array<string, mixed>
      */
     public function validateApplePayMerchant(
         string $paymentId,
@@ -317,6 +323,7 @@ final class GoPayClient
      * POST /eshops/{goid}/recurrences
      *
      * @param array<string, mixed> $params
+     *
      * @throws GoPaySdkException
      */
     public function createRecurrence(string $goid, array $params): RecurrenceDetails
@@ -357,6 +364,7 @@ final class GoPayClient
      * POST /recurrences/{rec_id}/start
      *
      * @param array<string, mixed>|null $params Optional payment overrides.
+     *
      * @throws GoPaySdkException
      */
     public function startRecurrence(string $recId, ?array $params = null): PaymentDetails
@@ -371,6 +379,7 @@ final class GoPayClient
      * POST /recurrences/{rec_id}/next
      *
      * @param array<string, mixed>|null $params Optional payment overrides.
+     *
      * @throws GoPaySdkException
      */
     public function recurrenceNext(string $recId, ?array $params = null): PaymentDetails
@@ -389,6 +398,7 @@ final class GoPayClient
      * POST /payments/{payment_id}/refunds
      *
      * @param array<string, mixed> $params
+     *
      * @throws GoPaySdkException
      */
     public function refundPayment(string $paymentId, array $params): RefundDetails
@@ -402,8 +412,9 @@ final class GoPayClient
      *
      * GET /payments/{payment_id}/refunds
      *
-     * @return list<RefundDetails>
      * @throws GoPaySdkException
+     *
+     * @return list<RefundDetails>
      */
     public function listRefunds(string $paymentId): array
     {
@@ -434,6 +445,7 @@ final class GoPayClient
      * POST /eshops/{goid}/links
      *
      * @param array<string, mixed> $params
+     *
      * @throws GoPaySdkException
      */
     public function createPaymentLink(string $goid, array $params): LinkDetails

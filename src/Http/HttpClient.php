@@ -53,10 +53,13 @@ final class HttpClient
 
     /**
      * @template T of ModelInterface
+     *
      * @param class-string<T> $type
-     * @return T
+     *
      * @throws GoPaySdkException
      * @throws GoPayHttpException
+     *
+     * @return T
      */
     public function get(string $path, string $type, ?RequestOptions $options = null): ModelInterface
     {
@@ -69,11 +72,14 @@ final class HttpClient
 
     /**
      * @template T of ModelInterface
+     *
      * @param class-string<T> $type
      * @param array<string, mixed>|null $body
-     * @return T
+     *
      * @throws GoPaySdkException
      * @throws GoPayHttpException
+     *
+     * @return T
      */
     public function post(string $path, ?array $body, string $type, ?RequestOptions $options = null): ModelInterface
     {
@@ -100,9 +106,10 @@ final class HttpClient
      * GET, returning a top-level JSON array as a list of decoded items.
      * Use for list endpoints (e.g. GET /payments/{id}/refunds → [{...}, {...}]).
      *
-     * @return list<array<string, mixed>>
      * @throws GoPaySdkException
      * @throws GoPayHttpException
+     *
+     * @return list<array<string, mixed>>
      */
     public function getJsonList(string $path, ?RequestOptions $options = null): array
     {
@@ -118,9 +125,10 @@ final class HttpClient
      * GET, returning the decoded JSON as a plain PHP array (no DTO hydration).
      * Use for endpoints whose response shape varies or is opaque (object responses).
      *
-     * @return array<string, mixed>
      * @throws GoPaySdkException
      * @throws GoPayHttpException
+     *
+     * @return array<string, mixed>
      */
     public function getArray(string $path, ?RequestOptions $options = null): array
     {
@@ -136,9 +144,11 @@ final class HttpClient
      * POST, returning the decoded JSON as a plain PHP array (no DTO hydration).
      *
      * @param array<string, mixed>|null $body
-     * @return array<string, mixed>
+     *
      * @throws GoPaySdkException
      * @throws GoPayHttpException
+     *
+     * @return array<string, mixed>
      */
     public function postArray(string $path, ?array $body, ?RequestOptions $options = null): array
     {
@@ -153,11 +163,14 @@ final class HttpClient
 
     /**
      * @template T of ModelInterface
+     *
      * @param class-string<T>        $type
      * @param array<string, string>  $form
-     * @return T
+     *
      * @throws GoPaySdkException
      * @throws GoPayHttpException
+     *
+     * @return T
      */
     public function postForm(string $path, array $form, string $type, ?RequestOptions $options = null): ModelInterface
     {
@@ -219,8 +232,9 @@ final class HttpClient
      */
     public function emitError(\Throwable $e): never
     {
-        if ($this->config->onError !== null && ($e instanceof GoPaySdkException || $e instanceof GoPayHttpException)) {
-            ($this->config->onError)($e);
+        $onError = $this->config->onError;
+        if ($onError !== null && ($e instanceof GoPaySdkException || $e instanceof GoPayHttpException)) {
+            $onError($e);
         }
         throw $e;
     }
@@ -320,14 +334,15 @@ final class HttpClient
      * Deserialize a JSON response body into a typed model object via ModelInterface::fromArray().
      *
      * @template T of ModelInterface
+     *
      * @param class-string<T> $type
+     *
      * @return T
      */
     private function deserialize(string $json, string $type): ModelInterface
     {
         $data = json_decode($json, true);
         if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
-            /** @phpstan-ignore-next-line */
             $this->emitError(new GoPaySdkException(
                 '[GoPaySDK] Failed to parse API response as JSON.',
                 ErrorCode::NetworkError,

@@ -37,13 +37,14 @@ final class PaymentsApi
      * POST /eshops/{goid}/payments
      *
      * @param array<string, mixed> $params Payment creation parameters (amount, currency, order_number, customer, callback…).
+     *
      * @throws GoPaySdkException
      */
     public function createPayment(string $goid, array $params): PaymentDetails
     {
-        $this->requireNonEmpty($goid, 'goid');
+        $gid = $this->requireNonEmpty($goid, 'goid');
 
-        return $this->client->post("/eshops/{$goid}/payments", $params, PaymentDetails::class);
+        return $this->client->post("/eshops/{$gid}/payments", $params, PaymentDetails::class);
     }
 
     /**
@@ -66,6 +67,7 @@ final class PaymentsApi
      * POST /payments/{payment_id}/charge
      *
      * @param array<string, mixed> $params Charge parameters including the payment_instrument.
+     *
      * @throws GoPaySdkException
      */
     public function chargePayment(string $paymentId, array $params): PaymentChargeResponse
@@ -95,8 +97,9 @@ final class PaymentsApi
      *
      * GET /payments/{payment_id}/google-pay/info
      *
-     * @return array<string, mixed>
      * @throws GoPaySdkException
+     *
+     * @return array<string, mixed>
      */
     public function getGooglePayInfo(string $paymentId): array
     {
@@ -111,8 +114,9 @@ final class PaymentsApi
      *
      * GET /payments/{payment_id}/apple-pay/info
      *
-     * @return array<string, mixed>
      * @throws GoPaySdkException
+     *
+     * @return array<string, mixed>
      */
     public function getApplePayInfo(string $paymentId): array
     {
@@ -131,8 +135,10 @@ final class PaymentsApi
      *
      * @param array<string, mixed>|null $body Usually {validationUrl: "…"} from the browser.
      * @param string|null $origin Merchant HTTPS origin sent to Apple during validation.
-     * @return array<string, mixed>
+     *
      * @throws GoPaySdkException
+     *
+     * @return array<string, mixed>
      */
     public function validateApplePayMerchant(
         string $paymentId,
@@ -152,6 +158,7 @@ final class PaymentsApi
      * GET /payments/{payment_id}/qr-payment/info
      *
      * @param string|null $format Image format: 'png' (default) or 'svg'.
+     *
      * @throws GoPaySdkException
      */
     public function getQrPaymentInfo(string $paymentId, ?string $format = null): QrPaymentDetails
@@ -174,6 +181,7 @@ final class PaymentsApi
      *
      * @param int $timeoutSeconds Maximum total wait time (default 30 s).
      * @param int $pollIntervalMs Polling interval in milliseconds (default 1 000 ms).
+     *
      * @throws GoPaySdkException
      */
     public function awaitChargeState(

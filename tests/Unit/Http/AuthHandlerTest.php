@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace GoPay\Payments\Tests\Unit\Http;
 
-use GoPay\Payments\Config;
-use GoPay\Payments\Environment;
-use GoPay\Payments\Exception\ErrorCode;
 use GoPay\Payments\Exception\GoPaySdkException;
 use GoPay\Payments\Http\AuthHandler;
 use GoPay\Payments\Http\TokenStore;

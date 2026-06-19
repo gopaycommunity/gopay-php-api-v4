@@ -80,8 +80,9 @@ final class AuthApi
      * Call this on your server and pass the result to the browser page so it
      * can initialise `GoPayBrowserSDK`. Never returns the client_secret.
      *
-     * @return array{shareable_key: string, client_id: string}
      * @throws GoPaySdkException
+     *
+     * @return array{shareable_key: string, client_id: string}
      */
     public function getBrowserKeys(): array
     {

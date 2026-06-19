@@ -19,7 +19,7 @@ final class Config
      * @param string|null $baseUrl         Override the API base URL (e.g. for mock servers). Takes precedence over $environment.
      * @param int         $requestTimeoutMs Per-request timeout in milliseconds. Defaults to 10 000 ms.
      * @param bool        $debugLoggingEnabled Log outgoing requests and incoming responses.
-     * @param callable(GoPaySdkException|GoPayHttpException): void|null $onError Called synchronously for every SDK/HTTP error before it propagates.
+     * @param (callable(GoPaySdkException|GoPayHttpException): void)|null $onError Called synchronously for every SDK/HTTP error before it propagates.
      * @param string|null $shareableKey    Shareable (public) key for browser-SDK handoff via getBrowserKeys().
      */
     public function __construct(
@@ -27,7 +27,7 @@ final class Config
         public readonly ?string $baseUrl = null,
         public readonly int $requestTimeoutMs = 10_000,
         public readonly bool $debugLoggingEnabled = false,
-        /** @var callable(GoPaySdkException|GoPayHttpException): void|null */
+        /** @phpstan-var (callable(GoPaySdkException|GoPayHttpException): void)|null */
         public readonly mixed $onError = null,
         public readonly ?string $shareableKey = null,
     ) {}

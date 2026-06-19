@@ -52,11 +52,9 @@ final class AuthHandler
             return $request;
         }
 
-        // Proactive refresh: get a new token before we make the call.
-        if ($this->tokenStore->isExpiringSoon()) {
-            // Refresh happens in requestWithRetry; here we just skip injection
-            // if expiring — the retry path will refresh before the second attempt.
-        }
+        // Proactive refresh is handled in requestWithRetry() via isExpiringSoon().
+        // injectAuth() does not refresh here — the retry path replaces the token
+        // on the second attempt when the first returns 401.
 
         $token = $this->tokenStore->getAccessToken();
 

@@ -25,13 +25,14 @@ final class LinksApi
      * POST /eshops/{goid}/links
      *
      * @param array<string, mixed> $params Link creation parameters (payment data, expiry, reusability…).
+     *
      * @throws GoPaySdkException
      */
     public function createPaymentLink(string $goid, array $params): LinkDetails
     {
-        $this->requireNonEmpty($goid, 'goid');
+        $gid = $this->requireNonEmpty($goid, 'goid');
 
-        return $this->client->post("/eshops/{$goid}/links", $params, LinkDetails::class);
+        return $this->client->post("/eshops/{$gid}/links", $params, LinkDetails::class);
     }
 
     /**

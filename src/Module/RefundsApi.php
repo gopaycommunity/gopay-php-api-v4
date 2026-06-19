@@ -29,6 +29,7 @@ final class RefundsApi
      * POST /payments/{payment_id}/refunds
      *
      * @param array<string, mixed> $params Refund parameters (amount in cents, etc.).
+     *
      * @throws GoPaySdkException
      */
     public function refundPayment(string $paymentId, array $params): RefundDetails
@@ -44,15 +45,16 @@ final class RefundsApi
      *
      * GET /payments/{payment_id}/refunds
      *
-     * @return list<RefundDetails>
      * @throws GoPaySdkException
+     *
+     * @return list<RefundDetails>
      */
     public function listRefunds(string $paymentId): array
     {
         $pid = $this->requireNonEmpty($paymentId, 'paymentId');
 
         return array_map(
-            static fn (array $item): RefundDetails => RefundDetails::fromArray($item),
+            static fn(array $item): RefundDetails => RefundDetails::fromArray($item),
             $this->client->getJsonList("/payments/{$pid}/refunds"),
         );
     }
