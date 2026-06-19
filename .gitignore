@@ -11,9 +11,13 @@ composer.lock
 .php_cs.cache
 
 # PHPUnit
+.phpunit.cache/
 .phpunit.result.cache
 coverage.xml
 coverage/
+
+# Codegen scratch dir (created by scripts/codegen.sh attempts)
+tmp-codegen/
 
 # Node (semantic-release toolchain)
 node_modules/
