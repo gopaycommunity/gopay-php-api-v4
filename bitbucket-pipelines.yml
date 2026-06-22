@@ -10,8 +10,7 @@ definitions:
         caches:
           - composer
         script:
-          - apt-get update -qq && apt-get install -y -qq git zip unzip libzip-dev $PHPIZE_DEPS && docker-php-ext-install zip
-          - pecl install pcov && docker-php-ext-enable pcov && php -m | grep pcov
+          - apt-get update -qq && apt-get install -y -qq git zip unzip libzip-dev && docker-php-ext-install zip
           - php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
           - php -r "copy('https://composer.github.io/installer.sig', 'composer-setup.sig');"
           - php -r "if (trim(file_get_contents('composer-setup.sig')) !== hash_file('sha384', 'composer-setup.php')) { fwrite(STDERR, 'Invalid Composer installer checksum'.PHP_EOL); exit(1); }"
@@ -34,7 +33,10 @@ definitions:
     - step: &test
         name: Unit Tests (PHPUnit)
         script:
+          - apt-get update -qq && apt-get install -y -qq $PHPIZE_DEPS && pecl install pcov && docker-php-ext-enable pcov
           - vendor/bin/phpunit --colors=always --coverage-clover=coverage.xml
+        artifacts:
+          - coverage.xml
 
     - step: &audit
         name: Security Audit
