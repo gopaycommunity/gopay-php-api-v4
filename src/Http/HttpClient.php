@@ -117,8 +117,7 @@ final class HttpClient
         $response = $this->send($request, $options);
         $this->throwIfNotOk($response);
 
-        /** @var list<array<string, mixed>> */
-        return array_values((array) json_decode((string) $response->getBody(), true));
+        return $this->decodeJsonList((string) $response->getBody());
     }
 
     /**
@@ -136,8 +135,7 @@ final class HttpClient
         $response = $this->send($request, $options);
         $this->throwIfNotOk($response);
 
-        /** @var array<string, mixed> */
-        return (array) json_decode((string) $response->getBody(), true);
+        return $this->decodeJsonObject((string) $response->getBody());
     }
 
     /**
@@ -157,8 +155,7 @@ final class HttpClient
         $response = $this->send($request, $options);
         $this->throwIfNotOk($response);
 
-        /** @var array<string, mixed> */
-        return (array) json_decode((string) $response->getBody(), true);
+        return $this->decodeJsonObject((string) $response->getBody());
     }
 
     /**
@@ -328,6 +325,40 @@ final class HttpClient
         $parsedBody = json_last_error() === JSON_ERROR_NONE ? $decoded : $body;
 
         $this->emitError(new GoPayHttpException($status, $parsedBody));
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function decodeJsonList(string $json): array
+    {
+        $data = json_decode($json, true);
+        if (!is_array($data) || !array_is_list($data)) {
+            $this->emitError(new GoPaySdkException(
+                '[GoPaySDK] Failed to parse API response as JSON list.',
+                ErrorCode::NetworkError,
+            ));
+        }
+
+        /** @var list<array<string, mixed>> $data */
+        return $data;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function decodeJsonObject(string $json): array
+    {
+        $data = json_decode($json, true);
+        if (!is_array($data) || array_is_list($data)) {
+            $this->emitError(new GoPaySdkException(
+                '[GoPaySDK] Failed to parse API response as JSON object.',
+                ErrorCode::NetworkError,
+            ));
+        }
+
+        /** @var array<string, mixed> $data */
+        return $data;
     }
 
     /**

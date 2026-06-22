@@ -63,9 +63,16 @@ final class AuthHandler
         }
 
         // Shareable-key fallback: Basic auth for browser-compatible requests.
-        if ($shareableKey !== null) {
-            $raw = ($clientId ?? '') . ':' . $shareableKey;
+        if ($shareableKey !== null && $clientId !== null && $clientId !== '') {
+            $raw = $clientId . ':' . $shareableKey;
             return $request->withHeader('Authorization', 'Basic ' . base64_encode($raw));
+        }
+
+        if ($shareableKey !== null) {
+            throw new GoPaySdkException(
+                '[GoPaySDK] No clientId available for shareable-key auth. Call authenticate() first.',
+                ErrorCode::AuthCredentialsMissing,
+            );
         }
 
         throw new GoPaySdkException(

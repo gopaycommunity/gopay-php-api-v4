@@ -189,6 +189,12 @@ final class PaymentsApi
         int $timeoutSeconds = 30,
         int $pollIntervalMs = 1_000,
     ): PaymentChargeStatusResponse {
+        if ($timeoutSeconds <= 0) {
+            throw new GoPaySdkException('[GoPaySDK] timeoutSeconds must be > 0.', ErrorCode::InvalidArgument);
+        }
+        if ($pollIntervalMs <= 0) {
+            throw new GoPaySdkException('[GoPaySDK] pollIntervalMs must be > 0.', ErrorCode::InvalidArgument);
+        }
         $pid = $this->requireNonEmpty($paymentId, 'paymentId');
         $deadline = time() + $timeoutSeconds;
 
@@ -203,6 +209,10 @@ final class PaymentsApi
 
             if ($chargeState === 'FAILED') {
                 throw new GoPaySdkException('[GoPaySDK] Charge failed.', ErrorCode::ChargeFailed);
+            }
+
+            if ($chargeState === 'CANCELLED') {
+                throw new GoPaySdkException('[GoPaySDK] Charge cancelled.', ErrorCode::ChargeFailed);
             }
 
             if (time() >= $deadline) {
