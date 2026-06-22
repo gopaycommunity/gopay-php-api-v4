@@ -85,8 +85,9 @@ These 11 methods are gone in v4. They will throw HTTP 404 if called against the 
 
 | v1 method | v3 endpoint | v4 status |
 |---|---|---|
-| `refundPayment` / `refundPaymentEET` | `POST /payments/payment/{id}/refund` | ✗ not in v4 spec |
-| `getHistoryRefunds` | `GET /payments/payment/{id}/refunds` | ✗ |
+| `refundPayment` | `POST /payments/payment/{id}/refund` | ⟶ reimplemented as `refundPayment()` on new path `POST /payments/{id}/refunds`; refund resource now has its own ID |
+| `getHistoryRefunds` | `GET /payments/payment/{id}/refunds` | ⟶ replaced by `listRefunds($id)` + `getRefund($refundId)` on new v4 paths |
+| `refundPaymentEET` | `POST /payments/payment/{id}/refund` | ✗ EET abolished Jan 2023, no v4 equivalent |
 | `captureAuthorization` / `captureAuthorizationPartial` | `POST /payments/payment/{id}/capture` | ✗ |
 | `voidAuthorization` | `POST /payments/payment/{id}/void-authorization` | ✗ |
 | `getPaymentInstruments` / `getPaymentInstrumentsAll` | `GET /eshops/eshop/{goid}/payment-instruments/...` | ✗ |

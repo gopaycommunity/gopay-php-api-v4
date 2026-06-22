@@ -88,7 +88,6 @@ use GoPay\Payments\Environment;
 $config = new Config(
     environment:         Environment::Production, // Environment::Sandbox (default)
     baseUrl:             null,          // override base URL (e.g. staging); null = use environment
-    requestTimeoutMs:    10_000,        // request timeout in milliseconds (default 10 000)
     debugLoggingEnabled: false,         // log request/response to error_log (default false)
     onError:             null,          // callable(\Throwable): void — called before throwing
     shareableKey:        null,          // shareable key for browser SDK initialisation
@@ -99,7 +98,6 @@ $config = new Config(
 |---|---|---|---|
 | `environment` | `Environment` | `Sandbox` | API environment |
 | `baseUrl` | `?string` | `null` | Override the resolved URL (e.g. for staging) |
-| `requestTimeoutMs` | `int` | `10000` | HTTP request timeout (ms) |
 | `debugLoggingEnabled` | `bool` | `false` | Log to `error_log` |
 | `onError` | `?callable` | `null` | Invoked before every thrown exception |
 | `shareableKey` | `?string` | `null` | Shareable key for `getBrowserKeys()` |

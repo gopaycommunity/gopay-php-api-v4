@@ -1593,7 +1593,7 @@ components:
             - `payment:read` reads information about the payment
             - `payment:charge` allows only to charge the payment
           examples:
-            - 'payment:write payment:read'
+            - 'payment:charge payment:read'
           example: 'payment:charge payment:read'
     Access-Token:
       type: object
