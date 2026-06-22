@@ -21,6 +21,7 @@ use Psr\Http\Message\StreamFactoryInterface;
 final class AuthHandler
 {
     private const AUTH_PATH = '/oauth2/token';
+    private const BEARER_PREFIX = 'Bearer ';
 
     public function __construct(
         private readonly TokenStore $tokenStore,
@@ -44,7 +45,7 @@ final class AuthHandler
     ): RequestInterface {
         // Per-request override — used directly without touching the token store.
         if ($options?->accessToken !== null) {
-            return $request->withHeader('Authorization', 'Bearer ' . $options->accessToken);
+            return $request->withHeader('Authorization', self::BEARER_PREFIX . $options->accessToken);
         }
 
         // Auth endpoint doesn't get Bearer (it provides Basic credentials itself).
@@ -52,19 +53,32 @@ final class AuthHandler
             return $request;
         }
 
-        // Proactive refresh is handled in requestWithRetry() via isExpiringSoon().
-        // injectAuth() does not refresh here — the retry path replaces the token
-        // on the second attempt when the first returns 401.
+        return $this->applyCredentialAuth($request, $shareableKey, $clientId);
+    }
 
+    /**
+     * Resolve and apply the best available credential: stored bearer token,
+     * shareable-key Basic auth, or throw if neither is available.
+     *
+     * Proactive refresh is handled in requestWithRetry() via isExpiringSoon().
+     *
+     * @throws GoPaySdkException
+     */
+    private function applyCredentialAuth(
+        RequestInterface $request,
+        ?string $shareableKey,
+        ?string $clientId,
+    ): RequestInterface {
         $token = $this->tokenStore->getAccessToken();
 
         if ($token !== null) {
-            return $request->withHeader('Authorization', 'Bearer ' . $token);
+            return $request->withHeader('Authorization', self::BEARER_PREFIX . $token);
         }
 
         // Shareable-key fallback: Basic auth for browser-compatible requests.
         if ($shareableKey !== null && $clientId !== null && $clientId !== '') {
             $raw = $clientId . ':' . $shareableKey;
+
             return $request->withHeader('Authorization', 'Basic ' . base64_encode($raw));
         }
 
@@ -91,8 +105,6 @@ final class AuthHandler
     public function requestWithRetry(
         RequestInterface $request,
         ClientInterface $client,
-        ?string $shareableKey,
-        ?string $clientId,
         bool $isAuthRequest = false,
     ): \Psr\Http\Message\ResponseInterface {
         // Proactive refresh before the first attempt.
@@ -100,18 +112,14 @@ final class AuthHandler
             $this->refresh($client);
             $token = $this->tokenStore->getAccessToken();
             if ($token !== null) {
-                $request = $request->withHeader('Authorization', 'Bearer ' . $token);
+                $request = $request->withHeader('Authorization', self::BEARER_PREFIX . $token);
             }
         }
 
         $response = $client->sendRequest($request);
 
-        if ($response->getStatusCode() !== 401 || $isAuthRequest) {
-            return $response;
-        }
-
-        // 401 → try to refresh and retry once.
-        if (!$this->tokenStore->hasClientCredentials()) {
+        // Short-circuit: not a 401, or auth endpoint, or no credentials to refresh with.
+        if ($response->getStatusCode() !== 401 || $isAuthRequest || !$this->tokenStore->hasClientCredentials()) {
             return $response;
         }
 
@@ -122,7 +130,7 @@ final class AuthHandler
             return $response;
         }
 
-        $retryRequest = $request->withHeader('Authorization', 'Bearer ' . $freshToken);
+        $retryRequest = $request->withHeader('Authorization', self::BEARER_PREFIX . $freshToken);
         $retryResponse = $client->sendRequest($retryRequest);
 
         if ($retryResponse->getStatusCode() === 401) {

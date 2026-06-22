@@ -47,6 +47,8 @@ use Psr\Http\Message\StreamFactoryInterface;
  *     ],
  * ]);
  * ```
+ *
+ * @SuppressWarnings("php:S1448")
  */
 final class GoPayClient
 {

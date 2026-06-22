@@ -18,6 +18,8 @@ use Psr\Http\Message\StreamFactoryInterface;
 
 /**
  * PSR-18 HTTP client with GoPay auth, error mapping, and response deserialization.
+ *
+ * @SuppressWarnings("php:S1448")
  */
 final class HttpClient
 {
@@ -26,6 +28,8 @@ final class HttpClient
     private readonly StreamFactoryInterface $streamFactory;
     private readonly AuthHandler $authHandler;
     private readonly TokenStore $tokenStore;
+    private const APPLICATION_JSON = 'application/json';
+
     private ?string $shareableKey;
 
     public function __construct(
@@ -84,7 +88,7 @@ final class HttpClient
     public function post(string $path, ?array $body, string $type, ?RequestOptions $options = null): ModelInterface
     {
         $encoded = $body !== null ? json_encode($body, JSON_THROW_ON_ERROR) : null;
-        $request = $this->buildRequest('POST', $path, $encoded, $options, 'application/json');
+        $request = $this->buildRequest('POST', $path, $encoded, $options, self::APPLICATION_JSON);
         $response = $this->send($request, $options);
         $this->throwIfNotOk($response);
 
@@ -151,7 +155,7 @@ final class HttpClient
     public function postArray(string $path, ?array $body, ?RequestOptions $options = null): array
     {
         $encoded = $body !== null ? json_encode($body, JSON_THROW_ON_ERROR) : null;
-        $request = $this->buildRequest('POST', $path, $encoded, $options, 'application/json');
+        $request = $this->buildRequest('POST', $path, $encoded, $options, self::APPLICATION_JSON);
         $response = $this->send($request, $options);
         $this->throwIfNotOk($response);
 
@@ -245,12 +249,12 @@ final class HttpClient
         string $path,
         ?string $body,
         ?RequestOptions $options,
-        string $contentType = 'application/json',
+        string $contentType = self::APPLICATION_JSON,
     ): \Psr\Http\Message\RequestInterface {
         $url = rtrim($this->config->resolvedBaseUrl(), '/') . '/' . ltrim($path, '/');
 
         $request = $this->requestFactory->createRequest($method, $url)
-            ->withHeader('Accept', 'application/json');
+            ->withHeader('Accept', self::APPLICATION_JSON);
 
         if ($body !== null) {
             $request = $request
@@ -286,8 +290,6 @@ final class HttpClient
             $response = $this->authHandler->requestWithRetry(
                 $request,
                 $this->client,
-                $this->shareableKey,
-                $this->tokenStore->getClientId(),
                 $isAuthRequest,
             );
         } catch (GoPaySdkException $e) {
@@ -381,9 +383,6 @@ final class HttpClient
         }
 
         /** @var array<string, mixed> $data */
-        /** @var T $result */
-        $result = $type::fromArray($data);
-
-        return $result;
+        return $type::fromArray($data);
     }
 }

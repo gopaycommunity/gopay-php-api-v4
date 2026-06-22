@@ -102,7 +102,7 @@ final class AuthHandlerTest extends TestCase
         $request = $this->factory->createRequest('GET', 'https://example.com/payments/123')
             ->withHeader('Authorization', 'Bearer old-token');
 
-        $response = $this->handler->requestWithRetry($request, $this->mockClient, null, null);
+        $response = $this->handler->requestWithRetry($request, $this->mockClient);
         $this->assertSame(200, $response->getStatusCode());
         $this->assertSame('new-token', $this->tokenStore->getAccessToken());
     }
