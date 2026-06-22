@@ -82,26 +82,6 @@ definitions:
         artifacts:
           - CHANGELOG.md
 
-  agents:
-    readme-consistency:
-      provider: claude
-      prompt: |
-        Review this PHP SDK PR for README/docs consistency:
-        - README.md code examples must use GoPayClient, not old gopay/payments-sdk class names
-        - Migration guide (MIGRATION.md) must cover all v3→v4 breaking changes listed in the Jira analysis
-        - CLAUDE.md must document the composer codegen command and the gw_url do-not-use rule
-        - Module method signatures in README must match actual src/Module/*.php signatures
-        Post a PR comment summarising any inconsistencies found, with inline references.
-
-    spec-consistency:
-      provider: claude
-      prompt: |
-        Review this PHP SDK PR for API spec consistency:
-        - Check that every endpoint in spec/payments.yaml is covered by a method in src/GoPayClient.php
-        - Check that request array keys in README examples match the spec's required fields
-        - Verify that MIGRATION.md's "no v4 equivalent" list matches the v4 spec (refunds, capture/void, EET, etc.)
-        Post a PR comment summarising any gaps or mismatches found.
-
   services:
     docker2x:
       type: docker
@@ -117,24 +97,6 @@ pipelines:
           - step: *test
       - step: *audit
       - step: *sonar
-      - step:
-          name: Readme Consistency (Claude)
-          auth:
-            system:
-              scopes:
-                - read:repository:bitbucket
-                - write:pullrequest:bitbucket
-          script:
-            - agent: readme-consistency
-      - step:
-          name: Spec Consistency (Claude)
-          auth:
-            system:
-              scopes:
-                - read:repository:bitbucket
-                - write:pullrequest:bitbucket
-          script:
-            - agent: spec-consistency
       - step: *release-preview
 
   branches:
