@@ -68,7 +68,7 @@ definitions:
           depth: full
         script:
           - apt-get update -qq && apt-get install -y -qq git nodejs npm
-          - npx semantic-release --dry-run --no-ci
+          - npx -p semantic-release -p @semantic-release/commit-analyzer -p @semantic-release/release-notes-generator -p @semantic-release/changelog -p @semantic-release/exec -p @semantic-release/git semantic-release --dry-run --no-ci
 
     - step: &release
         name: Release
@@ -78,7 +78,7 @@ definitions:
         script:
           - apt-get update -qq && apt-get install -y -qq git nodejs npm
           - git remote set-url origin https://gopay-release-bot:$BITBUCKET_BOT_PUSH_TOKEN@bitbucket.org/$BITBUCKET_REPO_FULL_NAME.git
-          - npx semantic-release
+          - npx -p semantic-release -p @semantic-release/commit-analyzer -p @semantic-release/release-notes-generator -p @semantic-release/changelog -p @semantic-release/exec -p @semantic-release/git semantic-release
         artifacts:
           - CHANGELOG.md
 
