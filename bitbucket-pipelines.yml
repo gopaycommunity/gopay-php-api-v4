@@ -67,7 +67,9 @@ definitions:
         clone:
           depth: full
         script:
-          - apt-get update -qq && apt-get install -y -qq git nodejs npm
+          - apt-get update -qq && apt-get install -y -qq git curl
+          - curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+          - apt-get install -y -qq nodejs
           - npx -p semantic-release -p @semantic-release/commit-analyzer -p @semantic-release/release-notes-generator -p @semantic-release/changelog -p @semantic-release/exec -p @semantic-release/git semantic-release --dry-run --no-ci
 
     - step: &release
@@ -76,7 +78,9 @@ definitions:
         clone:
           depth: full
         script:
-          - apt-get update -qq && apt-get install -y -qq git nodejs npm
+          - apt-get update -qq && apt-get install -y -qq git curl
+          - curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+          - apt-get install -y -qq nodejs
           - git remote set-url origin https://gopay-release-bot:$BITBUCKET_BOT_PUSH_TOKEN@bitbucket.org/$BITBUCKET_REPO_FULL_NAME.git
           - npx -p semantic-release -p @semantic-release/commit-analyzer -p @semantic-release/release-notes-generator -p @semantic-release/changelog -p @semantic-release/exec -p @semantic-release/git semantic-release
         artifacts:
