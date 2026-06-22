@@ -11,7 +11,12 @@ definitions:
           - composer
         script:
           - apt-get update -qq && apt-get install -y -qq git zip unzip libzip-dev && docker-php-ext-install zip
-          - curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+          - pecl install pcov && docker-php-ext-enable pcov
+          - php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+          - php -r "copy('https://composer.github.io/installer.sig', 'composer-setup.sig');"
+          - php -r "if (trim(file_get_contents('composer-setup.sig')) !== hash_file('sha384', 'composer-setup.php')) { fwrite(STDERR, 'Invalid Composer installer checksum'.PHP_EOL); exit(1); }"
+          - php composer-setup.php --install-dir=/usr/local/bin --filename=composer
+          - rm -f composer-setup.php composer-setup.sig
           - composer install --no-interaction --prefer-dist
         artifacts:
           - vendor/**
@@ -19,7 +24,7 @@ definitions:
     - step: &cs
         name: Code Style (php-cs-fixer)
         script:
-          - vendor/bin/php-cs-fixer check --diff --ansi
+          - vendor/bin/php-cs-fixer check --diff --ansi --allow-risky=yes
 
     - step: &phpstan
         name: Static Analysis (PHPStan)
@@ -29,7 +34,7 @@ definitions:
     - step: &test
         name: Unit Tests (PHPUnit)
         script:
-          - vendor/bin/phpunit --colors=always
+          - vendor/bin/phpunit --colors=always --coverage-clover=coverage.xml
 
     - step: &audit
         name: Security Audit
