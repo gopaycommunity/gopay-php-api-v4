@@ -19,6 +19,9 @@ cd "$(dirname "$0")/.."
 TMP_DIR=".codegen-tmp"
 GEN_DIR="src/Generated"
 
+echo "→ Fetching latest spec from payments-api.beta.gopay.com ..."
+curl -fsSL http://api-docs.gopay.com/spec/en/payments.yaml -o spec/payments.yaml
+
 echo "→ Generating PHP models from spec/payments.yaml ..."
 
 # The CLI reads openapitools.json for generator config and Docker settings.
