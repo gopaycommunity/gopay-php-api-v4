@@ -28,8 +28,8 @@ abstract class E2ETestCase extends TestCase
         self::loadEnvFile(__DIR__ . '/../../.env.e2e');
         $this->requireCredentials();
 
-        $baseUrl      = self::env('GP_PHP_SDK_BASE_URL');
-        $shareableKey = self::env('GP_PHP_SDK_SHAREABLE_KEY');
+        $baseUrl      = self::env('GOPAY_PAYMENTS_V4_BASE_URL');
+        $shareableKey = self::env('GOPAY_PAYMENTS_V4_SHAREABLE_KEY');
 
         $config = new Config(
             environment: Environment::Sandbox,
@@ -38,11 +38,11 @@ abstract class E2ETestCase extends TestCase
         );
 
         $this->sdk  = new GoPayClient($config);
-        $this->goid = self::requireEnv('GP_PHP_SDK_GOID');
+        $this->goid = self::requireEnv('GOPAY_PAYMENTS_V4_GOID');
 
         $this->sdk->authenticate(
-            self::requireEnv('GP_PHP_SDK_CLIENT_ID'),
-            self::requireEnv('GP_PHP_SDK_CLIENT_SECRET'),
+            self::requireEnv('GOPAY_PAYMENTS_V4_CLIENT_ID'),
+            self::requireEnv('GOPAY_PAYMENTS_V4_CLIENT_SECRET'),
             'payment:write payment:read card:write card:read',
         );
     }
@@ -51,10 +51,10 @@ abstract class E2ETestCase extends TestCase
 
     private function requireCredentials(): void
     {
-        if (self::env('GP_PHP_SDK_CLIENT_ID') === null) {
+        if (self::env('GOPAY_PAYMENTS_V4_CLIENT_ID') === null) {
             self::markTestSkipped(
                 'E2E credentials not configured. '
-                . 'Copy .env.e2e.example to .env.e2e and fill in GP_PHP_SDK_* values.',
+                . 'Copy .env.e2e.example to .env.e2e and fill in GOPAY_PAYMENTS_V4_* values.',
             );
         }
     }

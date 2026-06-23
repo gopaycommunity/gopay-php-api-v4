@@ -57,9 +57,9 @@ use GoPay\Payments\Config;
 use GoPay\Payments\Environment;
 use GoPay\Payments\GoPayClient;
 
-$baseUrl      = env('GP_PHP_SDK_BASE_URL');
-$shareableKey = env('GP_PHP_SDK_SHAREABLE_KEY');
-$goid         = env_require('GP_PHP_SDK_GOID');
+$baseUrl      = env('GOPAY_PAYMENTS_V4_BASE_URL');
+$shareableKey = env('GOPAY_PAYMENTS_V4_SHAREABLE_KEY');
+$goid         = env_require('GOPAY_PAYMENTS_V4_GOID');
 
 $config = new Config(
     environment: Environment::Sandbox,
@@ -70,8 +70,8 @@ $config = new Config(
 $sdk = new GoPayClient($config);
 
 $sdk->authenticate(
-    env_require('GP_PHP_SDK_CLIENT_ID'),
-    env_require('GP_PHP_SDK_CLIENT_SECRET'),
+    env_require('GOPAY_PAYMENTS_V4_CLIENT_ID'),
+    env_require('GOPAY_PAYMENTS_V4_CLIENT_SECRET'),
     'payment:write payment:read card:write card:read',
 );
 
