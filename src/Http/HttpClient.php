@@ -8,7 +8,8 @@ use GoPay\Payments\Config;
 use GoPay\Payments\Exception\ErrorCode;
 use GoPay\Payments\Exception\GoPayHttpException;
 use GoPay\Payments\Exception\GoPaySdkException;
-use GoPay\Payments\Generated\ModelInterface;
+use GoPay\Payments\Generated\Model\ModelInterface;
+use GoPay\Payments\Generated\ObjectSerializer;
 use Http\Discovery\Psr17FactoryDiscovery;
 use Http\Discovery\Psr18ClientDiscovery;
 use Psr\Http\Client\ClientInterface;
@@ -364,7 +365,7 @@ final class HttpClient
     }
 
     /**
-     * Deserialize a JSON response body into a typed model object via ModelInterface::fromArray().
+     * Deserialize a JSON response body into a typed model object via ObjectSerializer.
      *
      * @template T of ModelInterface
      *
@@ -374,15 +375,17 @@ final class HttpClient
      */
     private function deserialize(string $json, string $type): ModelInterface
     {
-        $data = json_decode($json, true);
-        if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
+        $data = json_decode($json);
+        if (json_last_error() !== JSON_ERROR_NONE || !($data instanceof \stdClass)) {
             $this->emitError(new GoPaySdkException(
                 '[GoPaySDK] Failed to parse API response as JSON.',
                 ErrorCode::NetworkError,
             ));
         }
 
-        /** @var array<string, mixed> $data */
-        return $type::fromArray($data);
+        /** @var T $result */
+        $result = ObjectSerializer::deserialize($data, $type);
+
+        return $result;
     }
 }

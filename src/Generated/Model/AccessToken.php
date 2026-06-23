@@ -1,6 +1,6 @@
 <?php
 /**
- * PaymentDetails
+ * AccessToken
  *
  * PHP version 7.4
  *
@@ -33,16 +33,16 @@ use \ArrayAccess;
 use \GoPay\Payments\Generated\ObjectSerializer;
 
 /**
- * PaymentDetails Class Doc Comment
+ * AccessToken Class Doc Comment
  *
  * @category Class
- * @description Representation of an existing payment
+ * @description The access token and its meta information.
  * @package  GoPay\Payments\Generated
  * @author   OpenAPI Generator team
  * @link     https://openapi-generator.tech
  * @implements \ArrayAccess<string, mixed>
  */
-class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
+class AccessToken implements ModelInterface, ArrayAccess, \JsonSerializable
 {
     public const DISCRIMINATOR = null;
 
@@ -51,7 +51,7 @@ class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
       *
       * @var string
       */
-    protected static $openAPIModelName = 'Payment-Details';
+    protected static $openAPIModelName = 'Access-Token';
 
     /**
       * Array of property to type mappings. Used for (de)serialization
@@ -59,15 +59,10 @@ class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
       * @var string[]
       */
     protected static $openAPITypes = [
-        'id' => 'string',
-        'orderNumber' => 'string',
-        'state' => '\GoPay\Payments\Generated\Model\PaymentState',
-        'amount' => 'int',
-        'currency' => '\GoPay\Payments\Generated\Model\Currency',
-        'customer' => '\GoPay\Payments\Generated\Model\Customer',
-        'gwUrl' => 'string',
-        'charge' => '\GoPay\Payments\Generated\Model\PaymentChargeStatusResponse',
-        'paymentSecret' => 'string'
+        'tokenType' => 'string',
+        'accessToken' => 'string',
+        'scope' => 'string',
+        'expiresIn' => 'int'
     ];
 
     /**
@@ -78,15 +73,10 @@ class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
       * @psalm-var array<string, string|null>
       */
     protected static $openAPIFormats = [
-        'id' => null,
-        'orderNumber' => null,
-        'state' => null,
-        'amount' => null,
-        'currency' => null,
-        'customer' => null,
-        'gwUrl' => 'uri',
-        'charge' => null,
-        'paymentSecret' => null
+        'tokenType' => null,
+        'accessToken' => null,
+        'scope' => null,
+        'expiresIn' => null
     ];
 
     /**
@@ -95,15 +85,10 @@ class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
       * @var boolean[]
       */
     protected static array $openAPINullables = [
-        'id' => false,
-        'orderNumber' => false,
-        'state' => false,
-        'amount' => false,
-        'currency' => false,
-        'customer' => false,
-        'gwUrl' => false,
-        'charge' => false,
-        'paymentSecret' => false
+        'tokenType' => false,
+        'accessToken' => false,
+        'scope' => false,
+        'expiresIn' => false
     ];
 
     /**
@@ -192,15 +177,10 @@ class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
      * @var string[]
      */
     protected static $attributeMap = [
-        'id' => 'id',
-        'orderNumber' => 'order_number',
-        'state' => 'state',
-        'amount' => 'amount',
-        'currency' => 'currency',
-        'customer' => 'customer',
-        'gwUrl' => 'gw_url',
-        'charge' => 'charge',
-        'paymentSecret' => 'payment_secret'
+        'tokenType' => 'token_type',
+        'accessToken' => 'access_token',
+        'scope' => 'scope',
+        'expiresIn' => 'expires_in'
     ];
 
     /**
@@ -209,15 +189,10 @@ class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
      * @var string[]
      */
     protected static $setters = [
-        'id' => 'setId',
-        'orderNumber' => 'setOrderNumber',
-        'state' => 'setState',
-        'amount' => 'setAmount',
-        'currency' => 'setCurrency',
-        'customer' => 'setCustomer',
-        'gwUrl' => 'setGwUrl',
-        'charge' => 'setCharge',
-        'paymentSecret' => 'setPaymentSecret'
+        'tokenType' => 'setTokenType',
+        'accessToken' => 'setAccessToken',
+        'scope' => 'setScope',
+        'expiresIn' => 'setExpiresIn'
     ];
 
     /**
@@ -226,15 +201,10 @@ class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
      * @var string[]
      */
     protected static $getters = [
-        'id' => 'getId',
-        'orderNumber' => 'getOrderNumber',
-        'state' => 'getState',
-        'amount' => 'getAmount',
-        'currency' => 'getCurrency',
-        'customer' => 'getCustomer',
-        'gwUrl' => 'getGwUrl',
-        'charge' => 'getCharge',
-        'paymentSecret' => 'getPaymentSecret'
+        'tokenType' => 'getTokenType',
+        'accessToken' => 'getAccessToken',
+        'scope' => 'getScope',
+        'expiresIn' => 'getExpiresIn'
     ];
 
     /**
@@ -278,6 +248,19 @@ class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
         return self::$openAPIModelName;
     }
 
+    public const TOKEN_TYPE_BEARER = 'bearer';
+
+    /**
+     * Gets allowable values of the enum
+     *
+     * @return string[]
+     */
+    public function getTokenTypeAllowableValues()
+    {
+        return [
+            self::TOKEN_TYPE_BEARER,
+        ];
+    }
 
     /**
      * Associative array for storing property values
@@ -294,15 +277,10 @@ class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
      */
     public function __construct(array $data = null)
     {
-        $this->setIfExists('id', $data ?? [], null);
-        $this->setIfExists('orderNumber', $data ?? [], null);
-        $this->setIfExists('state', $data ?? [], null);
-        $this->setIfExists('amount', $data ?? [], null);
-        $this->setIfExists('currency', $data ?? [], null);
-        $this->setIfExists('customer', $data ?? [], null);
-        $this->setIfExists('gwUrl', $data ?? [], null);
-        $this->setIfExists('charge', $data ?? [], null);
-        $this->setIfExists('paymentSecret', $data ?? [], null);
+        $this->setIfExists('tokenType', $data ?? [], 'bearer');
+        $this->setIfExists('accessToken', $data ?? [], null);
+        $this->setIfExists('scope', $data ?? [], null);
+        $this->setIfExists('expiresIn', $data ?? [], null);
     }
 
     /**
@@ -332,30 +310,19 @@ class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
     {
         $invalidProperties = [];
 
-        if ($this->container['id'] === null) {
-            $invalidProperties[] = "'id' can't be null";
+        $allowedValues = $this->getTokenTypeAllowableValues();
+        if (!is_null($this->container['tokenType']) && !in_array($this->container['tokenType'], $allowedValues, true)) {
+            $invalidProperties[] = sprintf(
+                "invalid value '%s' for 'tokenType', must be one of '%s'",
+                $this->container['tokenType'],
+                implode("', '", $allowedValues)
+            );
         }
-        if ($this->container['orderNumber'] === null) {
-            $invalidProperties[] = "'orderNumber' can't be null";
+
+        if (!is_null($this->container['expiresIn']) && ($this->container['expiresIn'] < 0)) {
+            $invalidProperties[] = "invalid value for 'expiresIn', must be bigger than or equal to 0.";
         }
-        if ($this->container['state'] === null) {
-            $invalidProperties[] = "'state' can't be null";
-        }
-        if ($this->container['amount'] === null) {
-            $invalidProperties[] = "'amount' can't be null";
-        }
-        if ($this->container['currency'] === null) {
-            $invalidProperties[] = "'currency' can't be null";
-        }
-        if ($this->container['customer'] === null) {
-            $invalidProperties[] = "'customer' can't be null";
-        }
-        if ($this->container['gwUrl'] === null) {
-            $invalidProperties[] = "'gwUrl' can't be null";
-        }
-        if ($this->container['paymentSecret'] === null) {
-            $invalidProperties[] = "'paymentSecret' can't be null";
-        }
+
         return $invalidProperties;
     }
 
@@ -372,244 +339,124 @@ class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
 
 
     /**
-     * Gets id
+     * Gets tokenType
      *
-     * @return string
+     * @return string|null
      */
-    public function getId()
+    public function getTokenType()
     {
-        return $this->container['id'];
+        return $this->container['tokenType'];
     }
 
     /**
-     * Sets id
+     * Sets tokenType
      *
-     * @param string $id Payment session ID
+     * @param string|null $tokenType Always `bearer`
      *
      * @return self
      */
-    public function setId($id)
+    public function setTokenType($tokenType)
     {
-        if (is_null($id)) {
-            throw new \InvalidArgumentException('non-nullable id cannot be null');
+        if (is_null($tokenType)) {
+            throw new \InvalidArgumentException('non-nullable tokenType cannot be null');
         }
-        $this->container['id'] = $id;
+        $allowedValues = $this->getTokenTypeAllowableValues();
+        if (!in_array($tokenType, $allowedValues, true)) {
+            throw new \InvalidArgumentException(
+                sprintf(
+                    "Invalid value '%s' for 'tokenType', must be one of '%s'",
+                    $tokenType,
+                    implode("', '", $allowedValues)
+                )
+            );
+        }
+        $this->container['tokenType'] = $tokenType;
 
         return $this;
     }
 
     /**
-     * Gets orderNumber
+     * Gets accessToken
      *
-     * @return string
+     * @return string|null
      */
-    public function getOrderNumber()
+    public function getAccessToken()
     {
-        return $this->container['orderNumber'];
+        return $this->container['accessToken'];
     }
 
     /**
-     * Sets orderNumber
+     * Sets accessToken
      *
-     * @param string $orderNumber Order ID forwarded from the payment request
+     * @param string|null $accessToken The JWT string as described by [RFC 7519: JSON Web Token (JWT)](https://datatracker.ietf.org/doc/html/rfc7519)  The JWT claims contain: - `sub` -> the Client ID for which the token was issued - `scope` -> the scopes of the token - `iat` -> timestamp of token issuing - `exp` -> timestamp of token expiration - `domain` -> `merchant` for server tokens issued for client credentials. `payment` for payment tokens issued for `payment_secret` using the `authorization_code` flow - used on calling the API from the browser.
      *
      * @return self
      */
-    public function setOrderNumber($orderNumber)
+    public function setAccessToken($accessToken)
     {
-        if (is_null($orderNumber)) {
-            throw new \InvalidArgumentException('non-nullable orderNumber cannot be null');
+        if (is_null($accessToken)) {
+            throw new \InvalidArgumentException('non-nullable accessToken cannot be null');
         }
-        $this->container['orderNumber'] = $orderNumber;
+        $this->container['accessToken'] = $accessToken;
 
         return $this;
     }
 
     /**
-     * Gets state
+     * Gets scope
      *
-     * @return \GoPay\Payments\Generated\Model\PaymentState
+     * @return string|null
      */
-    public function getState()
+    public function getScope()
     {
-        return $this->container['state'];
+        return $this->container['scope'];
     }
 
     /**
-     * Sets state
+     * Sets scope
      *
-     * @param \GoPay\Payments\Generated\Model\PaymentState $state Payment state
+     * @param string|null $scope Space-separated list of token scopes.
      *
      * @return self
      */
-    public function setState($state)
+    public function setScope($scope)
     {
-        if (is_null($state)) {
-            throw new \InvalidArgumentException('non-nullable state cannot be null');
+        if (is_null($scope)) {
+            throw new \InvalidArgumentException('non-nullable scope cannot be null');
         }
-        $this->container['state'] = $state;
+        $this->container['scope'] = $scope;
 
         return $this;
     }
 
     /**
-     * Gets amount
+     * Gets expiresIn
      *
-     * @return int
+     * @return int|null
      */
-    public function getAmount()
+    public function getExpiresIn()
     {
-        return $this->container['amount'];
+        return $this->container['expiresIn'];
     }
 
     /**
-     * Sets amount
+     * Sets expiresIn
      *
-     * @param int $amount Total amount in cents
+     * @param int|null $expiresIn The expiration of the access JWT in seconds
      *
      * @return self
      */
-    public function setAmount($amount)
+    public function setExpiresIn($expiresIn)
     {
-        if (is_null($amount)) {
-            throw new \InvalidArgumentException('non-nullable amount cannot be null');
+        if (is_null($expiresIn)) {
+            throw new \InvalidArgumentException('non-nullable expiresIn cannot be null');
         }
-        $this->container['amount'] = $amount;
 
-        return $this;
-    }
-
-    /**
-     * Gets currency
-     *
-     * @return \GoPay\Payments\Generated\Model\Currency
-     */
-    public function getCurrency()
-    {
-        return $this->container['currency'];
-    }
-
-    /**
-     * Sets currency
-     *
-     * @param \GoPay\Payments\Generated\Model\Currency $currency Payment currency
-     *
-     * @return self
-     */
-    public function setCurrency($currency)
-    {
-        if (is_null($currency)) {
-            throw new \InvalidArgumentException('non-nullable currency cannot be null');
+        if (($expiresIn < 0)) {
+            throw new \InvalidArgumentException('invalid value for $expiresIn when calling AccessToken., must be bigger than or equal to 0.');
         }
-        $this->container['currency'] = $currency;
 
-        return $this;
-    }
-
-    /**
-     * Gets customer
-     *
-     * @return \GoPay\Payments\Generated\Model\Customer
-     */
-    public function getCustomer()
-    {
-        return $this->container['customer'];
-    }
-
-    /**
-     * Sets customer
-     *
-     * @param \GoPay\Payments\Generated\Model\Customer $customer Customer data
-     *
-     * @return self
-     */
-    public function setCustomer($customer)
-    {
-        if (is_null($customer)) {
-            throw new \InvalidArgumentException('non-nullable customer cannot be null');
-        }
-        $this->container['customer'] = $customer;
-
-        return $this;
-    }
-
-    /**
-     * Gets gwUrl
-     *
-     * @return string
-     */
-    public function getGwUrl()
-    {
-        return $this->container['gwUrl'];
-    }
-
-    /**
-     * Sets gwUrl
-     *
-     * @param string $gwUrl URL of the hosted payment gateway
-     *
-     * @return self
-     */
-    public function setGwUrl($gwUrl)
-    {
-        if (is_null($gwUrl)) {
-            throw new \InvalidArgumentException('non-nullable gwUrl cannot be null');
-        }
-        $this->container['gwUrl'] = $gwUrl;
-
-        return $this;
-    }
-
-    /**
-     * Gets charge
-     *
-     * @return \GoPay\Payments\Generated\Model\PaymentChargeStatusResponse|null
-     */
-    public function getCharge()
-    {
-        return $this->container['charge'];
-    }
-
-    /**
-     * Sets charge
-     *
-     * @param \GoPay\Payments\Generated\Model\PaymentChargeStatusResponse|null $charge charge
-     *
-     * @return self
-     */
-    public function setCharge($charge)
-    {
-        if (is_null($charge)) {
-            throw new \InvalidArgumentException('non-nullable charge cannot be null');
-        }
-        $this->container['charge'] = $charge;
-
-        return $this;
-    }
-
-    /**
-     * Gets paymentSecret
-     *
-     * @return string
-     */
-    public function getPaymentSecret()
-    {
-        return $this->container['paymentSecret'];
-    }
-
-    /**
-     * Sets paymentSecret
-     *
-     * @param string $paymentSecret Payment secret that can be shared to the client side. Used to generate payment-specific JWTs. **Do not embed in URLs, log or store!**
-     *
-     * @return self
-     */
-    public function setPaymentSecret($paymentSecret)
-    {
-        if (is_null($paymentSecret)) {
-            throw new \InvalidArgumentException('non-nullable paymentSecret cannot be null');
-        }
-        $this->container['paymentSecret'] = $paymentSecret;
+        $this->container['expiresIn'] = $expiresIn;
 
         return $this;
     }

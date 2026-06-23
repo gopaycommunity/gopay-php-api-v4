@@ -1,6 +1,6 @@
 <?php
 /**
- * PaymentDetails
+ * PaymentCardChargeDetails
  *
  * PHP version 7.4
  *
@@ -33,16 +33,16 @@ use \ArrayAccess;
 use \GoPay\Payments\Generated\ObjectSerializer;
 
 /**
- * PaymentDetails Class Doc Comment
+ * PaymentCardChargeDetails Class Doc Comment
  *
  * @category Class
- * @description Representation of an existing payment
+ * @description Output details of a card payment instrument as returned in a charge response. Contains masked card data identifying the card used.
  * @package  GoPay\Payments\Generated
  * @author   OpenAPI Generator team
  * @link     https://openapi-generator.tech
  * @implements \ArrayAccess<string, mixed>
  */
-class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
+class PaymentCardChargeDetails implements ModelInterface, ArrayAccess, \JsonSerializable
 {
     public const DISCRIMINATOR = null;
 
@@ -51,7 +51,7 @@ class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
       *
       * @var string
       */
-    protected static $openAPIModelName = 'Payment-Details';
+    protected static $openAPIModelName = 'Payment-Card-Charge-Details';
 
     /**
       * Array of property to type mappings. Used for (de)serialization
@@ -59,15 +59,12 @@ class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
       * @var string[]
       */
     protected static $openAPITypes = [
-        'id' => 'string',
-        'orderNumber' => 'string',
-        'state' => '\GoPay\Payments\Generated\Model\PaymentState',
-        'amount' => 'int',
-        'currency' => '\GoPay\Payments\Generated\Model\Currency',
-        'customer' => '\GoPay\Payments\Generated\Model\Customer',
-        'gwUrl' => 'string',
-        'charge' => '\GoPay\Payments\Generated\Model\PaymentChargeStatusResponse',
-        'paymentSecret' => 'string'
+        'inputType' => '\GoPay\Payments\Generated\Model\PaymentCardInputType',
+        'maskedPan' => 'string',
+        'expirationMonth' => 'string',
+        'expirationYear' => 'string',
+        'scheme' => '\GoPay\Payments\Generated\Model\CardScheme',
+        'fingerprint' => 'string'
     ];
 
     /**
@@ -78,15 +75,12 @@ class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
       * @psalm-var array<string, string|null>
       */
     protected static $openAPIFormats = [
-        'id' => null,
-        'orderNumber' => null,
-        'state' => null,
-        'amount' => null,
-        'currency' => null,
-        'customer' => null,
-        'gwUrl' => 'uri',
-        'charge' => null,
-        'paymentSecret' => null
+        'inputType' => null,
+        'maskedPan' => null,
+        'expirationMonth' => null,
+        'expirationYear' => null,
+        'scheme' => null,
+        'fingerprint' => null
     ];
 
     /**
@@ -95,15 +89,12 @@ class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
       * @var boolean[]
       */
     protected static array $openAPINullables = [
-        'id' => false,
-        'orderNumber' => false,
-        'state' => false,
-        'amount' => false,
-        'currency' => false,
-        'customer' => false,
-        'gwUrl' => false,
-        'charge' => false,
-        'paymentSecret' => false
+        'inputType' => false,
+        'maskedPan' => false,
+        'expirationMonth' => false,
+        'expirationYear' => false,
+        'scheme' => false,
+        'fingerprint' => false
     ];
 
     /**
@@ -192,15 +183,12 @@ class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
      * @var string[]
      */
     protected static $attributeMap = [
-        'id' => 'id',
-        'orderNumber' => 'order_number',
-        'state' => 'state',
-        'amount' => 'amount',
-        'currency' => 'currency',
-        'customer' => 'customer',
-        'gwUrl' => 'gw_url',
-        'charge' => 'charge',
-        'paymentSecret' => 'payment_secret'
+        'inputType' => 'input_type',
+        'maskedPan' => 'masked_pan',
+        'expirationMonth' => 'expiration_month',
+        'expirationYear' => 'expiration_year',
+        'scheme' => 'scheme',
+        'fingerprint' => 'fingerprint'
     ];
 
     /**
@@ -209,15 +197,12 @@ class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
      * @var string[]
      */
     protected static $setters = [
-        'id' => 'setId',
-        'orderNumber' => 'setOrderNumber',
-        'state' => 'setState',
-        'amount' => 'setAmount',
-        'currency' => 'setCurrency',
-        'customer' => 'setCustomer',
-        'gwUrl' => 'setGwUrl',
-        'charge' => 'setCharge',
-        'paymentSecret' => 'setPaymentSecret'
+        'inputType' => 'setInputType',
+        'maskedPan' => 'setMaskedPan',
+        'expirationMonth' => 'setExpirationMonth',
+        'expirationYear' => 'setExpirationYear',
+        'scheme' => 'setScheme',
+        'fingerprint' => 'setFingerprint'
     ];
 
     /**
@@ -226,15 +211,12 @@ class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
      * @var string[]
      */
     protected static $getters = [
-        'id' => 'getId',
-        'orderNumber' => 'getOrderNumber',
-        'state' => 'getState',
-        'amount' => 'getAmount',
-        'currency' => 'getCurrency',
-        'customer' => 'getCustomer',
-        'gwUrl' => 'getGwUrl',
-        'charge' => 'getCharge',
-        'paymentSecret' => 'getPaymentSecret'
+        'inputType' => 'getInputType',
+        'maskedPan' => 'getMaskedPan',
+        'expirationMonth' => 'getExpirationMonth',
+        'expirationYear' => 'getExpirationYear',
+        'scheme' => 'getScheme',
+        'fingerprint' => 'getFingerprint'
     ];
 
     /**
@@ -294,15 +276,12 @@ class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
      */
     public function __construct(array $data = null)
     {
-        $this->setIfExists('id', $data ?? [], null);
-        $this->setIfExists('orderNumber', $data ?? [], null);
-        $this->setIfExists('state', $data ?? [], null);
-        $this->setIfExists('amount', $data ?? [], null);
-        $this->setIfExists('currency', $data ?? [], null);
-        $this->setIfExists('customer', $data ?? [], null);
-        $this->setIfExists('gwUrl', $data ?? [], null);
-        $this->setIfExists('charge', $data ?? [], null);
-        $this->setIfExists('paymentSecret', $data ?? [], null);
+        $this->setIfExists('inputType', $data ?? [], null);
+        $this->setIfExists('maskedPan', $data ?? [], null);
+        $this->setIfExists('expirationMonth', $data ?? [], null);
+        $this->setIfExists('expirationYear', $data ?? [], null);
+        $this->setIfExists('scheme', $data ?? [], null);
+        $this->setIfExists('fingerprint', $data ?? [], null);
     }
 
     /**
@@ -332,30 +311,17 @@ class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
     {
         $invalidProperties = [];
 
-        if ($this->container['id'] === null) {
-            $invalidProperties[] = "'id' can't be null";
+        if ($this->container['inputType'] === null) {
+            $invalidProperties[] = "'inputType' can't be null";
         }
-        if ($this->container['orderNumber'] === null) {
-            $invalidProperties[] = "'orderNumber' can't be null";
+        if (!is_null($this->container['expirationMonth']) && !preg_match("/^(?:0[0-9]|1[0-2])$/", $this->container['expirationMonth'])) {
+            $invalidProperties[] = "invalid value for 'expirationMonth', must be conform to the pattern /^(?:0[0-9]|1[0-2])$/.";
         }
-        if ($this->container['state'] === null) {
-            $invalidProperties[] = "'state' can't be null";
+
+        if (!is_null($this->container['expirationYear']) && !preg_match("/^[0-9]{2}$/", $this->container['expirationYear'])) {
+            $invalidProperties[] = "invalid value for 'expirationYear', must be conform to the pattern /^[0-9]{2}$/.";
         }
-        if ($this->container['amount'] === null) {
-            $invalidProperties[] = "'amount' can't be null";
-        }
-        if ($this->container['currency'] === null) {
-            $invalidProperties[] = "'currency' can't be null";
-        }
-        if ($this->container['customer'] === null) {
-            $invalidProperties[] = "'customer' can't be null";
-        }
-        if ($this->container['gwUrl'] === null) {
-            $invalidProperties[] = "'gwUrl' can't be null";
-        }
-        if ($this->container['paymentSecret'] === null) {
-            $invalidProperties[] = "'paymentSecret' can't be null";
-        }
+
         return $invalidProperties;
     }
 
@@ -372,244 +338,173 @@ class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
 
 
     /**
-     * Gets id
+     * Gets inputType
      *
-     * @return string
+     * @return \GoPay\Payments\Generated\Model\PaymentCardInputType
      */
-    public function getId()
+    public function getInputType()
     {
-        return $this->container['id'];
+        return $this->container['inputType'];
     }
 
     /**
-     * Sets id
+     * Sets inputType
      *
-     * @param string $id Payment session ID
+     * @param \GoPay\Payments\Generated\Model\PaymentCardInputType $inputType The type of card input that was used for the charge
      *
      * @return self
      */
-    public function setId($id)
+    public function setInputType($inputType)
     {
-        if (is_null($id)) {
-            throw new \InvalidArgumentException('non-nullable id cannot be null');
+        if (is_null($inputType)) {
+            throw new \InvalidArgumentException('non-nullable inputType cannot be null');
         }
-        $this->container['id'] = $id;
+        $this->container['inputType'] = $inputType;
 
         return $this;
     }
 
     /**
-     * Gets orderNumber
+     * Gets maskedPan
      *
-     * @return string
+     * @return string|null
      */
-    public function getOrderNumber()
+    public function getMaskedPan()
     {
-        return $this->container['orderNumber'];
+        return $this->container['maskedPan'];
     }
 
     /**
-     * Sets orderNumber
+     * Sets maskedPan
      *
-     * @param string $orderNumber Order ID forwarded from the payment request
+     * @param string|null $maskedPan Masked primary account number with only the first six and last four digits visible
      *
      * @return self
      */
-    public function setOrderNumber($orderNumber)
+    public function setMaskedPan($maskedPan)
     {
-        if (is_null($orderNumber)) {
-            throw new \InvalidArgumentException('non-nullable orderNumber cannot be null');
+        if (is_null($maskedPan)) {
+            throw new \InvalidArgumentException('non-nullable maskedPan cannot be null');
         }
-        $this->container['orderNumber'] = $orderNumber;
+        $this->container['maskedPan'] = $maskedPan;
 
         return $this;
     }
 
     /**
-     * Gets state
+     * Gets expirationMonth
      *
-     * @return \GoPay\Payments\Generated\Model\PaymentState
+     * @return string|null
      */
-    public function getState()
+    public function getExpirationMonth()
     {
-        return $this->container['state'];
+        return $this->container['expirationMonth'];
     }
 
     /**
-     * Sets state
+     * Sets expirationMonth
      *
-     * @param \GoPay\Payments\Generated\Model\PaymentState $state Payment state
+     * @param string|null $expirationMonth Card expiration month (01–12)
      *
      * @return self
      */
-    public function setState($state)
+    public function setExpirationMonth($expirationMonth)
     {
-        if (is_null($state)) {
-            throw new \InvalidArgumentException('non-nullable state cannot be null');
+        if (is_null($expirationMonth)) {
+            throw new \InvalidArgumentException('non-nullable expirationMonth cannot be null');
         }
-        $this->container['state'] = $state;
+
+        if ((!preg_match("/^(?:0[0-9]|1[0-2])$/", ObjectSerializer::toString($expirationMonth)))) {
+            throw new \InvalidArgumentException("invalid value for \$expirationMonth when calling PaymentCardChargeDetails., must conform to the pattern /^(?:0[0-9]|1[0-2])$/.");
+        }
+
+        $this->container['expirationMonth'] = $expirationMonth;
 
         return $this;
     }
 
     /**
-     * Gets amount
+     * Gets expirationYear
      *
-     * @return int
+     * @return string|null
      */
-    public function getAmount()
+    public function getExpirationYear()
     {
-        return $this->container['amount'];
+        return $this->container['expirationYear'];
     }
 
     /**
-     * Sets amount
+     * Sets expirationYear
      *
-     * @param int $amount Total amount in cents
+     * @param string|null $expirationYear Card expiration year (two-digit format)
      *
      * @return self
      */
-    public function setAmount($amount)
+    public function setExpirationYear($expirationYear)
     {
-        if (is_null($amount)) {
-            throw new \InvalidArgumentException('non-nullable amount cannot be null');
+        if (is_null($expirationYear)) {
+            throw new \InvalidArgumentException('non-nullable expirationYear cannot be null');
         }
-        $this->container['amount'] = $amount;
+
+        if ((!preg_match("/^[0-9]{2}$/", ObjectSerializer::toString($expirationYear)))) {
+            throw new \InvalidArgumentException("invalid value for \$expirationYear when calling PaymentCardChargeDetails., must conform to the pattern /^[0-9]{2}$/.");
+        }
+
+        $this->container['expirationYear'] = $expirationYear;
 
         return $this;
     }
 
     /**
-     * Gets currency
+     * Gets scheme
      *
-     * @return \GoPay\Payments\Generated\Model\Currency
+     * @return \GoPay\Payments\Generated\Model\CardScheme|null
      */
-    public function getCurrency()
+    public function getScheme()
     {
-        return $this->container['currency'];
+        return $this->container['scheme'];
     }
 
     /**
-     * Sets currency
+     * Sets scheme
      *
-     * @param \GoPay\Payments\Generated\Model\Currency $currency Payment currency
+     * @param \GoPay\Payments\Generated\Model\CardScheme|null $scheme Card network scheme
      *
      * @return self
      */
-    public function setCurrency($currency)
+    public function setScheme($scheme)
     {
-        if (is_null($currency)) {
-            throw new \InvalidArgumentException('non-nullable currency cannot be null');
+        if (is_null($scheme)) {
+            throw new \InvalidArgumentException('non-nullable scheme cannot be null');
         }
-        $this->container['currency'] = $currency;
+        $this->container['scheme'] = $scheme;
 
         return $this;
     }
 
     /**
-     * Gets customer
+     * Gets fingerprint
      *
-     * @return \GoPay\Payments\Generated\Model\Customer
+     * @return string|null
      */
-    public function getCustomer()
+    public function getFingerprint()
     {
-        return $this->container['customer'];
+        return $this->container['fingerprint'];
     }
 
     /**
-     * Sets customer
+     * Sets fingerprint
      *
-     * @param \GoPay\Payments\Generated\Model\Customer $customer Customer data
+     * @param string|null $fingerprint A unique hash identifying the physical card
      *
      * @return self
      */
-    public function setCustomer($customer)
+    public function setFingerprint($fingerprint)
     {
-        if (is_null($customer)) {
-            throw new \InvalidArgumentException('non-nullable customer cannot be null');
+        if (is_null($fingerprint)) {
+            throw new \InvalidArgumentException('non-nullable fingerprint cannot be null');
         }
-        $this->container['customer'] = $customer;
-
-        return $this;
-    }
-
-    /**
-     * Gets gwUrl
-     *
-     * @return string
-     */
-    public function getGwUrl()
-    {
-        return $this->container['gwUrl'];
-    }
-
-    /**
-     * Sets gwUrl
-     *
-     * @param string $gwUrl URL of the hosted payment gateway
-     *
-     * @return self
-     */
-    public function setGwUrl($gwUrl)
-    {
-        if (is_null($gwUrl)) {
-            throw new \InvalidArgumentException('non-nullable gwUrl cannot be null');
-        }
-        $this->container['gwUrl'] = $gwUrl;
-
-        return $this;
-    }
-
-    /**
-     * Gets charge
-     *
-     * @return \GoPay\Payments\Generated\Model\PaymentChargeStatusResponse|null
-     */
-    public function getCharge()
-    {
-        return $this->container['charge'];
-    }
-
-    /**
-     * Sets charge
-     *
-     * @param \GoPay\Payments\Generated\Model\PaymentChargeStatusResponse|null $charge charge
-     *
-     * @return self
-     */
-    public function setCharge($charge)
-    {
-        if (is_null($charge)) {
-            throw new \InvalidArgumentException('non-nullable charge cannot be null');
-        }
-        $this->container['charge'] = $charge;
-
-        return $this;
-    }
-
-    /**
-     * Gets paymentSecret
-     *
-     * @return string
-     */
-    public function getPaymentSecret()
-    {
-        return $this->container['paymentSecret'];
-    }
-
-    /**
-     * Sets paymentSecret
-     *
-     * @param string $paymentSecret Payment secret that can be shared to the client side. Used to generate payment-specific JWTs. **Do not embed in URLs, log or store!**
-     *
-     * @return self
-     */
-    public function setPaymentSecret($paymentSecret)
-    {
-        if (is_null($paymentSecret)) {
-            throw new \InvalidArgumentException('non-nullable paymentSecret cannot be null');
-        }
-        $this->container['paymentSecret'] = $paymentSecret;
+        $this->container['fingerprint'] = $fingerprint;
 
         return $this;
     }

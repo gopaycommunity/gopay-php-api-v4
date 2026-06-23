@@ -1,6 +1,6 @@
 <?php
 /**
- * RefundDetails
+ * PaymentChargeInput
  *
  * PHP version 7.4
  *
@@ -33,15 +33,16 @@ use \ArrayAccess;
 use \GoPay\Payments\Generated\ObjectSerializer;
 
 /**
- * RefundDetails Class Doc Comment
+ * PaymentChargeInput Class Doc Comment
  *
  * @category Class
+ * @description Model holding all data necessary to perform a payment charge
  * @package  GoPay\Payments\Generated
  * @author   OpenAPI Generator team
  * @link     https://openapi-generator.tech
  * @implements \ArrayAccess<string, mixed>
  */
-class RefundDetails implements ModelInterface, ArrayAccess, \JsonSerializable
+class PaymentChargeInput implements ModelInterface, ArrayAccess, \JsonSerializable
 {
     public const DISCRIMINATOR = null;
 
@@ -50,7 +51,7 @@ class RefundDetails implements ModelInterface, ArrayAccess, \JsonSerializable
       *
       * @var string
       */
-    protected static $openAPIModelName = 'Refund-Details';
+    protected static $openAPIModelName = 'Payment-Charge-Input';
 
     /**
       * Array of property to type mappings. Used for (de)serialization
@@ -58,12 +59,7 @@ class RefundDetails implements ModelInterface, ArrayAccess, \JsonSerializable
       * @var string[]
       */
     protected static $openAPITypes = [
-        'id' => 'string',
-        'state' => '\GoPay\Payments\Generated\Model\RefundState',
-        'amount' => 'int',
-        'currency' => '\GoPay\Payments\Generated\Model\Currency',
-        'createdAt' => '\DateTime',
-        'updatedAt' => '\DateTime'
+        'paymentInstrument' => '\GoPay\Payments\Generated\Model\PaymentChargeData'
     ];
 
     /**
@@ -74,12 +70,7 @@ class RefundDetails implements ModelInterface, ArrayAccess, \JsonSerializable
       * @psalm-var array<string, string|null>
       */
     protected static $openAPIFormats = [
-        'id' => null,
-        'state' => null,
-        'amount' => null,
-        'currency' => null,
-        'createdAt' => 'date-time',
-        'updatedAt' => 'date-time'
+        'paymentInstrument' => null
     ];
 
     /**
@@ -88,12 +79,7 @@ class RefundDetails implements ModelInterface, ArrayAccess, \JsonSerializable
       * @var boolean[]
       */
     protected static array $openAPINullables = [
-        'id' => false,
-        'state' => false,
-        'amount' => false,
-        'currency' => false,
-        'createdAt' => false,
-        'updatedAt' => false
+        'paymentInstrument' => false
     ];
 
     /**
@@ -182,12 +168,7 @@ class RefundDetails implements ModelInterface, ArrayAccess, \JsonSerializable
      * @var string[]
      */
     protected static $attributeMap = [
-        'id' => 'id',
-        'state' => 'state',
-        'amount' => 'amount',
-        'currency' => 'currency',
-        'createdAt' => 'created_at',
-        'updatedAt' => 'updated_at'
+        'paymentInstrument' => 'payment_instrument'
     ];
 
     /**
@@ -196,12 +177,7 @@ class RefundDetails implements ModelInterface, ArrayAccess, \JsonSerializable
      * @var string[]
      */
     protected static $setters = [
-        'id' => 'setId',
-        'state' => 'setState',
-        'amount' => 'setAmount',
-        'currency' => 'setCurrency',
-        'createdAt' => 'setCreatedAt',
-        'updatedAt' => 'setUpdatedAt'
+        'paymentInstrument' => 'setPaymentInstrument'
     ];
 
     /**
@@ -210,12 +186,7 @@ class RefundDetails implements ModelInterface, ArrayAccess, \JsonSerializable
      * @var string[]
      */
     protected static $getters = [
-        'id' => 'getId',
-        'state' => 'getState',
-        'amount' => 'getAmount',
-        'currency' => 'getCurrency',
-        'createdAt' => 'getCreatedAt',
-        'updatedAt' => 'getUpdatedAt'
+        'paymentInstrument' => 'getPaymentInstrument'
     ];
 
     /**
@@ -275,12 +246,7 @@ class RefundDetails implements ModelInterface, ArrayAccess, \JsonSerializable
      */
     public function __construct(array $data = null)
     {
-        $this->setIfExists('id', $data ?? [], null);
-        $this->setIfExists('state', $data ?? [], null);
-        $this->setIfExists('amount', $data ?? [], null);
-        $this->setIfExists('currency', $data ?? [], null);
-        $this->setIfExists('createdAt', $data ?? [], null);
-        $this->setIfExists('updatedAt', $data ?? [], null);
+        $this->setIfExists('paymentInstrument', $data ?? [], null);
     }
 
     /**
@@ -310,20 +276,8 @@ class RefundDetails implements ModelInterface, ArrayAccess, \JsonSerializable
     {
         $invalidProperties = [];
 
-        if ($this->container['id'] === null) {
-            $invalidProperties[] = "'id' can't be null";
-        }
-        if ($this->container['state'] === null) {
-            $invalidProperties[] = "'state' can't be null";
-        }
-        if ($this->container['amount'] === null) {
-            $invalidProperties[] = "'amount' can't be null";
-        }
-        if ($this->container['currency'] === null) {
-            $invalidProperties[] = "'currency' can't be null";
-        }
-        if ($this->container['createdAt'] === null) {
-            $invalidProperties[] = "'createdAt' can't be null";
+        if ($this->container['paymentInstrument'] === null) {
+            $invalidProperties[] = "'paymentInstrument' can't be null";
         }
         return $invalidProperties;
     }
@@ -341,163 +295,28 @@ class RefundDetails implements ModelInterface, ArrayAccess, \JsonSerializable
 
 
     /**
-     * Gets id
+     * Gets paymentInstrument
      *
-     * @return string
+     * @return \GoPay\Payments\Generated\Model\PaymentChargeData
      */
-    public function getId()
+    public function getPaymentInstrument()
     {
-        return $this->container['id'];
+        return $this->container['paymentInstrument'];
     }
 
     /**
-     * Sets id
+     * Sets paymentInstrument
      *
-     * @param string $id id
+     * @param \GoPay\Payments\Generated\Model\PaymentChargeData $paymentInstrument Payment instrument data specifying how the payment should be charged
      *
      * @return self
      */
-    public function setId($id)
+    public function setPaymentInstrument($paymentInstrument)
     {
-        if (is_null($id)) {
-            throw new \InvalidArgumentException('non-nullable id cannot be null');
+        if (is_null($paymentInstrument)) {
+            throw new \InvalidArgumentException('non-nullable paymentInstrument cannot be null');
         }
-        $this->container['id'] = $id;
-
-        return $this;
-    }
-
-    /**
-     * Gets state
-     *
-     * @return \GoPay\Payments\Generated\Model\RefundState
-     */
-    public function getState()
-    {
-        return $this->container['state'];
-    }
-
-    /**
-     * Sets state
-     *
-     * @param \GoPay\Payments\Generated\Model\RefundState $state state
-     *
-     * @return self
-     */
-    public function setState($state)
-    {
-        if (is_null($state)) {
-            throw new \InvalidArgumentException('non-nullable state cannot be null');
-        }
-        $this->container['state'] = $state;
-
-        return $this;
-    }
-
-    /**
-     * Gets amount
-     *
-     * @return int
-     */
-    public function getAmount()
-    {
-        return $this->container['amount'];
-    }
-
-    /**
-     * Sets amount
-     *
-     * @param int $amount amount
-     *
-     * @return self
-     */
-    public function setAmount($amount)
-    {
-        if (is_null($amount)) {
-            throw new \InvalidArgumentException('non-nullable amount cannot be null');
-        }
-        $this->container['amount'] = $amount;
-
-        return $this;
-    }
-
-    /**
-     * Gets currency
-     *
-     * @return \GoPay\Payments\Generated\Model\Currency
-     */
-    public function getCurrency()
-    {
-        return $this->container['currency'];
-    }
-
-    /**
-     * Sets currency
-     *
-     * @param \GoPay\Payments\Generated\Model\Currency $currency currency
-     *
-     * @return self
-     */
-    public function setCurrency($currency)
-    {
-        if (is_null($currency)) {
-            throw new \InvalidArgumentException('non-nullable currency cannot be null');
-        }
-        $this->container['currency'] = $currency;
-
-        return $this;
-    }
-
-    /**
-     * Gets createdAt
-     *
-     * @return \DateTime
-     */
-    public function getCreatedAt()
-    {
-        return $this->container['createdAt'];
-    }
-
-    /**
-     * Sets createdAt
-     *
-     * @param \DateTime $createdAt createdAt
-     *
-     * @return self
-     */
-    public function setCreatedAt($createdAt)
-    {
-        if (is_null($createdAt)) {
-            throw new \InvalidArgumentException('non-nullable createdAt cannot be null');
-        }
-        $this->container['createdAt'] = $createdAt;
-
-        return $this;
-    }
-
-    /**
-     * Gets updatedAt
-     *
-     * @return \DateTime|null
-     */
-    public function getUpdatedAt()
-    {
-        return $this->container['updatedAt'];
-    }
-
-    /**
-     * Sets updatedAt
-     *
-     * @param \DateTime|null $updatedAt updatedAt
-     *
-     * @return self
-     */
-    public function setUpdatedAt($updatedAt)
-    {
-        if (is_null($updatedAt)) {
-            throw new \InvalidArgumentException('non-nullable updatedAt cannot be null');
-        }
-        $this->container['updatedAt'] = $updatedAt;
+        $this->container['paymentInstrument'] = $paymentInstrument;
 
         return $this;
     }

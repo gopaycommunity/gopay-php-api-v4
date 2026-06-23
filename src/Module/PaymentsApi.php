@@ -9,7 +9,7 @@ use GoPay\Payments\Exception\GoPaySdkException;
 use GoPay\Payments\Generated\Model\PaymentChargeResponse;
 use GoPay\Payments\Generated\Model\PaymentChargeStatusResponse;
 use GoPay\Payments\Generated\Model\PaymentDetails;
-use GoPay\Payments\Generated\Model\QrPaymentDetails;
+use GoPay\Payments\Generated\Model\QRPaymentDetails;
 use GoPay\Payments\Http\HttpClient;
 use GoPay\Payments\Http\RequestOptions;
 
@@ -161,7 +161,7 @@ final class PaymentsApi
      *
      * @throws GoPaySdkException
      */
-    public function getQrPaymentInfo(string $paymentId, ?string $format = null): QrPaymentDetails
+    public function getQrPaymentInfo(string $paymentId, ?string $format = null): QRPaymentDetails
     {
         $pid = $this->requireNonEmpty($paymentId, 'paymentId');
         $path = "/payments/{$pid}/qr-payment/info";
@@ -169,7 +169,7 @@ final class PaymentsApi
             $path .= '?format=' . urlencode($format);
         }
 
-        return $this->client->get($path, QrPaymentDetails::class);
+        return $this->client->get($path, QRPaymentDetails::class);
     }
 
     /**

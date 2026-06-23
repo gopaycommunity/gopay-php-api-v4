@@ -7,6 +7,7 @@ namespace GoPay\Payments\Module;
 use GoPay\Payments\Exception\ErrorCode;
 use GoPay\Payments\Exception\GoPaySdkException;
 use GoPay\Payments\Generated\Model\RefundDetails;
+use GoPay\Payments\Generated\ObjectSerializer;
 use GoPay\Payments\Http\HttpClient;
 
 /**
@@ -54,7 +55,11 @@ final class RefundsApi
         $pid = $this->requireNonEmpty($paymentId, 'paymentId');
 
         return array_map(
-            static fn(array $item): RefundDetails => RefundDetails::fromArray($item),
+            static function (array $item): RefundDetails {
+                /** @var RefundDetails $r */
+                $r = ObjectSerializer::deserialize($item, RefundDetails::class);
+                return $r;
+            },
             $this->client->getJsonList("/payments/{$pid}/refunds"),
         );
     }

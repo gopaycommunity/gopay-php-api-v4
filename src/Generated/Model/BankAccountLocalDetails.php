@@ -1,6 +1,6 @@
 <?php
 /**
- * PaymentDetails
+ * BankAccountLocalDetails
  *
  * PHP version 7.4
  *
@@ -33,16 +33,16 @@ use \ArrayAccess;
 use \GoPay\Payments\Generated\ObjectSerializer;
 
 /**
- * PaymentDetails Class Doc Comment
+ * BankAccountLocalDetails Class Doc Comment
  *
  * @category Class
- * @description Representation of an existing payment
+ * @description Bank account details in the local Czech/Slovak format, including the account number prefix, bank code, and variable symbol for payment identification.
  * @package  GoPay\Payments\Generated
  * @author   OpenAPI Generator team
  * @link     https://openapi-generator.tech
  * @implements \ArrayAccess<string, mixed>
  */
-class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
+class BankAccountLocalDetails implements ModelInterface, ArrayAccess, \JsonSerializable
 {
     public const DISCRIMINATOR = null;
 
@@ -51,7 +51,7 @@ class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
       *
       * @var string
       */
-    protected static $openAPIModelName = 'Payment-Details';
+    protected static $openAPIModelName = 'Bank-Account-Local-Details';
 
     /**
       * Array of property to type mappings. Used for (de)serialization
@@ -59,15 +59,10 @@ class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
       * @var string[]
       */
     protected static $openAPITypes = [
-        'id' => 'string',
-        'orderNumber' => 'string',
-        'state' => '\GoPay\Payments\Generated\Model\PaymentState',
-        'amount' => 'int',
-        'currency' => '\GoPay\Payments\Generated\Model\Currency',
-        'customer' => '\GoPay\Payments\Generated\Model\Customer',
-        'gwUrl' => 'string',
-        'charge' => '\GoPay\Payments\Generated\Model\PaymentChargeStatusResponse',
-        'paymentSecret' => 'string'
+        'prefix' => 'string',
+        'accountNumber' => 'string',
+        'bankCode' => 'string',
+        'variableSymbol' => 'string'
     ];
 
     /**
@@ -78,15 +73,10 @@ class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
       * @psalm-var array<string, string|null>
       */
     protected static $openAPIFormats = [
-        'id' => null,
-        'orderNumber' => null,
-        'state' => null,
-        'amount' => null,
-        'currency' => null,
-        'customer' => null,
-        'gwUrl' => 'uri',
-        'charge' => null,
-        'paymentSecret' => null
+        'prefix' => null,
+        'accountNumber' => null,
+        'bankCode' => null,
+        'variableSymbol' => null
     ];
 
     /**
@@ -95,15 +85,10 @@ class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
       * @var boolean[]
       */
     protected static array $openAPINullables = [
-        'id' => false,
-        'orderNumber' => false,
-        'state' => false,
-        'amount' => false,
-        'currency' => false,
-        'customer' => false,
-        'gwUrl' => false,
-        'charge' => false,
-        'paymentSecret' => false
+        'prefix' => false,
+        'accountNumber' => false,
+        'bankCode' => false,
+        'variableSymbol' => false
     ];
 
     /**
@@ -192,15 +177,10 @@ class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
      * @var string[]
      */
     protected static $attributeMap = [
-        'id' => 'id',
-        'orderNumber' => 'order_number',
-        'state' => 'state',
-        'amount' => 'amount',
-        'currency' => 'currency',
-        'customer' => 'customer',
-        'gwUrl' => 'gw_url',
-        'charge' => 'charge',
-        'paymentSecret' => 'payment_secret'
+        'prefix' => 'prefix',
+        'accountNumber' => 'account_number',
+        'bankCode' => 'bank_code',
+        'variableSymbol' => 'variable_symbol'
     ];
 
     /**
@@ -209,15 +189,10 @@ class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
      * @var string[]
      */
     protected static $setters = [
-        'id' => 'setId',
-        'orderNumber' => 'setOrderNumber',
-        'state' => 'setState',
-        'amount' => 'setAmount',
-        'currency' => 'setCurrency',
-        'customer' => 'setCustomer',
-        'gwUrl' => 'setGwUrl',
-        'charge' => 'setCharge',
-        'paymentSecret' => 'setPaymentSecret'
+        'prefix' => 'setPrefix',
+        'accountNumber' => 'setAccountNumber',
+        'bankCode' => 'setBankCode',
+        'variableSymbol' => 'setVariableSymbol'
     ];
 
     /**
@@ -226,15 +201,10 @@ class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
      * @var string[]
      */
     protected static $getters = [
-        'id' => 'getId',
-        'orderNumber' => 'getOrderNumber',
-        'state' => 'getState',
-        'amount' => 'getAmount',
-        'currency' => 'getCurrency',
-        'customer' => 'getCustomer',
-        'gwUrl' => 'getGwUrl',
-        'charge' => 'getCharge',
-        'paymentSecret' => 'getPaymentSecret'
+        'prefix' => 'getPrefix',
+        'accountNumber' => 'getAccountNumber',
+        'bankCode' => 'getBankCode',
+        'variableSymbol' => 'getVariableSymbol'
     ];
 
     /**
@@ -294,15 +264,10 @@ class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
      */
     public function __construct(array $data = null)
     {
-        $this->setIfExists('id', $data ?? [], null);
-        $this->setIfExists('orderNumber', $data ?? [], null);
-        $this->setIfExists('state', $data ?? [], null);
-        $this->setIfExists('amount', $data ?? [], null);
-        $this->setIfExists('currency', $data ?? [], null);
-        $this->setIfExists('customer', $data ?? [], null);
-        $this->setIfExists('gwUrl', $data ?? [], null);
-        $this->setIfExists('charge', $data ?? [], null);
-        $this->setIfExists('paymentSecret', $data ?? [], null);
+        $this->setIfExists('prefix', $data ?? [], null);
+        $this->setIfExists('accountNumber', $data ?? [], null);
+        $this->setIfExists('bankCode', $data ?? [], null);
+        $this->setIfExists('variableSymbol', $data ?? [], null);
     }
 
     /**
@@ -332,29 +297,17 @@ class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
     {
         $invalidProperties = [];
 
-        if ($this->container['id'] === null) {
-            $invalidProperties[] = "'id' can't be null";
+        if ($this->container['prefix'] === null) {
+            $invalidProperties[] = "'prefix' can't be null";
         }
-        if ($this->container['orderNumber'] === null) {
-            $invalidProperties[] = "'orderNumber' can't be null";
+        if ($this->container['accountNumber'] === null) {
+            $invalidProperties[] = "'accountNumber' can't be null";
         }
-        if ($this->container['state'] === null) {
-            $invalidProperties[] = "'state' can't be null";
+        if ($this->container['bankCode'] === null) {
+            $invalidProperties[] = "'bankCode' can't be null";
         }
-        if ($this->container['amount'] === null) {
-            $invalidProperties[] = "'amount' can't be null";
-        }
-        if ($this->container['currency'] === null) {
-            $invalidProperties[] = "'currency' can't be null";
-        }
-        if ($this->container['customer'] === null) {
-            $invalidProperties[] = "'customer' can't be null";
-        }
-        if ($this->container['gwUrl'] === null) {
-            $invalidProperties[] = "'gwUrl' can't be null";
-        }
-        if ($this->container['paymentSecret'] === null) {
-            $invalidProperties[] = "'paymentSecret' can't be null";
+        if ($this->container['variableSymbol'] === null) {
+            $invalidProperties[] = "'variableSymbol' can't be null";
         }
         return $invalidProperties;
     }
@@ -372,244 +325,109 @@ class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
 
 
     /**
-     * Gets id
+     * Gets prefix
      *
      * @return string
      */
-    public function getId()
+    public function getPrefix()
     {
-        return $this->container['id'];
+        return $this->container['prefix'];
     }
 
     /**
-     * Sets id
+     * Sets prefix
      *
-     * @param string $id Payment session ID
+     * @param string $prefix Account number prefix (may be all zeros)
      *
      * @return self
      */
-    public function setId($id)
+    public function setPrefix($prefix)
     {
-        if (is_null($id)) {
-            throw new \InvalidArgumentException('non-nullable id cannot be null');
+        if (is_null($prefix)) {
+            throw new \InvalidArgumentException('non-nullable prefix cannot be null');
         }
-        $this->container['id'] = $id;
+        $this->container['prefix'] = $prefix;
 
         return $this;
     }
 
     /**
-     * Gets orderNumber
+     * Gets accountNumber
      *
      * @return string
      */
-    public function getOrderNumber()
+    public function getAccountNumber()
     {
-        return $this->container['orderNumber'];
+        return $this->container['accountNumber'];
     }
 
     /**
-     * Sets orderNumber
+     * Sets accountNumber
      *
-     * @param string $orderNumber Order ID forwarded from the payment request
+     * @param string $accountNumber The local bank account number
      *
      * @return self
      */
-    public function setOrderNumber($orderNumber)
+    public function setAccountNumber($accountNumber)
     {
-        if (is_null($orderNumber)) {
-            throw new \InvalidArgumentException('non-nullable orderNumber cannot be null');
+        if (is_null($accountNumber)) {
+            throw new \InvalidArgumentException('non-nullable accountNumber cannot be null');
         }
-        $this->container['orderNumber'] = $orderNumber;
+        $this->container['accountNumber'] = $accountNumber;
 
         return $this;
     }
 
     /**
-     * Gets state
-     *
-     * @return \GoPay\Payments\Generated\Model\PaymentState
-     */
-    public function getState()
-    {
-        return $this->container['state'];
-    }
-
-    /**
-     * Sets state
-     *
-     * @param \GoPay\Payments\Generated\Model\PaymentState $state Payment state
-     *
-     * @return self
-     */
-    public function setState($state)
-    {
-        if (is_null($state)) {
-            throw new \InvalidArgumentException('non-nullable state cannot be null');
-        }
-        $this->container['state'] = $state;
-
-        return $this;
-    }
-
-    /**
-     * Gets amount
-     *
-     * @return int
-     */
-    public function getAmount()
-    {
-        return $this->container['amount'];
-    }
-
-    /**
-     * Sets amount
-     *
-     * @param int $amount Total amount in cents
-     *
-     * @return self
-     */
-    public function setAmount($amount)
-    {
-        if (is_null($amount)) {
-            throw new \InvalidArgumentException('non-nullable amount cannot be null');
-        }
-        $this->container['amount'] = $amount;
-
-        return $this;
-    }
-
-    /**
-     * Gets currency
-     *
-     * @return \GoPay\Payments\Generated\Model\Currency
-     */
-    public function getCurrency()
-    {
-        return $this->container['currency'];
-    }
-
-    /**
-     * Sets currency
-     *
-     * @param \GoPay\Payments\Generated\Model\Currency $currency Payment currency
-     *
-     * @return self
-     */
-    public function setCurrency($currency)
-    {
-        if (is_null($currency)) {
-            throw new \InvalidArgumentException('non-nullable currency cannot be null');
-        }
-        $this->container['currency'] = $currency;
-
-        return $this;
-    }
-
-    /**
-     * Gets customer
-     *
-     * @return \GoPay\Payments\Generated\Model\Customer
-     */
-    public function getCustomer()
-    {
-        return $this->container['customer'];
-    }
-
-    /**
-     * Sets customer
-     *
-     * @param \GoPay\Payments\Generated\Model\Customer $customer Customer data
-     *
-     * @return self
-     */
-    public function setCustomer($customer)
-    {
-        if (is_null($customer)) {
-            throw new \InvalidArgumentException('non-nullable customer cannot be null');
-        }
-        $this->container['customer'] = $customer;
-
-        return $this;
-    }
-
-    /**
-     * Gets gwUrl
+     * Gets bankCode
      *
      * @return string
      */
-    public function getGwUrl()
+    public function getBankCode()
     {
-        return $this->container['gwUrl'];
+        return $this->container['bankCode'];
     }
 
     /**
-     * Sets gwUrl
+     * Sets bankCode
      *
-     * @param string $gwUrl URL of the hosted payment gateway
+     * @param string $bankCode Numeric bank code identifying the bank
      *
      * @return self
      */
-    public function setGwUrl($gwUrl)
+    public function setBankCode($bankCode)
     {
-        if (is_null($gwUrl)) {
-            throw new \InvalidArgumentException('non-nullable gwUrl cannot be null');
+        if (is_null($bankCode)) {
+            throw new \InvalidArgumentException('non-nullable bankCode cannot be null');
         }
-        $this->container['gwUrl'] = $gwUrl;
+        $this->container['bankCode'] = $bankCode;
 
         return $this;
     }
 
     /**
-     * Gets charge
-     *
-     * @return \GoPay\Payments\Generated\Model\PaymentChargeStatusResponse|null
-     */
-    public function getCharge()
-    {
-        return $this->container['charge'];
-    }
-
-    /**
-     * Sets charge
-     *
-     * @param \GoPay\Payments\Generated\Model\PaymentChargeStatusResponse|null $charge charge
-     *
-     * @return self
-     */
-    public function setCharge($charge)
-    {
-        if (is_null($charge)) {
-            throw new \InvalidArgumentException('non-nullable charge cannot be null');
-        }
-        $this->container['charge'] = $charge;
-
-        return $this;
-    }
-
-    /**
-     * Gets paymentSecret
+     * Gets variableSymbol
      *
      * @return string
      */
-    public function getPaymentSecret()
+    public function getVariableSymbol()
     {
-        return $this->container['paymentSecret'];
+        return $this->container['variableSymbol'];
     }
 
     /**
-     * Sets paymentSecret
+     * Sets variableSymbol
      *
-     * @param string $paymentSecret Payment secret that can be shared to the client side. Used to generate payment-specific JWTs. **Do not embed in URLs, log or store!**
+     * @param string $variableSymbol Variable symbol used to match the payment to an order
      *
      * @return self
      */
-    public function setPaymentSecret($paymentSecret)
+    public function setVariableSymbol($variableSymbol)
     {
-        if (is_null($paymentSecret)) {
-            throw new \InvalidArgumentException('non-nullable paymentSecret cannot be null');
+        if (is_null($variableSymbol)) {
+            throw new \InvalidArgumentException('non-nullable variableSymbol cannot be null');
         }
-        $this->container['paymentSecret'] = $paymentSecret;
+        $this->container['variableSymbol'] = $variableSymbol;
 
         return $this;
     }

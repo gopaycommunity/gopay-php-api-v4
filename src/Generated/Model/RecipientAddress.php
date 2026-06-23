@@ -1,6 +1,6 @@
 <?php
 /**
- * PaymentDetails
+ * RecipientAddress
  *
  * PHP version 7.4
  *
@@ -33,16 +33,16 @@ use \ArrayAccess;
 use \GoPay\Payments\Generated\ObjectSerializer;
 
 /**
- * PaymentDetails Class Doc Comment
+ * RecipientAddress Class Doc Comment
  *
  * @category Class
- * @description Representation of an existing payment
+ * @description Physical address of the payment recipient.
  * @package  GoPay\Payments\Generated
  * @author   OpenAPI Generator team
  * @link     https://openapi-generator.tech
  * @implements \ArrayAccess<string, mixed>
  */
-class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
+class RecipientAddress implements ModelInterface, ArrayAccess, \JsonSerializable
 {
     public const DISCRIMINATOR = null;
 
@@ -51,7 +51,7 @@ class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
       *
       * @var string
       */
-    protected static $openAPIModelName = 'Payment-Details';
+    protected static $openAPIModelName = 'Recipient-Address';
 
     /**
       * Array of property to type mappings. Used for (de)serialization
@@ -59,15 +59,10 @@ class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
       * @var string[]
       */
     protected static $openAPITypes = [
-        'id' => 'string',
-        'orderNumber' => 'string',
-        'state' => '\GoPay\Payments\Generated\Model\PaymentState',
-        'amount' => 'int',
-        'currency' => '\GoPay\Payments\Generated\Model\Currency',
-        'customer' => '\GoPay\Payments\Generated\Model\Customer',
-        'gwUrl' => 'string',
-        'charge' => '\GoPay\Payments\Generated\Model\PaymentChargeStatusResponse',
-        'paymentSecret' => 'string'
+        'street' => 'string',
+        'city' => 'string',
+        'zipCode' => 'string',
+        'country' => 'string'
     ];
 
     /**
@@ -78,15 +73,10 @@ class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
       * @psalm-var array<string, string|null>
       */
     protected static $openAPIFormats = [
-        'id' => null,
-        'orderNumber' => null,
-        'state' => null,
-        'amount' => null,
-        'currency' => null,
-        'customer' => null,
-        'gwUrl' => 'uri',
-        'charge' => null,
-        'paymentSecret' => null
+        'street' => null,
+        'city' => null,
+        'zipCode' => null,
+        'country' => null
     ];
 
     /**
@@ -95,15 +85,10 @@ class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
       * @var boolean[]
       */
     protected static array $openAPINullables = [
-        'id' => false,
-        'orderNumber' => false,
-        'state' => false,
-        'amount' => false,
-        'currency' => false,
-        'customer' => false,
-        'gwUrl' => false,
-        'charge' => false,
-        'paymentSecret' => false
+        'street' => false,
+        'city' => false,
+        'zipCode' => false,
+        'country' => false
     ];
 
     /**
@@ -192,15 +177,10 @@ class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
      * @var string[]
      */
     protected static $attributeMap = [
-        'id' => 'id',
-        'orderNumber' => 'order_number',
-        'state' => 'state',
-        'amount' => 'amount',
-        'currency' => 'currency',
-        'customer' => 'customer',
-        'gwUrl' => 'gw_url',
-        'charge' => 'charge',
-        'paymentSecret' => 'payment_secret'
+        'street' => 'street',
+        'city' => 'city',
+        'zipCode' => 'zip_code',
+        'country' => 'country'
     ];
 
     /**
@@ -209,15 +189,10 @@ class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
      * @var string[]
      */
     protected static $setters = [
-        'id' => 'setId',
-        'orderNumber' => 'setOrderNumber',
-        'state' => 'setState',
-        'amount' => 'setAmount',
-        'currency' => 'setCurrency',
-        'customer' => 'setCustomer',
-        'gwUrl' => 'setGwUrl',
-        'charge' => 'setCharge',
-        'paymentSecret' => 'setPaymentSecret'
+        'street' => 'setStreet',
+        'city' => 'setCity',
+        'zipCode' => 'setZipCode',
+        'country' => 'setCountry'
     ];
 
     /**
@@ -226,15 +201,10 @@ class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
      * @var string[]
      */
     protected static $getters = [
-        'id' => 'getId',
-        'orderNumber' => 'getOrderNumber',
-        'state' => 'getState',
-        'amount' => 'getAmount',
-        'currency' => 'getCurrency',
-        'customer' => 'getCustomer',
-        'gwUrl' => 'getGwUrl',
-        'charge' => 'getCharge',
-        'paymentSecret' => 'getPaymentSecret'
+        'street' => 'getStreet',
+        'city' => 'getCity',
+        'zipCode' => 'getZipCode',
+        'country' => 'getCountry'
     ];
 
     /**
@@ -294,15 +264,10 @@ class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
      */
     public function __construct(array $data = null)
     {
-        $this->setIfExists('id', $data ?? [], null);
-        $this->setIfExists('orderNumber', $data ?? [], null);
-        $this->setIfExists('state', $data ?? [], null);
-        $this->setIfExists('amount', $data ?? [], null);
-        $this->setIfExists('currency', $data ?? [], null);
-        $this->setIfExists('customer', $data ?? [], null);
-        $this->setIfExists('gwUrl', $data ?? [], null);
-        $this->setIfExists('charge', $data ?? [], null);
-        $this->setIfExists('paymentSecret', $data ?? [], null);
+        $this->setIfExists('street', $data ?? [], null);
+        $this->setIfExists('city', $data ?? [], null);
+        $this->setIfExists('zipCode', $data ?? [], null);
+        $this->setIfExists('country', $data ?? [], null);
     }
 
     /**
@@ -332,30 +297,6 @@ class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
     {
         $invalidProperties = [];
 
-        if ($this->container['id'] === null) {
-            $invalidProperties[] = "'id' can't be null";
-        }
-        if ($this->container['orderNumber'] === null) {
-            $invalidProperties[] = "'orderNumber' can't be null";
-        }
-        if ($this->container['state'] === null) {
-            $invalidProperties[] = "'state' can't be null";
-        }
-        if ($this->container['amount'] === null) {
-            $invalidProperties[] = "'amount' can't be null";
-        }
-        if ($this->container['currency'] === null) {
-            $invalidProperties[] = "'currency' can't be null";
-        }
-        if ($this->container['customer'] === null) {
-            $invalidProperties[] = "'customer' can't be null";
-        }
-        if ($this->container['gwUrl'] === null) {
-            $invalidProperties[] = "'gwUrl' can't be null";
-        }
-        if ($this->container['paymentSecret'] === null) {
-            $invalidProperties[] = "'paymentSecret' can't be null";
-        }
         return $invalidProperties;
     }
 
@@ -372,244 +313,109 @@ class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
 
 
     /**
-     * Gets id
+     * Gets street
      *
-     * @return string
+     * @return string|null
      */
-    public function getId()
+    public function getStreet()
     {
-        return $this->container['id'];
+        return $this->container['street'];
     }
 
     /**
-     * Sets id
+     * Sets street
      *
-     * @param string $id Payment session ID
+     * @param string|null $street Street address including the building number
      *
      * @return self
      */
-    public function setId($id)
+    public function setStreet($street)
     {
-        if (is_null($id)) {
-            throw new \InvalidArgumentException('non-nullable id cannot be null');
+        if (is_null($street)) {
+            throw new \InvalidArgumentException('non-nullable street cannot be null');
         }
-        $this->container['id'] = $id;
+        $this->container['street'] = $street;
 
         return $this;
     }
 
     /**
-     * Gets orderNumber
+     * Gets city
      *
-     * @return string
+     * @return string|null
      */
-    public function getOrderNumber()
+    public function getCity()
     {
-        return $this->container['orderNumber'];
+        return $this->container['city'];
     }
 
     /**
-     * Sets orderNumber
+     * Sets city
      *
-     * @param string $orderNumber Order ID forwarded from the payment request
+     * @param string|null $city City name
      *
      * @return self
      */
-    public function setOrderNumber($orderNumber)
+    public function setCity($city)
     {
-        if (is_null($orderNumber)) {
-            throw new \InvalidArgumentException('non-nullable orderNumber cannot be null');
+        if (is_null($city)) {
+            throw new \InvalidArgumentException('non-nullable city cannot be null');
         }
-        $this->container['orderNumber'] = $orderNumber;
+        $this->container['city'] = $city;
 
         return $this;
     }
 
     /**
-     * Gets state
+     * Gets zipCode
      *
-     * @return \GoPay\Payments\Generated\Model\PaymentState
+     * @return string|null
      */
-    public function getState()
+    public function getZipCode()
     {
-        return $this->container['state'];
+        return $this->container['zipCode'];
     }
 
     /**
-     * Sets state
+     * Sets zipCode
      *
-     * @param \GoPay\Payments\Generated\Model\PaymentState $state Payment state
+     * @param string|null $zipCode ZIP or postal code
      *
      * @return self
      */
-    public function setState($state)
+    public function setZipCode($zipCode)
     {
-        if (is_null($state)) {
-            throw new \InvalidArgumentException('non-nullable state cannot be null');
+        if (is_null($zipCode)) {
+            throw new \InvalidArgumentException('non-nullable zipCode cannot be null');
         }
-        $this->container['state'] = $state;
+        $this->container['zipCode'] = $zipCode;
 
         return $this;
     }
 
     /**
-     * Gets amount
+     * Gets country
      *
-     * @return int
+     * @return string|null
      */
-    public function getAmount()
+    public function getCountry()
     {
-        return $this->container['amount'];
+        return $this->container['country'];
     }
 
     /**
-     * Sets amount
+     * Sets country
      *
-     * @param int $amount Total amount in cents
+     * @param string|null $country Country name
      *
      * @return self
      */
-    public function setAmount($amount)
+    public function setCountry($country)
     {
-        if (is_null($amount)) {
-            throw new \InvalidArgumentException('non-nullable amount cannot be null');
+        if (is_null($country)) {
+            throw new \InvalidArgumentException('non-nullable country cannot be null');
         }
-        $this->container['amount'] = $amount;
-
-        return $this;
-    }
-
-    /**
-     * Gets currency
-     *
-     * @return \GoPay\Payments\Generated\Model\Currency
-     */
-    public function getCurrency()
-    {
-        return $this->container['currency'];
-    }
-
-    /**
-     * Sets currency
-     *
-     * @param \GoPay\Payments\Generated\Model\Currency $currency Payment currency
-     *
-     * @return self
-     */
-    public function setCurrency($currency)
-    {
-        if (is_null($currency)) {
-            throw new \InvalidArgumentException('non-nullable currency cannot be null');
-        }
-        $this->container['currency'] = $currency;
-
-        return $this;
-    }
-
-    /**
-     * Gets customer
-     *
-     * @return \GoPay\Payments\Generated\Model\Customer
-     */
-    public function getCustomer()
-    {
-        return $this->container['customer'];
-    }
-
-    /**
-     * Sets customer
-     *
-     * @param \GoPay\Payments\Generated\Model\Customer $customer Customer data
-     *
-     * @return self
-     */
-    public function setCustomer($customer)
-    {
-        if (is_null($customer)) {
-            throw new \InvalidArgumentException('non-nullable customer cannot be null');
-        }
-        $this->container['customer'] = $customer;
-
-        return $this;
-    }
-
-    /**
-     * Gets gwUrl
-     *
-     * @return string
-     */
-    public function getGwUrl()
-    {
-        return $this->container['gwUrl'];
-    }
-
-    /**
-     * Sets gwUrl
-     *
-     * @param string $gwUrl URL of the hosted payment gateway
-     *
-     * @return self
-     */
-    public function setGwUrl($gwUrl)
-    {
-        if (is_null($gwUrl)) {
-            throw new \InvalidArgumentException('non-nullable gwUrl cannot be null');
-        }
-        $this->container['gwUrl'] = $gwUrl;
-
-        return $this;
-    }
-
-    /**
-     * Gets charge
-     *
-     * @return \GoPay\Payments\Generated\Model\PaymentChargeStatusResponse|null
-     */
-    public function getCharge()
-    {
-        return $this->container['charge'];
-    }
-
-    /**
-     * Sets charge
-     *
-     * @param \GoPay\Payments\Generated\Model\PaymentChargeStatusResponse|null $charge charge
-     *
-     * @return self
-     */
-    public function setCharge($charge)
-    {
-        if (is_null($charge)) {
-            throw new \InvalidArgumentException('non-nullable charge cannot be null');
-        }
-        $this->container['charge'] = $charge;
-
-        return $this;
-    }
-
-    /**
-     * Gets paymentSecret
-     *
-     * @return string
-     */
-    public function getPaymentSecret()
-    {
-        return $this->container['paymentSecret'];
-    }
-
-    /**
-     * Sets paymentSecret
-     *
-     * @param string $paymentSecret Payment secret that can be shared to the client side. Used to generate payment-specific JWTs. **Do not embed in URLs, log or store!**
-     *
-     * @return self
-     */
-    public function setPaymentSecret($paymentSecret)
-    {
-        if (is_null($paymentSecret)) {
-            throw new \InvalidArgumentException('non-nullable paymentSecret cannot be null');
-        }
-        $this->container['paymentSecret'] = $paymentSecret;
+        $this->container['country'] = $country;
 
         return $this;
     }

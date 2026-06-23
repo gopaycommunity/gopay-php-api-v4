@@ -2,6 +2,22 @@
   "$schema": "node_modules/@openapitools/openapi-generator-cli/config.schema.json",
   "spaces": 2,
   "generator-cli": {
-    "version": "7.10.0"
+    "version": "7.9.0",
+    "useDocker": true,
+    "generators": {
+      "php-models": {
+        "generatorName": "php",
+        "inputSpec": "spec/payments.yaml",
+        "output": ".codegen-tmp",
+        "skipValidateSpec": true,
+        "globalProperty": "models,supportingFiles=ObjectSerializer.php:ModelInterface.php:HeaderSelector.php",
+        "additionalProperties": {
+          "invokerPackage": "GoPay\\Payments\\Generated",
+          "modelPackage": "Model",
+          "phpLegacySupport": false,
+          "variableNamingConvention": "camelCase"
+        }
+      }
+    }
   }
 }

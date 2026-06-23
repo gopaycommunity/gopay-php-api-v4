@@ -8,21 +8,28 @@ payment and charges a card token produced by the GoPay-hosted iframe.
 
 ## Model classes — hand-written (not generated)
 
-The model DTOs in `src/Generated/Model/` are currently **hand-written**, not generated. The
-openapi-generator toolchain had availability issues during initial development (Docker JAR download
-hung, local Java not installed). They implement `GoPay\Payments\Generated\ModelInterface` which
-provides `fromArray(array $data): static` for JSON hydration.
+The model DTOs in `src/Generated/Model/` are currently **hand-written**, not generated. They
+implement `GoPay\Payments\Generated\ModelInterface` which provides `fromArray(array $data): static`
+for JSON hydration. `HttpClient::deserialize()` calls `$type::fromArray($data)` directly.
 
-`composer codegen` (`scripts/codegen.sh`) is a no-op until the generator is re-enabled. When the
-generator is confirmed working, uncomment the generation block in the script — it will overwrite
-`src/Generated/` with generator output. Review the diff carefully: ensure the namespace matches
-`GoPay\Payments\Generated\Model` and that `ModelInterface` remains intact.
+**Toolchain status**: `@openapitools/openapi-generator-cli@2.39.0` + Docker mode is confirmed
+working (no Java needed — Docker image `openapitools/openapi-generator-cli:v7.9.0` must be
+available). Config lives in `openapitools.json`.
+
+**Blocker before enabling codegen**: The generator produces models that implement a different
+`ModelInterface` (no `fromArray()`) and use `ObjectSerializer` for deserialization. Merging the
+generated output requires either:
+- Adding `fromArray()` to each generated model via a custom Mustache template, OR
+- Updating `HttpClient::deserialize()` to use `ObjectSerializer::deserialize()` instead.
+
+Run `composer codegen` to generate into `.codegen-tmp/` and inspect the diff before committing.
+The script copies `lib/Model/*`, `ObjectSerializer.php`, and `HeaderSelector.php` into
+`src/Generated/`. Review: namespace must be `GoPay\Payments\Generated\Model`, and `ModelInterface`
+compatibility must be preserved.
 
 The entire `src/Generated/` directory is **excluded from PHPStan** analysis (see `phpstan.neon`).
 PHPStan still reads the class definitions for type inference in analysed files, it just doesn't
 check the Generated files themselves for level-10 violations.
-
-Re-generate when `spec/payments.yaml` is updated and the toolchain is available.
 
 ## Quality checks
 

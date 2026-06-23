@@ -10,7 +10,7 @@ use GoPay\Payments\Generated\Model\PaymentChargeResponse;
 use GoPay\Payments\Generated\Model\PaymentChargeStatusResponse;
 use GoPay\Payments\Generated\Model\PaymentDetails;
 use GoPay\Payments\Generated\Model\PermanentCardTokenDetails;
-use GoPay\Payments\Generated\Model\QrPaymentDetails;
+use GoPay\Payments\Generated\Model\QRPaymentDetails;
 use GoPay\Payments\Generated\Model\RecurrenceDetails;
 use GoPay\Payments\Generated\Model\RefundDetails;
 use GoPay\Payments\Http\HttpClient;
@@ -252,7 +252,7 @@ final class GoPayClient
      *
      * @throws GoPaySdkException
      */
-    public function getQrPaymentInfo(string $paymentId, ?string $format = null): QrPaymentDetails
+    public function getQrPaymentInfo(string $paymentId, ?string $format = null): QRPaymentDetails
     {
         return $this->payments->getQrPaymentInfo($paymentId, $format);
     }

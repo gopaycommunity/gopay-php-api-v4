@@ -31,17 +31,17 @@ class PaymentsE2ETest extends E2ETestCase
         $payment = $this->sdk->createPayment($this->goid, $this->paymentParams());
 
         $this->assertInstanceOf(PaymentDetails::class, $payment);
-        $this->assertNotEmpty($payment->id);
+        $this->assertNotEmpty($payment->getId());
     }
 
     #[\PHPUnit\Framework\Attributes\Test]
     public function get_payment_status_returns_payment_details(): void
     {
         $payment = $this->sdk->createPayment($this->goid, $this->paymentParams());
-        $status  = $this->sdk->getPaymentStatus((string) $payment->id);
+        $status  = $this->sdk->getPaymentStatus((string) $payment->getId());
 
         $this->assertInstanceOf(PaymentDetails::class, $status);
-        $this->assertSame($payment->id, $status->id);
+        $this->assertSame($payment->getId(), $status->getId());
     }
 
     #[\PHPUnit\Framework\Attributes\Test]
@@ -49,7 +49,7 @@ class PaymentsE2ETest extends E2ETestCase
     {
         $payment = $this->sdk->createPayment($this->goid, $this->paymentParams());
 
-        $charge = $this->sdk->chargePayment((string) $payment->id, [
+        $charge = $this->sdk->chargePayment((string) $payment->getId(), [
             'payment_instrument' => [
                 'payment_instrument' => 'PAYMENT_CARD',
                 'input'              => [

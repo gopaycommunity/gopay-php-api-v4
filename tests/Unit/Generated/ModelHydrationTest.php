@@ -4,19 +4,22 @@ declare(strict_types=1);
 
 namespace GoPay\Payments\Tests\Unit\Generated;
 
-use GoPay\Payments\Generated\Model\ChargeAction;
+use GoPay\Payments\Generated\Model\BankTransferRecipient;
 use GoPay\Payments\Generated\Model\LinkDetails;
+use GoPay\Payments\Generated\Model\PaymentChargeAction;
 use GoPay\Payments\Generated\Model\PaymentChargeResponse;
 use GoPay\Payments\Generated\Model\PaymentChargeStatusResponse;
 use GoPay\Payments\Generated\Model\PaymentDetails;
 use GoPay\Payments\Generated\Model\PermanentCardTokenDetails;
-use GoPay\Payments\Generated\Model\QrPaymentDetails;
+use GoPay\Payments\Generated\Model\QRCodeList;
+use GoPay\Payments\Generated\Model\QRPaymentDetails;
 use GoPay\Payments\Generated\Model\RecurrenceDetails;
 use GoPay\Payments\Generated\Model\RefundDetails;
+use GoPay\Payments\Generated\ObjectSerializer;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Sanity-checks for model hydration via fromArray().
+ * Sanity-checks for model hydration via ObjectSerializer.
  */
 final class ModelHydrationTest extends TestCase
 {
@@ -34,167 +37,162 @@ final class ModelHydrationTest extends TestCase
             'charge'         => ['id' => 'chg-001', 'state' => 'REQUESTED'],
         ];
 
-        $payment = PaymentDetails::fromArray($data);
+        /** @var PaymentDetails $payment */
+        $payment = ObjectSerializer::deserialize($data, PaymentDetails::class);
 
-        $this->assertSame('pay-001', $payment->id);
-        $this->assertSame('ORDER-001', $payment->orderNumber);
-        $this->assertSame('CREATED', $payment->state);
-        $this->assertSame(1000, $payment->amount);
-        $this->assertSame('CZK', $payment->currency);
-        $this->assertSame(['email' => 'test@example.com'], $payment->customer);
-        $this->assertSame('https://gw.example.com', $payment->gwUrl);
-        $this->assertSame('secret-xyz', $payment->paymentSecret);
-        $this->assertInstanceOf(PaymentChargeStatusResponse::class, $payment->charge);
-        $this->assertSame('chg-001', $payment->charge->id);
-
-        // Getters
         $this->assertSame('pay-001', $payment->getId());
+        $this->assertSame('ORDER-001', $payment->getOrderNumber());
         $this->assertSame('CREATED', $payment->getState());
+        $this->assertSame(1000, $payment->getAmount());
+        $this->assertSame('CZK', $payment->getCurrency());
+        $this->assertSame('test@example.com', $payment->getCustomer()->getEmail());
+        $this->assertSame('https://gw.example.com', $payment->getGwUrl());
+        $this->assertSame('secret-xyz', $payment->getPaymentSecret());
+        $this->assertInstanceOf(PaymentChargeStatusResponse::class, $payment->getCharge());
+        $this->assertSame('chg-001', $payment->getCharge()->getId());
     }
 
     public function testPaymentDetailsMissingFieldsAreNull(): void
     {
-        $payment = PaymentDetails::fromArray([]);
+        /** @var PaymentDetails $payment */
+        $payment = ObjectSerializer::deserialize([], PaymentDetails::class);
 
-        $this->assertNull($payment->id);
-        $this->assertNull($payment->state);
-        $this->assertNull($payment->charge);
+        $this->assertNull($payment->getId());
+        $this->assertNull($payment->getState());
+        $this->assertNull($payment->getCharge());
     }
 
     public function testPaymentChargeResponseHydration(): void
     {
         $data = [
             'id'     => 'chg-002',
-            'state'  => 'AUTHENTICATION_PENDING',
-            'action' => ['redirect_url' => 'https://3ds.example.com', 'action_type' => 'REDIRECT'],
+            'state'  => 'ACTION_REQUIRED',
+            'action' => ['redirect_url' => 'https://3ds.example.com', 'action_type' => 'EMV3DS'],
         ];
 
-        $charge = PaymentChargeResponse::fromArray($data);
+        /** @var PaymentChargeResponse $charge */
+        $charge = ObjectSerializer::deserialize($data, PaymentChargeResponse::class);
 
-        $this->assertSame('chg-002', $charge->id);
-        $this->assertSame('AUTHENTICATION_PENDING', $charge->state);
-        $this->assertInstanceOf(ChargeAction::class, $charge->action);
-        $this->assertSame('https://3ds.example.com', $charge->action->redirectUrl);
-        $this->assertSame('REDIRECT', $charge->action->actionType);
-        $this->assertSame('https://3ds.example.com', $charge->action->getRedirectUrl());
         $this->assertSame('chg-002', $charge->getId());
-        $this->assertNotNull($charge->getAction());
+        $this->assertSame('ACTION_REQUIRED', $charge->getState());
+        $this->assertInstanceOf(PaymentChargeAction::class, $charge->getAction());
+        $this->assertSame('https://3ds.example.com', $charge->getAction()->getRedirectUrl());
+        $this->assertSame('EMV3DS', $charge->getAction()->getActionType());
     }
 
     public function testPaymentChargeResponseNoAction(): void
     {
-        $charge = PaymentChargeResponse::fromArray(['id' => 'chg-003', 'state' => 'SUCCEEDED']);
+        /** @var PaymentChargeResponse $charge */
+        $charge = ObjectSerializer::deserialize(['id' => 'chg-003', 'state' => 'SUCCEEDED'], PaymentChargeResponse::class);
 
-        $this->assertSame('SUCCEEDED', $charge->state);
-        $this->assertNull($charge->action);
+        $this->assertSame('SUCCEEDED', $charge->getState());
         $this->assertNull($charge->getAction());
     }
 
     public function testPaymentChargeStatusResponseHydration(): void
     {
         $data = [
-            'id'         => 'chg-004',
-            'state'      => 'FAILED',
+            'id'          => 'chg-004',
+            'state'       => 'FAILED',
             'fail_reason' => 'CARD_DECLINED',
         ];
 
-        $status = PaymentChargeStatusResponse::fromArray($data);
+        /** @var PaymentChargeStatusResponse $status */
+        $status = ObjectSerializer::deserialize($data, PaymentChargeStatusResponse::class);
 
-        $this->assertSame('FAILED', $status->state);
-        $this->assertSame('CARD_DECLINED', $status->failReason);
         $this->assertSame('FAILED', $status->getState());
+        $this->assertSame('CARD_DECLINED', $status->getFailReason());
     }
 
     public function testPermanentCardTokenDetailsHydration(): void
     {
         $data = [
-            'card_id'            => 'card-123',
-            'masked_pan'         => '411111******1111',
-            'expiration_month'   => 12,
-            'expiration_year'    => 2028,
-            'scheme'             => 'VISA',
-            'corporate'          => false,
-            'token'              => 'perm-token-abc',
-            'status'             => 'ACTIVE',
+            'card_id'          => 'card-123',
+            'masked_pan'       => '411111******1111',
+            'expiration_month' => 12,
+            'expiration_year'  => '28',
+            'scheme'           => 'VISA',
+            'corporate'        => false,
+            'token'            => 'perm-token-abc',
+            'status'           => 'ACTIVE',
         ];
 
-        $card = PermanentCardTokenDetails::fromArray($data);
+        /** @var PermanentCardTokenDetails $card */
+        $card = ObjectSerializer::deserialize($data, PermanentCardTokenDetails::class);
 
-        $this->assertSame('card-123', $card->cardId);
-        $this->assertSame('411111******1111', $card->maskedPan);
-        $this->assertSame(12, $card->expirationMonth);
-        $this->assertSame(2028, $card->expirationYear);
-        $this->assertSame('VISA', $card->scheme);
-        $this->assertFalse($card->corporate);
-        $this->assertSame('perm-token-abc', $card->token);
-        $this->assertSame('ACTIVE', $card->status);
         $this->assertSame('card-123', $card->getCardId());
+        $this->assertSame('411111******1111', $card->getMaskedPan());
+        $this->assertSame('12', $card->getExpirationMonth());
+        $this->assertSame('28', $card->getExpirationYear());
+        $this->assertSame('VISA', $card->getScheme());
+        $this->assertFalse($card->getCorporate());
         $this->assertSame('perm-token-abc', $card->getToken());
+        $this->assertSame('ACTIVE', $card->getStatus());
     }
 
     public function testRefundDetailsHydration(): void
     {
-        $refund = RefundDetails::fromArray([
+        /** @var RefundDetails $refund */
+        $refund = ObjectSerializer::deserialize([
             'id'         => 'ref-001',
-            'state'      => 'REFUNDED',
+            'state'      => 'SUCCESS',
             'amount'     => 500,
             'currency'   => 'CZK',
             'created_at' => '2024-01-15T10:00:00Z',
             'updated_at' => '2024-01-15T10:05:00Z',
-        ]);
+        ], RefundDetails::class);
 
-        $this->assertSame('ref-001', $refund->id);
-        $this->assertSame('REFUNDED', $refund->state);
-        $this->assertSame(500, $refund->amount);
-        $this->assertSame('2024-01-15T10:00:00Z', $refund->createdAt);
         $this->assertSame('ref-001', $refund->getId());
+        $this->assertSame('SUCCESS', $refund->getState());
+        $this->assertSame(500, $refund->getAmount());
+        $this->assertInstanceOf(\DateTime::class, $refund->getCreatedAt());
     }
 
     public function testRecurrenceDetailsHydration(): void
     {
-        $recurrence = RecurrenceDetails::fromArray([
-            'id'    => 'rec-001',
-            'type'  => 'ON_DEMAND',
-            'state' => 'STARTED',
+        /** @var RecurrenceDetails $recurrence */
+        $recurrence = ObjectSerializer::deserialize([
+            'id'      => 'rec-001',
+            'type'    => 'ON_DEMAND',
+            'state'   => 'STARTED',
             'payment' => ['id' => 'pay-002', 'state' => 'PAID'],
-        ]);
+        ], RecurrenceDetails::class);
 
-        $this->assertSame('rec-001', $recurrence->id);
-        $this->assertSame('ON_DEMAND', $recurrence->type);
-        $this->assertInstanceOf(PaymentDetails::class, $recurrence->payment);
-        $this->assertSame('pay-002', $recurrence->payment->id);
         $this->assertSame('rec-001', $recurrence->getId());
+        $this->assertSame('ON_DEMAND', $recurrence->getType());
+        $this->assertInstanceOf(PaymentDetails::class, $recurrence->getPayment());
+        $this->assertSame('pay-002', $recurrence->getPayment()->getId());
     }
 
     public function testLinkDetailsHydration(): void
     {
-        $link = LinkDetails::fromArray([
+        /** @var LinkDetails $link */
+        $link = ObjectSerializer::deserialize([
             'id'       => 'lnk-001',
             'url'      => 'https://pay.gopay.com/lnk-001',
             'active'   => true,
             'reusable' => false,
-        ]);
+        ], LinkDetails::class);
 
-        $this->assertSame('lnk-001', $link->id);
-        $this->assertSame('https://pay.gopay.com/lnk-001', $link->url);
-        $this->assertTrue($link->active);
-        $this->assertFalse($link->reusable);
         $this->assertSame('lnk-001', $link->getId());
         $this->assertSame('https://pay.gopay.com/lnk-001', $link->getUrl());
+        $this->assertTrue($link->getActive());
+        $this->assertFalse($link->getReusable());
     }
 
     public function testQrPaymentDetailsHydration(): void
     {
-        $qr = QrPaymentDetails::fromArray([
+        /** @var QRPaymentDetails $qr */
+        $qr = ObjectSerializer::deserialize([
             'amount'    => 1000,
             'currency'  => 'CZK',
             'recipient' => ['iban' => 'CZ1234567890'],
             'qr_code'   => ['spayd' => 'base64imagedata=='],
-        ]);
+        ], QRPaymentDetails::class);
 
-        $this->assertSame(1000, $qr->amount);
-        $this->assertSame('CZK', $qr->currency);
-        $this->assertSame(['iban' => 'CZ1234567890'], $qr->recipient);
-        $this->assertSame(['spayd' => 'base64imagedata=='], $qr->qrCode);
+        $this->assertSame(1000, $qr->getAmount());
+        $this->assertSame('CZK', $qr->getCurrency());
+        $this->assertInstanceOf(BankTransferRecipient::class, $qr->getRecipient());
+        $this->assertInstanceOf(QRCodeList::class, $qr->getQrCode());
     }
 }

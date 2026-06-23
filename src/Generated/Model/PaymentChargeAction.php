@@ -1,6 +1,6 @@
 <?php
 /**
- * PaymentDetails
+ * PaymentChargeAction
  *
  * PHP version 7.4
  *
@@ -33,25 +33,25 @@ use \ArrayAccess;
 use \GoPay\Payments\Generated\ObjectSerializer;
 
 /**
- * PaymentDetails Class Doc Comment
+ * PaymentChargeAction Class Doc Comment
  *
  * @category Class
- * @description Representation of an existing payment
+ * @description Discriminated union of actions that may be required to complete a payment charge. The discriminator is the &#x60;action_type&#x60; field. The action typically involves redirecting the customer to an external page (e.g. 3DS authentication or bank login).
  * @package  GoPay\Payments\Generated
  * @author   OpenAPI Generator team
  * @link     https://openapi-generator.tech
  * @implements \ArrayAccess<string, mixed>
  */
-class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
+class PaymentChargeAction implements ModelInterface, ArrayAccess, \JsonSerializable
 {
-    public const DISCRIMINATOR = null;
+    public const DISCRIMINATOR = 'actionType';
 
     /**
       * The original name of the model.
       *
       * @var string
       */
-    protected static $openAPIModelName = 'Payment-Details';
+    protected static $openAPIModelName = 'Payment-Charge-Action';
 
     /**
       * Array of property to type mappings. Used for (de)serialization
@@ -59,15 +59,9 @@ class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
       * @var string[]
       */
     protected static $openAPITypes = [
-        'id' => 'string',
-        'orderNumber' => 'string',
-        'state' => '\GoPay\Payments\Generated\Model\PaymentState',
-        'amount' => 'int',
-        'currency' => '\GoPay\Payments\Generated\Model\Currency',
-        'customer' => '\GoPay\Payments\Generated\Model\Customer',
-        'gwUrl' => 'string',
-        'charge' => '\GoPay\Payments\Generated\Model\PaymentChargeStatusResponse',
-        'paymentSecret' => 'string'
+        'actionType' => '\GoPay\Payments\Generated\Model\PaymentChargeActionType',
+        'state' => '\GoPay\Payments\Generated\Model\Emv3DSState',
+        'redirectUrl' => 'string'
     ];
 
     /**
@@ -78,15 +72,9 @@ class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
       * @psalm-var array<string, string|null>
       */
     protected static $openAPIFormats = [
-        'id' => null,
-        'orderNumber' => null,
+        'actionType' => null,
         'state' => null,
-        'amount' => null,
-        'currency' => null,
-        'customer' => null,
-        'gwUrl' => 'uri',
-        'charge' => null,
-        'paymentSecret' => null
+        'redirectUrl' => 'uri'
     ];
 
     /**
@@ -95,15 +83,9 @@ class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
       * @var boolean[]
       */
     protected static array $openAPINullables = [
-        'id' => false,
-        'orderNumber' => false,
+        'actionType' => false,
         'state' => false,
-        'amount' => false,
-        'currency' => false,
-        'customer' => false,
-        'gwUrl' => false,
-        'charge' => false,
-        'paymentSecret' => false
+        'redirectUrl' => false
     ];
 
     /**
@@ -192,15 +174,9 @@ class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
      * @var string[]
      */
     protected static $attributeMap = [
-        'id' => 'id',
-        'orderNumber' => 'order_number',
+        'actionType' => 'action_type',
         'state' => 'state',
-        'amount' => 'amount',
-        'currency' => 'currency',
-        'customer' => 'customer',
-        'gwUrl' => 'gw_url',
-        'charge' => 'charge',
-        'paymentSecret' => 'payment_secret'
+        'redirectUrl' => 'redirect_url'
     ];
 
     /**
@@ -209,15 +185,9 @@ class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
      * @var string[]
      */
     protected static $setters = [
-        'id' => 'setId',
-        'orderNumber' => 'setOrderNumber',
+        'actionType' => 'setActionType',
         'state' => 'setState',
-        'amount' => 'setAmount',
-        'currency' => 'setCurrency',
-        'customer' => 'setCustomer',
-        'gwUrl' => 'setGwUrl',
-        'charge' => 'setCharge',
-        'paymentSecret' => 'setPaymentSecret'
+        'redirectUrl' => 'setRedirectUrl'
     ];
 
     /**
@@ -226,15 +196,9 @@ class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
      * @var string[]
      */
     protected static $getters = [
-        'id' => 'getId',
-        'orderNumber' => 'getOrderNumber',
+        'actionType' => 'getActionType',
         'state' => 'getState',
-        'amount' => 'getAmount',
-        'currency' => 'getCurrency',
-        'customer' => 'getCustomer',
-        'gwUrl' => 'getGwUrl',
-        'charge' => 'getCharge',
-        'paymentSecret' => 'getPaymentSecret'
+        'redirectUrl' => 'getRedirectUrl'
     ];
 
     /**
@@ -294,15 +258,12 @@ class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
      */
     public function __construct(array $data = null)
     {
-        $this->setIfExists('id', $data ?? [], null);
-        $this->setIfExists('orderNumber', $data ?? [], null);
+        $this->setIfExists('actionType', $data ?? [], null);
         $this->setIfExists('state', $data ?? [], null);
-        $this->setIfExists('amount', $data ?? [], null);
-        $this->setIfExists('currency', $data ?? [], null);
-        $this->setIfExists('customer', $data ?? [], null);
-        $this->setIfExists('gwUrl', $data ?? [], null);
-        $this->setIfExists('charge', $data ?? [], null);
-        $this->setIfExists('paymentSecret', $data ?? [], null);
+        $this->setIfExists('redirectUrl', $data ?? [], null);
+
+        // Initialize discriminator property with the model name.
+        $this->container['actionType'] = static::$openAPIModelName;
     }
 
     /**
@@ -332,29 +293,11 @@ class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
     {
         $invalidProperties = [];
 
-        if ($this->container['id'] === null) {
-            $invalidProperties[] = "'id' can't be null";
-        }
-        if ($this->container['orderNumber'] === null) {
-            $invalidProperties[] = "'orderNumber' can't be null";
+        if ($this->container['actionType'] === null) {
+            $invalidProperties[] = "'actionType' can't be null";
         }
         if ($this->container['state'] === null) {
             $invalidProperties[] = "'state' can't be null";
-        }
-        if ($this->container['amount'] === null) {
-            $invalidProperties[] = "'amount' can't be null";
-        }
-        if ($this->container['currency'] === null) {
-            $invalidProperties[] = "'currency' can't be null";
-        }
-        if ($this->container['customer'] === null) {
-            $invalidProperties[] = "'customer' can't be null";
-        }
-        if ($this->container['gwUrl'] === null) {
-            $invalidProperties[] = "'gwUrl' can't be null";
-        }
-        if ($this->container['paymentSecret'] === null) {
-            $invalidProperties[] = "'paymentSecret' can't be null";
         }
         return $invalidProperties;
     }
@@ -372,55 +315,28 @@ class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
 
 
     /**
-     * Gets id
+     * Gets actionType
      *
-     * @return string
+     * @return \GoPay\Payments\Generated\Model\PaymentChargeActionType
      */
-    public function getId()
+    public function getActionType()
     {
-        return $this->container['id'];
+        return $this->container['actionType'];
     }
 
     /**
-     * Sets id
+     * Sets actionType
      *
-     * @param string $id Payment session ID
+     * @param \GoPay\Payments\Generated\Model\PaymentChargeActionType $actionType Always `EMV3DS`
      *
      * @return self
      */
-    public function setId($id)
+    public function setActionType($actionType)
     {
-        if (is_null($id)) {
-            throw new \InvalidArgumentException('non-nullable id cannot be null');
+        if (is_null($actionType)) {
+            throw new \InvalidArgumentException('non-nullable actionType cannot be null');
         }
-        $this->container['id'] = $id;
-
-        return $this;
-    }
-
-    /**
-     * Gets orderNumber
-     *
-     * @return string
-     */
-    public function getOrderNumber()
-    {
-        return $this->container['orderNumber'];
-    }
-
-    /**
-     * Sets orderNumber
-     *
-     * @param string $orderNumber Order ID forwarded from the payment request
-     *
-     * @return self
-     */
-    public function setOrderNumber($orderNumber)
-    {
-        if (is_null($orderNumber)) {
-            throw new \InvalidArgumentException('non-nullable orderNumber cannot be null');
-        }
-        $this->container['orderNumber'] = $orderNumber;
+        $this->container['actionType'] = $actionType;
 
         return $this;
     }
@@ -428,7 +344,7 @@ class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
     /**
      * Gets state
      *
-     * @return \GoPay\Payments\Generated\Model\PaymentState
+     * @return \GoPay\Payments\Generated\Model\Emv3DSState
      */
     public function getState()
     {
@@ -438,7 +354,7 @@ class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
     /**
      * Sets state
      *
-     * @param \GoPay\Payments\Generated\Model\PaymentState $state Payment state
+     * @param \GoPay\Payments\Generated\Model\Emv3DSState $state Current state of the 3DS authentication flow
      *
      * @return self
      */
@@ -453,163 +369,28 @@ class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
     }
 
     /**
-     * Gets amount
+     * Gets redirectUrl
      *
-     * @return int
+     * @return string|null
      */
-    public function getAmount()
+    public function getRedirectUrl()
     {
-        return $this->container['amount'];
+        return $this->container['redirectUrl'];
     }
 
     /**
-     * Sets amount
+     * Sets redirectUrl
      *
-     * @param int $amount Total amount in cents
+     * @param string|null $redirectUrl URL to redirect the customer to for completing the 3DS authentication
      *
      * @return self
      */
-    public function setAmount($amount)
+    public function setRedirectUrl($redirectUrl)
     {
-        if (is_null($amount)) {
-            throw new \InvalidArgumentException('non-nullable amount cannot be null');
+        if (is_null($redirectUrl)) {
+            throw new \InvalidArgumentException('non-nullable redirectUrl cannot be null');
         }
-        $this->container['amount'] = $amount;
-
-        return $this;
-    }
-
-    /**
-     * Gets currency
-     *
-     * @return \GoPay\Payments\Generated\Model\Currency
-     */
-    public function getCurrency()
-    {
-        return $this->container['currency'];
-    }
-
-    /**
-     * Sets currency
-     *
-     * @param \GoPay\Payments\Generated\Model\Currency $currency Payment currency
-     *
-     * @return self
-     */
-    public function setCurrency($currency)
-    {
-        if (is_null($currency)) {
-            throw new \InvalidArgumentException('non-nullable currency cannot be null');
-        }
-        $this->container['currency'] = $currency;
-
-        return $this;
-    }
-
-    /**
-     * Gets customer
-     *
-     * @return \GoPay\Payments\Generated\Model\Customer
-     */
-    public function getCustomer()
-    {
-        return $this->container['customer'];
-    }
-
-    /**
-     * Sets customer
-     *
-     * @param \GoPay\Payments\Generated\Model\Customer $customer Customer data
-     *
-     * @return self
-     */
-    public function setCustomer($customer)
-    {
-        if (is_null($customer)) {
-            throw new \InvalidArgumentException('non-nullable customer cannot be null');
-        }
-        $this->container['customer'] = $customer;
-
-        return $this;
-    }
-
-    /**
-     * Gets gwUrl
-     *
-     * @return string
-     */
-    public function getGwUrl()
-    {
-        return $this->container['gwUrl'];
-    }
-
-    /**
-     * Sets gwUrl
-     *
-     * @param string $gwUrl URL of the hosted payment gateway
-     *
-     * @return self
-     */
-    public function setGwUrl($gwUrl)
-    {
-        if (is_null($gwUrl)) {
-            throw new \InvalidArgumentException('non-nullable gwUrl cannot be null');
-        }
-        $this->container['gwUrl'] = $gwUrl;
-
-        return $this;
-    }
-
-    /**
-     * Gets charge
-     *
-     * @return \GoPay\Payments\Generated\Model\PaymentChargeStatusResponse|null
-     */
-    public function getCharge()
-    {
-        return $this->container['charge'];
-    }
-
-    /**
-     * Sets charge
-     *
-     * @param \GoPay\Payments\Generated\Model\PaymentChargeStatusResponse|null $charge charge
-     *
-     * @return self
-     */
-    public function setCharge($charge)
-    {
-        if (is_null($charge)) {
-            throw new \InvalidArgumentException('non-nullable charge cannot be null');
-        }
-        $this->container['charge'] = $charge;
-
-        return $this;
-    }
-
-    /**
-     * Gets paymentSecret
-     *
-     * @return string
-     */
-    public function getPaymentSecret()
-    {
-        return $this->container['paymentSecret'];
-    }
-
-    /**
-     * Sets paymentSecret
-     *
-     * @param string $paymentSecret Payment secret that can be shared to the client side. Used to generate payment-specific JWTs. **Do not embed in URLs, log or store!**
-     *
-     * @return self
-     */
-    public function setPaymentSecret($paymentSecret)
-    {
-        if (is_null($paymentSecret)) {
-            throw new \InvalidArgumentException('non-nullable paymentSecret cannot be null');
-        }
-        $this->container['paymentSecret'] = $paymentSecret;
+        $this->container['redirectUrl'] = $redirectUrl;
 
         return $this;
     }

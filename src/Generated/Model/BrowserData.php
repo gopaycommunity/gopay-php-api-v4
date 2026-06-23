@@ -1,6 +1,6 @@
 <?php
 /**
- * PaymentDetails
+ * BrowserData
  *
  * PHP version 7.4
  *
@@ -33,16 +33,16 @@ use \ArrayAccess;
 use \GoPay\Payments\Generated\ObjectSerializer;
 
 /**
- * PaymentDetails Class Doc Comment
+ * BrowserData Class Doc Comment
  *
  * @category Class
- * @description Representation of an existing payment
+ * @description Customer browser data collected for 3-D Secure authentication purposes. This data is forwarded to the card issuer during the authentication flow.
  * @package  GoPay\Payments\Generated
  * @author   OpenAPI Generator team
  * @link     https://openapi-generator.tech
  * @implements \ArrayAccess<string, mixed>
  */
-class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
+class BrowserData implements ModelInterface, ArrayAccess, \JsonSerializable
 {
     public const DISCRIMINATOR = null;
 
@@ -51,7 +51,7 @@ class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
       *
       * @var string
       */
-    protected static $openAPIModelName = 'Payment-Details';
+    protected static $openAPIModelName = 'Browser-Data';
 
     /**
       * Array of property to type mappings. Used for (de)serialization
@@ -59,15 +59,14 @@ class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
       * @var string[]
       */
     protected static $openAPITypes = [
-        'id' => 'string',
-        'orderNumber' => 'string',
-        'state' => '\GoPay\Payments\Generated\Model\PaymentState',
-        'amount' => 'int',
-        'currency' => '\GoPay\Payments\Generated\Model\Currency',
-        'customer' => '\GoPay\Payments\Generated\Model\Customer',
-        'gwUrl' => 'string',
-        'charge' => '\GoPay\Payments\Generated\Model\PaymentChargeStatusResponse',
-        'paymentSecret' => 'string'
+        'language' => 'string',
+        'timezone' => 'int',
+        'screenWidth' => 'int',
+        'screenHeight' => 'int',
+        'colorDepth' => 'int',
+        'userAgent' => 'string',
+        'acceptHeader' => 'string',
+        'javascriptEnabled' => 'bool'
     ];
 
     /**
@@ -78,15 +77,14 @@ class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
       * @psalm-var array<string, string|null>
       */
     protected static $openAPIFormats = [
-        'id' => null,
-        'orderNumber' => null,
-        'state' => null,
-        'amount' => null,
-        'currency' => null,
-        'customer' => null,
-        'gwUrl' => 'uri',
-        'charge' => null,
-        'paymentSecret' => null
+        'language' => null,
+        'timezone' => null,
+        'screenWidth' => null,
+        'screenHeight' => null,
+        'colorDepth' => null,
+        'userAgent' => null,
+        'acceptHeader' => null,
+        'javascriptEnabled' => null
     ];
 
     /**
@@ -95,15 +93,14 @@ class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
       * @var boolean[]
       */
     protected static array $openAPINullables = [
-        'id' => false,
-        'orderNumber' => false,
-        'state' => false,
-        'amount' => false,
-        'currency' => false,
-        'customer' => false,
-        'gwUrl' => false,
-        'charge' => false,
-        'paymentSecret' => false
+        'language' => false,
+        'timezone' => false,
+        'screenWidth' => false,
+        'screenHeight' => false,
+        'colorDepth' => false,
+        'userAgent' => false,
+        'acceptHeader' => false,
+        'javascriptEnabled' => false
     ];
 
     /**
@@ -192,15 +189,14 @@ class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
      * @var string[]
      */
     protected static $attributeMap = [
-        'id' => 'id',
-        'orderNumber' => 'order_number',
-        'state' => 'state',
-        'amount' => 'amount',
-        'currency' => 'currency',
-        'customer' => 'customer',
-        'gwUrl' => 'gw_url',
-        'charge' => 'charge',
-        'paymentSecret' => 'payment_secret'
+        'language' => 'language',
+        'timezone' => 'timezone',
+        'screenWidth' => 'screen_width',
+        'screenHeight' => 'screen_height',
+        'colorDepth' => 'color_depth',
+        'userAgent' => 'user_agent',
+        'acceptHeader' => 'accept_header',
+        'javascriptEnabled' => 'javascript_enabled'
     ];
 
     /**
@@ -209,15 +205,14 @@ class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
      * @var string[]
      */
     protected static $setters = [
-        'id' => 'setId',
-        'orderNumber' => 'setOrderNumber',
-        'state' => 'setState',
-        'amount' => 'setAmount',
-        'currency' => 'setCurrency',
-        'customer' => 'setCustomer',
-        'gwUrl' => 'setGwUrl',
-        'charge' => 'setCharge',
-        'paymentSecret' => 'setPaymentSecret'
+        'language' => 'setLanguage',
+        'timezone' => 'setTimezone',
+        'screenWidth' => 'setScreenWidth',
+        'screenHeight' => 'setScreenHeight',
+        'colorDepth' => 'setColorDepth',
+        'userAgent' => 'setUserAgent',
+        'acceptHeader' => 'setAcceptHeader',
+        'javascriptEnabled' => 'setJavascriptEnabled'
     ];
 
     /**
@@ -226,15 +221,14 @@ class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
      * @var string[]
      */
     protected static $getters = [
-        'id' => 'getId',
-        'orderNumber' => 'getOrderNumber',
-        'state' => 'getState',
-        'amount' => 'getAmount',
-        'currency' => 'getCurrency',
-        'customer' => 'getCustomer',
-        'gwUrl' => 'getGwUrl',
-        'charge' => 'getCharge',
-        'paymentSecret' => 'getPaymentSecret'
+        'language' => 'getLanguage',
+        'timezone' => 'getTimezone',
+        'screenWidth' => 'getScreenWidth',
+        'screenHeight' => 'getScreenHeight',
+        'colorDepth' => 'getColorDepth',
+        'userAgent' => 'getUserAgent',
+        'acceptHeader' => 'getAcceptHeader',
+        'javascriptEnabled' => 'getJavascriptEnabled'
     ];
 
     /**
@@ -294,15 +288,14 @@ class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
      */
     public function __construct(array $data = null)
     {
-        $this->setIfExists('id', $data ?? [], null);
-        $this->setIfExists('orderNumber', $data ?? [], null);
-        $this->setIfExists('state', $data ?? [], null);
-        $this->setIfExists('amount', $data ?? [], null);
-        $this->setIfExists('currency', $data ?? [], null);
-        $this->setIfExists('customer', $data ?? [], null);
-        $this->setIfExists('gwUrl', $data ?? [], null);
-        $this->setIfExists('charge', $data ?? [], null);
-        $this->setIfExists('paymentSecret', $data ?? [], null);
+        $this->setIfExists('language', $data ?? [], null);
+        $this->setIfExists('timezone', $data ?? [], null);
+        $this->setIfExists('screenWidth', $data ?? [], null);
+        $this->setIfExists('screenHeight', $data ?? [], null);
+        $this->setIfExists('colorDepth', $data ?? [], null);
+        $this->setIfExists('userAgent', $data ?? [], null);
+        $this->setIfExists('acceptHeader', $data ?? [], null);
+        $this->setIfExists('javascriptEnabled', $data ?? [], null);
     }
 
     /**
@@ -332,29 +325,20 @@ class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
     {
         $invalidProperties = [];
 
-        if ($this->container['id'] === null) {
-            $invalidProperties[] = "'id' can't be null";
+        if ($this->container['language'] === null) {
+            $invalidProperties[] = "'language' can't be null";
         }
-        if ($this->container['orderNumber'] === null) {
-            $invalidProperties[] = "'orderNumber' can't be null";
+        if ($this->container['timezone'] === null) {
+            $invalidProperties[] = "'timezone' can't be null";
         }
-        if ($this->container['state'] === null) {
-            $invalidProperties[] = "'state' can't be null";
+        if ($this->container['screenWidth'] === null) {
+            $invalidProperties[] = "'screenWidth' can't be null";
         }
-        if ($this->container['amount'] === null) {
-            $invalidProperties[] = "'amount' can't be null";
+        if ($this->container['screenHeight'] === null) {
+            $invalidProperties[] = "'screenHeight' can't be null";
         }
-        if ($this->container['currency'] === null) {
-            $invalidProperties[] = "'currency' can't be null";
-        }
-        if ($this->container['customer'] === null) {
-            $invalidProperties[] = "'customer' can't be null";
-        }
-        if ($this->container['gwUrl'] === null) {
-            $invalidProperties[] = "'gwUrl' can't be null";
-        }
-        if ($this->container['paymentSecret'] === null) {
-            $invalidProperties[] = "'paymentSecret' can't be null";
+        if ($this->container['colorDepth'] === null) {
+            $invalidProperties[] = "'colorDepth' can't be null";
         }
         return $invalidProperties;
     }
@@ -372,244 +356,217 @@ class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
 
 
     /**
-     * Gets id
+     * Gets language
      *
      * @return string
      */
-    public function getId()
+    public function getLanguage()
     {
-        return $this->container['id'];
+        return $this->container['language'];
     }
 
     /**
-     * Sets id
+     * Sets language
      *
-     * @param string $id Payment session ID
+     * @param string $language Language or locale of the customer environment
      *
      * @return self
      */
-    public function setId($id)
+    public function setLanguage($language)
     {
-        if (is_null($id)) {
-            throw new \InvalidArgumentException('non-nullable id cannot be null');
+        if (is_null($language)) {
+            throw new \InvalidArgumentException('non-nullable language cannot be null');
         }
-        $this->container['id'] = $id;
+        $this->container['language'] = $language;
 
         return $this;
     }
 
     /**
-     * Gets orderNumber
-     *
-     * @return string
-     */
-    public function getOrderNumber()
-    {
-        return $this->container['orderNumber'];
-    }
-
-    /**
-     * Sets orderNumber
-     *
-     * @param string $orderNumber Order ID forwarded from the payment request
-     *
-     * @return self
-     */
-    public function setOrderNumber($orderNumber)
-    {
-        if (is_null($orderNumber)) {
-            throw new \InvalidArgumentException('non-nullable orderNumber cannot be null');
-        }
-        $this->container['orderNumber'] = $orderNumber;
-
-        return $this;
-    }
-
-    /**
-     * Gets state
-     *
-     * @return \GoPay\Payments\Generated\Model\PaymentState
-     */
-    public function getState()
-    {
-        return $this->container['state'];
-    }
-
-    /**
-     * Sets state
-     *
-     * @param \GoPay\Payments\Generated\Model\PaymentState $state Payment state
-     *
-     * @return self
-     */
-    public function setState($state)
-    {
-        if (is_null($state)) {
-            throw new \InvalidArgumentException('non-nullable state cannot be null');
-        }
-        $this->container['state'] = $state;
-
-        return $this;
-    }
-
-    /**
-     * Gets amount
+     * Gets timezone
      *
      * @return int
      */
-    public function getAmount()
+    public function getTimezone()
     {
-        return $this->container['amount'];
+        return $this->container['timezone'];
     }
 
     /**
-     * Sets amount
+     * Sets timezone
      *
-     * @param int $amount Total amount in cents
+     * @param int $timezone Timezone offset of the customer environment in minutes (e.g. -60 for CET)
      *
      * @return self
      */
-    public function setAmount($amount)
+    public function setTimezone($timezone)
     {
-        if (is_null($amount)) {
-            throw new \InvalidArgumentException('non-nullable amount cannot be null');
+        if (is_null($timezone)) {
+            throw new \InvalidArgumentException('non-nullable timezone cannot be null');
         }
-        $this->container['amount'] = $amount;
+        $this->container['timezone'] = $timezone;
 
         return $this;
     }
 
     /**
-     * Gets currency
+     * Gets screenWidth
      *
-     * @return \GoPay\Payments\Generated\Model\Currency
+     * @return int
      */
-    public function getCurrency()
+    public function getScreenWidth()
     {
-        return $this->container['currency'];
+        return $this->container['screenWidth'];
     }
 
     /**
-     * Sets currency
+     * Sets screenWidth
      *
-     * @param \GoPay\Payments\Generated\Model\Currency $currency Payment currency
+     * @param int $screenWidth Width of the customer's screen in pixels
      *
      * @return self
      */
-    public function setCurrency($currency)
+    public function setScreenWidth($screenWidth)
     {
-        if (is_null($currency)) {
-            throw new \InvalidArgumentException('non-nullable currency cannot be null');
+        if (is_null($screenWidth)) {
+            throw new \InvalidArgumentException('non-nullable screenWidth cannot be null');
         }
-        $this->container['currency'] = $currency;
+        $this->container['screenWidth'] = $screenWidth;
 
         return $this;
     }
 
     /**
-     * Gets customer
+     * Gets screenHeight
      *
-     * @return \GoPay\Payments\Generated\Model\Customer
+     * @return int
      */
-    public function getCustomer()
+    public function getScreenHeight()
     {
-        return $this->container['customer'];
+        return $this->container['screenHeight'];
     }
 
     /**
-     * Sets customer
+     * Sets screenHeight
      *
-     * @param \GoPay\Payments\Generated\Model\Customer $customer Customer data
+     * @param int $screenHeight Height of the customer's screen in pixels
      *
      * @return self
      */
-    public function setCustomer($customer)
+    public function setScreenHeight($screenHeight)
     {
-        if (is_null($customer)) {
-            throw new \InvalidArgumentException('non-nullable customer cannot be null');
+        if (is_null($screenHeight)) {
+            throw new \InvalidArgumentException('non-nullable screenHeight cannot be null');
         }
-        $this->container['customer'] = $customer;
+        $this->container['screenHeight'] = $screenHeight;
 
         return $this;
     }
 
     /**
-     * Gets gwUrl
+     * Gets colorDepth
      *
-     * @return string
+     * @return int
      */
-    public function getGwUrl()
+    public function getColorDepth()
     {
-        return $this->container['gwUrl'];
+        return $this->container['colorDepth'];
     }
 
     /**
-     * Sets gwUrl
+     * Sets colorDepth
      *
-     * @param string $gwUrl URL of the hosted payment gateway
+     * @param int $colorDepth Color depth of the customer's screen in bits
      *
      * @return self
      */
-    public function setGwUrl($gwUrl)
+    public function setColorDepth($colorDepth)
     {
-        if (is_null($gwUrl)) {
-            throw new \InvalidArgumentException('non-nullable gwUrl cannot be null');
+        if (is_null($colorDepth)) {
+            throw new \InvalidArgumentException('non-nullable colorDepth cannot be null');
         }
-        $this->container['gwUrl'] = $gwUrl;
+        $this->container['colorDepth'] = $colorDepth;
 
         return $this;
     }
 
     /**
-     * Gets charge
+     * Gets userAgent
      *
-     * @return \GoPay\Payments\Generated\Model\PaymentChargeStatusResponse|null
+     * @return string|null
      */
-    public function getCharge()
+    public function getUserAgent()
     {
-        return $this->container['charge'];
+        return $this->container['userAgent'];
     }
 
     /**
-     * Sets charge
+     * Sets userAgent
      *
-     * @param \GoPay\Payments\Generated\Model\PaymentChargeStatusResponse|null $charge charge
+     * @param string|null $userAgent User-Agent string of the customer's browser
      *
      * @return self
      */
-    public function setCharge($charge)
+    public function setUserAgent($userAgent)
     {
-        if (is_null($charge)) {
-            throw new \InvalidArgumentException('non-nullable charge cannot be null');
+        if (is_null($userAgent)) {
+            throw new \InvalidArgumentException('non-nullable userAgent cannot be null');
         }
-        $this->container['charge'] = $charge;
+        $this->container['userAgent'] = $userAgent;
 
         return $this;
     }
 
     /**
-     * Gets paymentSecret
+     * Gets acceptHeader
      *
-     * @return string
+     * @return string|null
      */
-    public function getPaymentSecret()
+    public function getAcceptHeader()
     {
-        return $this->container['paymentSecret'];
+        return $this->container['acceptHeader'];
     }
 
     /**
-     * Sets paymentSecret
+     * Sets acceptHeader
      *
-     * @param string $paymentSecret Payment secret that can be shared to the client side. Used to generate payment-specific JWTs. **Do not embed in URLs, log or store!**
+     * @param string|null $acceptHeader JSON-encoded Accept headers from the customer's browser
      *
      * @return self
      */
-    public function setPaymentSecret($paymentSecret)
+    public function setAcceptHeader($acceptHeader)
     {
-        if (is_null($paymentSecret)) {
-            throw new \InvalidArgumentException('non-nullable paymentSecret cannot be null');
+        if (is_null($acceptHeader)) {
+            throw new \InvalidArgumentException('non-nullable acceptHeader cannot be null');
         }
-        $this->container['paymentSecret'] = $paymentSecret;
+        $this->container['acceptHeader'] = $acceptHeader;
+
+        return $this;
+    }
+
+    /**
+     * Gets javascriptEnabled
+     *
+     * @return bool|null
+     */
+    public function getJavascriptEnabled()
+    {
+        return $this->container['javascriptEnabled'];
+    }
+
+    /**
+     * Sets javascriptEnabled
+     *
+     * @param bool|null $javascriptEnabled Whether JavaScript is enabled in the customer's browser
+     *
+     * @return self
+     */
+    public function setJavascriptEnabled($javascriptEnabled)
+    {
+        if (is_null($javascriptEnabled)) {
+            throw new \InvalidArgumentException('non-nullable javascriptEnabled cannot be null');
+        }
+        $this->container['javascriptEnabled'] = $javascriptEnabled;
 
         return $this;
     }

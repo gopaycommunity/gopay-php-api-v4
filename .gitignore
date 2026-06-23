@@ -16,8 +16,9 @@ composer.lock
 coverage.xml
 coverage/
 
-# Codegen scratch dir (created by scripts/codegen.sh attempts)
+# Codegen scratch dirs
 tmp-codegen/
+.codegen-tmp/
 
 # Node (semantic-release toolchain)
 node_modules/
