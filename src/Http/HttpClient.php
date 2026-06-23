@@ -383,9 +383,7 @@ final class HttpClient
             ));
         }
 
-        /** @var T $result */
-        $result = ObjectSerializer::deserialize($data, $type);
-
-        return $result;
+        /** @var T */
+        return ObjectSerializer::deserialize($data, $type);
     }
 }
