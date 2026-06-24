@@ -6,6 +6,7 @@ namespace GoPay\Payments\Module;
 
 use GoPay\Payments\Exception\ErrorCode;
 use GoPay\Payments\Exception\GoPaySdkException;
+use GoPay\Payments\Generated\Model\ChargeState;
 use GoPay\Payments\Generated\Model\PaymentChargeResponse;
 use GoPay\Payments\Generated\Model\PaymentChargeStatusResponse;
 use GoPay\Payments\Generated\Model\PaymentDetails;
@@ -27,6 +28,8 @@ use GoPay\Payments\Http\RequestOptions;
  */
 final class PaymentsApi
 {
+    use ValidatesInput;
+
     public function __construct(
         private readonly HttpClient $client,
     ) {}
@@ -164,6 +167,9 @@ final class PaymentsApi
     public function getQrPaymentInfo(string $paymentId, ?string $format = null): QRPaymentDetails
     {
         $pid = $this->requireNonEmpty($paymentId, 'paymentId');
+        if ($format !== null && !in_array($format, ['png', 'svg'], true)) {
+            throw new GoPaySdkException('[GoPaySDK] format must be "png" or "svg".', ErrorCode::InvalidArgument);
+        }
         $path = "/payments/{$pid}/qr-payment/info";
         if ($format !== null) {
             $path .= '?format=' . urlencode($format);
@@ -176,8 +182,8 @@ final class PaymentsApi
      * Poll the charge state synchronously until a terminal outcome.
      *
      * Resolves on SUCCEEDED. Throws GoPaySdkException with CHARGE_FAILED on
-     * FAILED state, or CHARGE_TIMEOUT if the charge does not settle within
-     * $timeoutSeconds.
+     * FAILED or CANCELLED state, or CHARGE_TIMEOUT if the charge does not settle
+     * within $timeoutSeconds.
      *
      * @param int $timeoutSeconds Maximum total wait time (default 30 s).
      * @param int $pollIntervalMs Polling interval in milliseconds (default 1 000 ms).
@@ -189,13 +195,13 @@ final class PaymentsApi
         int $timeoutSeconds = 30,
         int $pollIntervalMs = 1_000,
     ): PaymentChargeStatusResponse {
+        $pid = $this->requireNonEmpty($paymentId, 'paymentId');
         if ($timeoutSeconds <= 0) {
             throw new GoPaySdkException('[GoPaySDK] timeoutSeconds must be > 0.', ErrorCode::InvalidArgument);
         }
         if ($pollIntervalMs <= 0) {
             throw new GoPaySdkException('[GoPaySDK] pollIntervalMs must be > 0.', ErrorCode::InvalidArgument);
         }
-        $pid = $this->requireNonEmpty($paymentId, 'paymentId');
         $deadline = time() + $timeoutSeconds;
 
         while (true) {
@@ -203,15 +209,15 @@ final class PaymentsApi
 
             $chargeState = $state->getState();
 
-            if ($chargeState === 'SUCCEEDED') {
+            if ($chargeState === ChargeState::SUCCEEDED) {
                 return $state;
             }
 
-            if ($chargeState === 'FAILED') {
+            if ($chargeState === ChargeState::FAILED) {
                 throw new GoPaySdkException('[GoPaySDK] Charge failed.', ErrorCode::ChargeFailed);
             }
 
-            if ($chargeState === 'CANCELLED') {
+            if ($chargeState === ChargeState::CANCELLED) {
                 throw new GoPaySdkException('[GoPaySDK] Charge cancelled.', ErrorCode::ChargeFailed);
             }
 
@@ -222,16 +228,10 @@ final class PaymentsApi
                 );
             }
 
-            usleep($pollIntervalMs * 1_000);
+            $sleepUs = min($pollIntervalMs * 1_000, max(0, ($deadline - time()) * 1_000_000));
+            if ($sleepUs > 0) {
+                usleep($sleepUs);
+            }
         }
-    }
-
-    private function requireNonEmpty(string $value, string $paramName): string
-    {
-        if ($value === '') {
-            throw new GoPaySdkException("[GoPaySDK] {$paramName} must not be empty.", ErrorCode::InvalidArgument);
-        }
-
-        return $value;
     }
 }

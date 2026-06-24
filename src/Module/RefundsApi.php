@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace GoPay\Payments\Module;
 
-use GoPay\Payments\Exception\ErrorCode;
 use GoPay\Payments\Exception\GoPaySdkException;
 use GoPay\Payments\Generated\Model\RefundDetails;
 use GoPay\Payments\Generated\ObjectSerializer;
@@ -19,6 +18,8 @@ use GoPay\Payments\Http\HttpClient;
  */
 final class RefundsApi
 {
+    use ValidatesInput;
+
     public function __construct(
         private readonly HttpClient $client,
     ) {}
@@ -76,14 +77,5 @@ final class RefundsApi
         $rid = $this->requireNonEmpty($refundId, 'refundId');
 
         return $this->client->get("/refunds/{$rid}", RefundDetails::class);
-    }
-
-    private function requireNonEmpty(string $value, string $paramName): string
-    {
-        if ($value === '') {
-            throw new GoPaySdkException("[GoPaySDK] {$paramName} must not be empty.", ErrorCode::InvalidArgument);
-        }
-
-        return $value;
     }
 }

@@ -55,7 +55,7 @@ $jwePayload = '...' /* sent by the browser */;
 echo '(Skipped — requires a real JWE payload from the browser iframe)' . PHP_EOL;
 echo 'In production:' . PHP_EOL;
 echo '  $tokenDetails = $sdk->tokenizeEncryptedCard($jwePayload);' . PHP_EOL;
-echo '  $token = $tokenDetails->token;' . PHP_EOL;
+echo '  $token = $tokenDetails->getToken();' . PHP_EOL;
 echo '  $sdk->chargePayment($paymentId, [' . PHP_EOL;
 echo '      "payment_instrument" => [' . PHP_EOL;
 echo '          "payment_instrument" => "PAYMENT_CARD",' . PHP_EOL;

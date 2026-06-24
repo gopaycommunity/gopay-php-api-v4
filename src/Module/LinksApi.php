@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace GoPay\Payments\Module;
 
-use GoPay\Payments\Exception\ErrorCode;
 use GoPay\Payments\Exception\GoPaySdkException;
 use GoPay\Payments\Generated\Model\LinkDetails;
 use GoPay\Payments\Http\HttpClient;
@@ -14,6 +13,8 @@ use GoPay\Payments\Http\HttpClient;
  */
 final class LinksApi
 {
+    use ValidatesInput;
+
     public function __construct(
         private readonly HttpClient $client,
     ) {}
@@ -62,14 +63,5 @@ final class LinksApi
     {
         $lid = $this->requireNonEmpty($linkId, 'linkId');
         $this->client->delete("/links/{$lid}");
-    }
-
-    private function requireNonEmpty(string $value, string $paramName): string
-    {
-        if ($value === '') {
-            throw new GoPaySdkException("[GoPaySDK] {$paramName} must not be empty.", ErrorCode::InvalidArgument);
-        }
-
-        return $value;
     }
 }

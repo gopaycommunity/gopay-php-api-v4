@@ -10,3 +10,6 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 WORKDIR /app
 
 ENV COMPOSER_HOME=/tmp/composer
+
+RUN useradd -r -m -u 1000 appuser && chown appuser:appuser /app
+USER appuser

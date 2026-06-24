@@ -105,5 +105,10 @@ final class AuthHandlerTest extends TestCase
         $response = $this->handler->requestWithRetry($request, $this->mockClient);
         $this->assertSame(200, $response->getStatusCode());
         $this->assertSame('new-token', $this->tokenStore->getAccessToken());
+
+        // Verify the retry request actually sent the new token
+        $sentRequests = $this->mockClient->getRequests();
+        $this->assertCount(3, $sentRequests);
+        $this->assertSame('Bearer new-token', $sentRequests[2]->getHeaderLine('Authorization'));
     }
 }

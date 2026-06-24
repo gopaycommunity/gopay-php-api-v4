@@ -57,7 +57,7 @@ abstract class E2ETestCase extends TestCase
     private function requireCredentials(): void
     {
         if (self::env('GOPAY_PAYMENTS_V4_CLIENT_ID') === null) {
-            self::fail(
+            self::markTestSkipped(
                 'E2E credentials not configured. '
                 . 'Set GOPAY_PAYMENTS_V4_* environment variables or copy .env.example to examples/.env.',
             );
@@ -80,7 +80,7 @@ abstract class E2ETestCase extends TestCase
     {
         $val = self::env($key);
         if ($val === null || $val === '') {
-            self::fail("Missing required E2E env var: {$key}");
+            self::markTestSkipped("Missing required E2E env var: {$key}");
         }
 
         return $val;

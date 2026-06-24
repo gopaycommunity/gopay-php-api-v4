@@ -259,7 +259,7 @@ final class GoPayClient
 
     /**
      * Poll the charge state synchronously until a terminal outcome.
-     * Throws CHARGE_FAILED on failure, CHARGE_TIMEOUT if it doesn't settle.
+     * Throws CHARGE_FAILED on FAILED or CANCELLED state, CHARGE_TIMEOUT if it doesn't settle.
      *
      * @throws GoPaySdkException
      */

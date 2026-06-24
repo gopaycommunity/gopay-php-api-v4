@@ -1495,7 +1495,8 @@ components:
             properties:
               applepayVersion:
                 type: integer
-                example: 6
+                examples:
+                  - 6
               merchantIdentifier:
                 type: string
                 example: com.gopay.merchant.demo

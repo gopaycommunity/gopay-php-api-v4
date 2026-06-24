@@ -17,7 +17,7 @@ final class Config
 {
     /**
      * @param Environment $environment     Target environment. Defaults to Sandbox.
-     * @param string|null $baseUrl         Override the API base URL (e.g. for mock servers). Takes precedence over $environment.
+     * @param string|null $baseUrl         Override the API base URL (e.g. for mock servers). Takes precedence over $environment. Must use https:// unless targeting localhost or 127.0.0.1.
      * @param bool        $debugLoggingEnabled Log outgoing requests and incoming responses.
      * @param (callable(GoPaySdkException|GoPayHttpException): void)|null $onError Called synchronously for every SDK/HTTP error before it propagates.
      * @param string|null $shareableKey    Shareable (public) key for browser-SDK handoff via getBrowserKeys().
@@ -36,10 +36,26 @@ final class Config
                 ErrorCode::InvalidConfig,
             );
         }
+        if ($this->baseUrl !== null && !$this->isAllowedBaseUrl($this->baseUrl)) {
+            throw new GoPaySdkException(
+                '[GoPaySDK] baseUrl must use https:// (localhost and 127.0.0.1 are exempt for local development).',
+                ErrorCode::InvalidConfig,
+            );
+        }
     }
 
     public function resolvedBaseUrl(): string
     {
         return $this->baseUrl ?? $this->environment->baseUrl();
+    }
+
+    private function isAllowedBaseUrl(string $url): bool
+    {
+        $host = parse_url($url, PHP_URL_HOST) ?? '';
+        if ($host === 'localhost' || $host === '127.0.0.1') {
+            return true;
+        }
+
+        return str_starts_with($url, 'https://');
     }
 }

@@ -52,7 +52,7 @@ $payment = $sdk->createPayment('YOUR_GOID', [
 
 // 4. Charge using a card token from the browser iframe
 //    (browser SDK's mountCardForm() → user enters card → iframe returns token)
-$charge = $sdk->chargePayment($payment->id, [
+$charge = $sdk->chargePayment($payment->getId(), [
     'payment_instrument' => [
         'payment_instrument' => 'PAYMENT_CARD',
         'input' => [
@@ -63,14 +63,14 @@ $charge = $sdk->chargePayment($payment->id, [
 ]);
 
 // 5a. No 3DS needed — poll for final state
-if ($charge->action === null) {
-    $final = $sdk->awaitChargeState($payment->id);
-    echo $final->state; // 'SUCCEEDED'
+if ($charge->getAction() === null) {
+    $final = $sdk->awaitChargeState($payment->getId());
+    echo $final->getState(); // 'SUCCEEDED'
 }
 
 // 5b. 3DS required — redirect the customer
-if ($charge->action?->redirectUrl !== null) {
-    header('Location: ' . $charge->action->redirectUrl);
+if ($charge->getAction()?->getRedirectUrl() !== null) {
+    header('Location: ' . $charge->getAction()->getRedirectUrl());
     exit;
 }
 ```
@@ -165,7 +165,7 @@ $sdk->chargePayment(string $paymentId, array $params): PaymentChargeResponse
 // Get charge state (poll manually)
 $sdk->getChargeState(string $paymentId): PaymentChargeStatusResponse
 
-// Poll charge state until terminal (throws on FAILED / timeout)
+// Poll charge state until terminal (throws on FAILED / CANCELLED / timeout)
 $sdk->awaitChargeState(
     string $paymentId,
     int $timeoutSeconds = 30,
@@ -182,7 +182,7 @@ $sdk->getApplePayInfo(string $paymentId): array
 $sdk->validateApplePayMerchant(string $paymentId, ?array $body = null, ?string $origin = null): array
 
 // QR payment information (recipient details + base64 QR image)
-$sdk->getQrPaymentInfo(string $paymentId, ?string $format = null): QrPaymentDetails
+$sdk->getQrPaymentInfo(string $paymentId, ?string $format = null): QRPaymentDetails
 ```
 
 ### Cards
@@ -247,21 +247,21 @@ $sdk->disableLink(string $linkId): void
 
 ## Response objects
 
-All API methods return typed objects with public readonly properties. Access them directly or via the getters provided:
+All API methods return typed objects. Use the provided getters to access fields:
 
 ```php
 $payment = $sdk->createPayment($goid, [...]);
-echo $payment->id;           // unique payment ID
-echo $payment->state;        // 'CREATED', 'PAID', etc.
-echo $payment->amount;       // amount in minor units (int)
+echo $payment->getId();     // unique payment ID
+echo $payment->getState();  // 'CREATED', 'PAID', etc.
+echo $payment->getAmount(); // amount in minor units (int)
 
-$charge = $sdk->chargePayment($payment->id, [...]);
-echo $charge->state;         // 'SUCCEEDED', 'AUTHENTICATION_PENDING', etc.
-echo $charge->action?->redirectUrl; // 3DS URL (null if no redirect needed)
+$charge = $sdk->chargePayment($payment->getId(), [...]);
+echo $charge->getState();                    // 'SUCCEEDED', 'AUTHENTICATION_PENDING', etc.
+echo $charge->getAction()?->getRedirectUrl(); // 3DS URL (null if no redirect needed)
 
 $card = $sdk->tokenizeEncryptedCard($jwePayload);
-echo $card->token;           // permanent card token for future charges
-echo $card->maskedPan;       // '411111******1111'
+echo $card->getToken();     // permanent card token for future charges
+echo $card->getMaskedPan(); // '411111******1111'
 ```
 
 ### Charge flow for 3DS cards
@@ -269,15 +269,15 @@ echo $card->maskedPan;       // '411111******1111'
 ```php
 $charge = $sdk->chargePayment($paymentId, $params);
 
-if ($charge->action?->redirectUrl !== null) {
+if ($charge->getAction()?->getRedirectUrl() !== null) {
     // 3DS authentication required — redirect the customer
-    header('Location: ' . $charge->action->redirectUrl);
+    header('Location: ' . $charge->getAction()->getRedirectUrl());
     exit;
 }
 
 // No 3DS — charge is complete or in processing; poll for result
 $final = $sdk->awaitChargeState($paymentId);
-echo $final->state; // 'SUCCEEDED'
+echo $final->getState(); // 'SUCCEEDED'
 ```
 
 ---
@@ -319,7 +319,7 @@ try {
 | `NetworkTimeout` | Request timed out |
 | `NetworkError` | Transport-level error |
 | `ChargeTimeout` | `awaitChargeState()` timed out |
-| `ChargeFailed` | Charge reached FAILED state |
+| `ChargeFailed` | Charge reached FAILED or CANCELLED state |
 | `InvalidConfig` | Bad configuration |
 | `InvalidArgument` | Empty required argument |
 
@@ -374,7 +374,7 @@ $card = $sdk->tokenizeEncryptedCard($jwePayload);
 $sdk->chargePayment($paymentId, [
     'payment_instrument' => [
         'payment_instrument' => 'PAYMENT_CARD',
-        'input' => ['input_type' => 'CARD_TOKEN', 'card_token' => $card->token],
+        'input' => ['input_type' => 'CARD_TOKEN', 'card_token' => $card->getToken()],
     ],
 ]);
 ```

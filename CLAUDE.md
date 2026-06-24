@@ -9,8 +9,8 @@ payment and charges a card token produced by the GoPay-hosted iframe.
 ## Model classes — hand-written (not generated)
 
 The model DTOs in `src/Generated/Model/` are currently **hand-written**, not generated. They
-implement `GoPay\Payments\Generated\ModelInterface` which provides `fromArray(array $data): static`
-for JSON hydration. `HttpClient::deserialize()` calls `$type::fromArray($data)` directly.
+implement `GoPay\Payments\Generated\ModelInterface`. `HttpClient::deserialize()` calls
+`ObjectSerializer::deserialize($data, $type, [])` directly.
 
 **Toolchain status**: `@openapitools/openapi-generator-cli@2.39.0` + Docker mode is confirmed
 working (no Java needed — Docker image `openapitools/openapi-generator-cli:v7.9.0` must be

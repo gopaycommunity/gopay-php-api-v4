@@ -1,4 +1,4 @@
-# Migration Guide: v1 (API v3) → v2 (API v4)
+# Migration Guide: `gopay/payments-sdk` v1 (API v3) → v2 (API v4)
 
 This SDK (v2) targets the GoPay Payments API **v4**. It has no source-level compatibility with
 `gopay/payments-sdk` v1, which targeted API v3.

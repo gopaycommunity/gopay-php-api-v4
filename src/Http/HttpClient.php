@@ -195,7 +195,11 @@ final class HttpClient
     public function authenticate(string $clientId, string $clientSecret, string $scope): void
     {
         $this->tokenStore->setClientCredentials($clientId, $clientSecret, $scope);
-        $this->authHandler->refresh($this->client);
+        try {
+            $this->authHandler->refresh($this->client);
+        } catch (GoPaySdkException $e) {
+            $this->emitError($e);
+        }
     }
 
     public function isAuthenticated(): bool

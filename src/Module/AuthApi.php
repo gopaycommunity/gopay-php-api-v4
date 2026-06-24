@@ -17,6 +17,8 @@ use GoPay\Payments\Http\HttpClient;
  */
 final class AuthApi
 {
+    use ValidatesInput;
+
     public function __construct(
         private readonly HttpClient $client,
     ) {}
@@ -34,15 +36,9 @@ final class AuthApi
      */
     public function authenticate(string $clientId, string $clientSecret, string $scope): void
     {
-        if ($clientId === '') {
-            throw new GoPaySdkException('[GoPaySDK] clientId must not be empty.', ErrorCode::InvalidArgument);
-        }
-        if ($clientSecret === '') {
-            throw new GoPaySdkException('[GoPaySDK] clientSecret must not be empty.', ErrorCode::InvalidArgument);
-        }
-        if ($scope === '') {
-            throw new GoPaySdkException('[GoPaySDK] scope must not be empty.', ErrorCode::InvalidArgument);
-        }
+        $this->requireNonEmpty($clientId, 'clientId');
+        $this->requireNonEmpty($clientSecret, 'clientSecret');
+        $this->requireNonEmpty($scope, 'scope');
 
         $this->client->authenticate($clientId, $clientSecret, $scope);
     }

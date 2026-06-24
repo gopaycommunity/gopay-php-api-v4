@@ -49,7 +49,7 @@ final class AuthHandler
         }
 
         // Auth endpoint doesn't get Bearer (it provides Basic credentials itself).
-        if (str_contains((string) $request->getUri(), self::AUTH_PATH)) {
+        if (str_ends_with($request->getUri()->getPath(), self::AUTH_PATH)) {
             return $request;
         }
 
