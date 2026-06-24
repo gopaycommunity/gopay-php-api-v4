@@ -32,11 +32,20 @@ definitions:
 
     - step: &test
         name: Unit Tests (PHPUnit)
+        runs-on:
+          - cypress
         script:
           - apt-get update -qq && apt-get install -y -qq $PHPIZE_DEPS && pecl install pcov && docker-php-ext-enable pcov
-          - vendor/bin/phpunit --colors=always --coverage-clover=coverage.xml
+          - vendor/bin/phpunit --testsuite Unit --colors=always --coverage-clover=coverage.xml
         artifacts:
           - coverage.xml
+
+    - step: &e2e
+        name: E2E Tests (PHPUnit)
+        runs-on:
+          - cypress
+        script:
+          - vendor/bin/phpunit --testsuite E2E --colors=always
 
     - step: &audit
         name: Security Audit
@@ -99,6 +108,7 @@ pipelines:
           - step: *cs
           - step: *phpstan
           - step: *test
+          - step: *e2e
       - step: *audit
       - step: *sonar
       - step: *release-preview
@@ -110,6 +120,7 @@ pipelines:
           - step: *cs
           - step: *phpstan
           - step: *test
+          - step: *e2e
       - step: *audit
       - step: *sonar
       - step: *release

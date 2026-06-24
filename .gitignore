@@ -37,4 +37,3 @@ Thumbs.db
 
 # Env overrides (not committed)
 .env
-.env.e2e

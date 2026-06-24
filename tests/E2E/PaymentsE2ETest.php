@@ -12,7 +12,7 @@ use GoPay\Payments\Generated\Model\PaymentDetails;
  *
  * Run: phpunit --group e2e
  *
- * Targets the Stoplight mock API by default (GOPAY_PAYMENTS_V4_BASE_URL in .env.e2e).
+ * Targets the Stoplight mock API by default (GOPAY_PAYMENTS_V4_BASE_URL in .env).
  * Switch GOPAY_PAYMENTS_V4_BASE_URL to https://api.gopay.com/api/merchant/payments/4.0
  * and supply sandbox credentials for live sandbox testing.
  */
@@ -47,6 +47,13 @@ class PaymentsE2ETest extends E2ETestCase
     #[\PHPUnit\Framework\Attributes\Test]
     public function charge_payment_with_card_token(): void
     {
+        $cardToken = self::env('GOPAY_PAYMENTS_V4_CARD_TOKEN');
+        if ($cardToken === null || $cardToken === '') {
+            self::markTestSkipped(
+                'Set GOPAY_PAYMENTS_V4_CARD_TOKEN to a browser-SDK-generated token to run this test.',
+            );
+        }
+
         $payment = $this->sdk->createPayment($this->goid, $this->paymentParams());
 
         $charge = $this->sdk->chargePayment((string) $payment->getId(), [
@@ -54,7 +61,17 @@ class PaymentsE2ETest extends E2ETestCase
                 'payment_instrument' => 'PAYMENT_CARD',
                 'input'              => [
                     'input_type' => 'CARD_TOKEN',
-                    'card_token' => 'tok_mocktoken_e2e_12345',
+                    'card_token' => $cardToken,
+                ],
+                'browser_data'       => [
+                    'language'           => 'en-US',
+                    'timezone'           => 0,
+                    'screen_width'       => 1920,
+                    'screen_height'      => 1080,
+                    'color_depth'        => 24,
+                    'user_agent'         => 'Mozilla/5.0 (phpunit)',
+                    'accept_header'      => 'text/html',
+                    'javascript_enabled' => true,
                 ],
             ],
         ]);

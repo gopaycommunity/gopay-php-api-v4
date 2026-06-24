@@ -12,7 +12,8 @@ use PHPUnit\Framework\TestCase;
 /**
  * Base class for E2E tests that hit a real (or mock) GoPay API.
  *
- * Requires a .env.e2e file in the project root (gitignored).
+ * Reads GOPAY_PAYMENTS_V4_* from environment variables or a .env file in the
+ * project root (gitignored; supplied by the Bitbucket pipeline in CI).
  * All tests in subclasses are skipped automatically if credentials are absent.
  *
  * Run: phpunit --group e2e
@@ -25,7 +26,8 @@ abstract class E2ETestCase extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        self::loadEnvFile(__DIR__ . '/../../.env.e2e');
+        self::loadEnvFile(__DIR__ . '/../../.env');
+        self::loadEnvFile(__DIR__ . '/../../examples/.env');
         $this->requireCredentials();
 
         $baseUrl      = self::env('GOPAY_PAYMENTS_V4_BASE_URL');
@@ -37,7 +39,10 @@ abstract class E2ETestCase extends TestCase
             shareableKey: $shareableKey,
         );
 
-        $this->sdk  = new GoPayClient($config);
+        $this->sdk  = new GoPayClient(
+            $config,
+            new \GuzzleHttp\Client(['connect_timeout' => 10, 'timeout' => 30]),
+        );
         $this->goid = self::requireEnv('GOPAY_PAYMENTS_V4_GOID');
 
         $this->sdk->authenticate(
@@ -52,9 +57,9 @@ abstract class E2ETestCase extends TestCase
     private function requireCredentials(): void
     {
         if (self::env('GOPAY_PAYMENTS_V4_CLIENT_ID') === null) {
-            self::markTestSkipped(
+            self::fail(
                 'E2E credentials not configured. '
-                . 'Copy .env.e2e.example to .env.e2e and fill in GOPAY_PAYMENTS_V4_* values.',
+                . 'Set GOPAY_PAYMENTS_V4_* environment variables or copy .env.example to examples/.env.',
             );
         }
     }

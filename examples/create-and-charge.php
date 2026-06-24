@@ -40,8 +40,8 @@ $payment = $sdk->createPayment($goid, [
 // Do NOT use $payment->gw_url — it is a backward-compat field for old redirects.
 // This SDK always uses createPayment() → chargePayment().
 
-echo 'Payment ID : ' . $payment->id . PHP_EOL;
-echo 'State      : ' . ($payment->state ?? 'n/a') . PHP_EOL;
+echo 'Payment ID : ' . $payment->getId() . PHP_EOL;
+echo 'State      : ' . ($payment->getState() ?? 'n/a') . PHP_EOL;
 
 // ─── Step 2: Charge with a card token ────────────────────────────────────────
 //
@@ -55,23 +55,38 @@ echo PHP_EOL . '=== Step 2: chargePayment ===' . PHP_EOL;
 
 $cardToken = 'tok_mocktoken_example_12345';
 
-$charge = $sdk->chargePayment((string) $payment->id, [
-    'payment_instrument' => [
-        'payment_instrument' => 'PAYMENT_CARD',
-        'input' => [
-            'input_type' => 'CARD_TOKEN',
-            'card_token' => $cardToken,
+try {
+    $charge = $sdk->chargePayment($payment->getId(), [
+        'payment_instrument' => [
+            'payment_instrument' => 'PAYMENT_CARD',
+            'input'              => [
+                'input_type' => 'CARD_TOKEN',
+                'card_token' => $cardToken,
+            ],
+            'browser_data'       => [
+                'language'            => 'en-US',
+                'timezone'            => 0,
+                'screen_width'        => 1920,
+                'screen_height'       => 1080,
+                'color_depth'         => 24,
+                'user_agent'          => 'Mozilla/5.0 (example)',
+                'accept_header'       => 'text/html',
+                'javascript_enabled'  => true,
+            ],
         ],
-    ],
-]);
+    ]);
+} catch (GoPayHttpException $e) {
+    echo 'Charge failed  : HTTP ' . $e->status . ' — ' . json_encode($e->body) . PHP_EOL;
+    exit(1);
+}
 
-echo 'Charge state   : ' . ($charge->state ?? 'n/a') . PHP_EOL;
+echo 'Charge state   : ' . ($charge->getState() ?? 'n/a') . PHP_EOL;
 
 // If the card requires 3-D Secure verification the API returns a redirect_url.
 // Redirect the customer to that URL; they complete 3DS on the bank's page and
 // the bank redirects back to your callback.return_url.
-if (!empty($charge->action->redirect_url)) {
-    echo '3DS redirect   : ' . $charge->action->redirect_url . PHP_EOL;
+if ($charge->getAction()?->getRedirectUrl() !== null) {
+    echo '3DS redirect   : ' . $charge->getAction()->getRedirectUrl() . PHP_EOL;
     echo '→ Redirect the customer to the URL above, then poll getPaymentStatus().' . PHP_EOL;
     exit(0);
 }
@@ -81,8 +96,8 @@ if (!empty($charge->action->redirect_url)) {
 echo PHP_EOL . '=== Step 3: awaitChargeState ===' . PHP_EOL;
 
 try {
-    $final = $sdk->awaitChargeState((string) $payment->id, timeoutSeconds: 10);
-    echo 'Final state    : ' . ($final->state ?? 'n/a') . PHP_EOL;
+    $final = $sdk->awaitChargeState($payment->getId(), timeoutSeconds: 10);
+    echo 'Final state    : ' . ($final->getState() ?? 'n/a') . PHP_EOL;
 } catch (GoPaySdkException $e) {
     echo 'Charge outcome : ' . $e->getMessage() . PHP_EOL;
 }
@@ -91,6 +106,6 @@ try {
 
 echo PHP_EOL . '=== Step 4: getPaymentStatus ===' . PHP_EOL;
 
-$status = $sdk->getPaymentStatus((string) $payment->id);
-echo 'Payment state  : ' . ($status->state ?? 'n/a') . PHP_EOL;
-echo 'Amount         : ' . ($status->amount ?? 'n/a') . ' ' . ($status->currency ?? '') . PHP_EOL;
+$status = $sdk->getPaymentStatus($payment->getId());
+echo 'Payment state  : ' . ($status->getState() ?? 'n/a') . PHP_EOL;
+echo 'Amount         : ' . ($status->getAmount() ?? 'n/a') . ' ' . ($status->getCurrency() ?? '') . PHP_EOL;
