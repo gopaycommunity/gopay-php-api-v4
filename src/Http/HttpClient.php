@@ -264,7 +264,7 @@ final class HttpClient
         }
 
         // Merge per-request extra headers.
-        foreach ($options?->headers ?? [] as $name => $value) {
+        foreach ($options !== null ? $options->headers : [] as $name => $value) {
             $request = $request->withHeader($name, $value);
         }
 

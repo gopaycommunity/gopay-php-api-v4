@@ -67,8 +67,13 @@ abstract class E2ETestCase extends TestCase
     protected static function env(string $key): ?string
     {
         $fromEnv = getenv($key);
+        $fromSuperglobal = $_ENV[$key] ?? null;
 
-        return $_ENV[$key] ?? ($fromEnv !== false ? $fromEnv : null);
+        if (is_string($fromSuperglobal)) {
+            return $fromSuperglobal;
+        }
+
+        return $fromEnv !== false ? $fromEnv : null;
     }
 
     protected static function requireEnv(string $key): string
