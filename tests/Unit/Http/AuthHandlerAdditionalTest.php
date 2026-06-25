@@ -27,18 +27,12 @@ final class AuthHandlerAdditionalTest extends TestCase
         $this->mockClient = new MockClient();
         $this->factory = new HttpFactory();
         $this->tokenStore = new TokenStore();
-        $this->handler = new AuthHandler(
-            $this->tokenStore,
-            'https://api.sandbox.gopay.com/api/merchant/payments/4.0',
-            $this->factory,
-            $this->factory,
-        );
+        $this->handler = new AuthHandler($this->tokenStore);
     }
 
     #[Test]
     public function injectAuthWithShareableKeyButNoClientIdThrows(): void
     {
-        // No token set, shareableKey is set but clientId is null
         $request = $this->factory->createRequest('GET', 'https://example.com/payments/123');
 
         $this->expectException(GoPaySdkException::class);
@@ -69,36 +63,38 @@ final class AuthHandlerAdditionalTest extends TestCase
     }
 
     #[Test]
-    public function requestWithRetrySecond401ClearsTokenAndThrows(): void
+    public function requestWithRetrySecond401ClearsTokenButPreservesCredentials(): void
     {
-        // Set up credentials so the refresh flow runs
         $this->tokenStore->setClientCredentials('client1', 'secret1', 'payment:read');
         $this->tokenStore->setToken('old-token', 3600);
 
-        // First call: 401
         $this->mockClient->addResponse(new Response(401));
-        // Token refresh: success
-        $this->mockClient->addResponse(new Response(200, [], '{"access_token":"new-token","expires_in":3600,"token_type":"bearer"}'));
-        // Retry: 401 again
         $this->mockClient->addResponse(new Response(401));
 
         $request = $this->factory->createRequest('GET', 'https://example.com/payments/123')
             ->withHeader('Authorization', 'Bearer old-token');
 
         try {
-            $this->handler->requestWithRetry($request, $this->mockClient);
+            $this->handler->requestWithRetry(
+                $request,
+                $this->mockClient,
+                false,
+                null,
+                fn() => $this->tokenStore->setToken('new-token', 3600),
+            );
             $this->fail('Expected GoPaySdkException was not thrown.');
         } catch (GoPaySdkException $e) {
             $this->assertSame(ErrorCode::AuthUnauthorized, $e->errorCode);
-            // Token should be cleared after the second 401
+            // Token must be cleared
             $this->assertNull($this->tokenStore->getAccessToken());
+            // Credentials must be preserved so the worker can re-authenticate
+            $this->assertSame('client1', $this->tokenStore->getClientId());
         }
     }
 
     #[Test]
     public function injectAuthUsesPerRequestAccessTokenOverride(): void
     {
-        // Even if a token is stored, per-request token takes precedence
         $this->tokenStore->setToken('stored-token', 3600);
         $request = $this->factory->createRequest('GET', 'https://example.com/payments/123');
         $options = new RequestOptions(accessToken: 'override-token');
@@ -110,63 +106,82 @@ final class AuthHandlerAdditionalTest extends TestCase
     #[Test]
     public function requestWithRetryProactivelyRefreshesExpiredToken(): void
     {
-        // Set credentials first, then overlay an expiring token
         $this->tokenStore->setClientCredentials('client1', 'secret1', 'payment:read');
         $this->tokenStore->setToken('expiring-token', 0); // 0 s → already expired
 
-        // Token refresh response, then the actual API response
-        $this->mockClient->addResponse(new Response(200, [], '{"access_token":"fresh-token","expires_in":3600,"token_type":"bearer"}'));
         $this->mockClient->addResponse(new Response(200, [], '{}'));
 
         $request = $this->factory->createRequest('GET', 'https://example.com/payments/123');
-        $response = $this->handler->requestWithRetry($request, $this->mockClient);
+        $response = $this->handler->requestWithRetry(
+            $request,
+            $this->mockClient,
+            false,
+            null,
+            fn() => $this->tokenStore->setToken('fresh-token', 3600),
+        );
 
         $this->assertSame(200, $response->getStatusCode());
         $this->assertSame('fresh-token', $this->tokenStore->getAccessToken());
     }
 
     #[Test]
-    public function refreshThrowsGoPaySdkExceptionOnNon2xxTokenResponse(): void
+    public function requestWithRetrySkipsProactiveRefreshForPerRequestOverride(): void
     {
+        // Token is expiring but request carries a per-request override — refresh must be skipped.
         $this->tokenStore->setClientCredentials('client1', 'secret1', 'payment:read');
-        $this->mockClient->addResponse(new Response(500));
+        $this->tokenStore->setToken('expiring-token', 0);
 
-        $this->expectException(GoPaySdkException::class);
-        $this->expectExceptionMessage('Token refresh failed: HTTP 500');
-        $this->handler->refresh($this->mockClient);
+        $this->mockClient->addResponse(new Response(200, [], '{}'));
+
+        $refreshCalled = false;
+        $options = new RequestOptions(accessToken: 'override-token');
+        $request = $this->factory->createRequest('GET', 'https://example.com/payments/123')
+            ->withHeader('Authorization', 'Bearer override-token');
+
+        $response = $this->handler->requestWithRetry(
+            $request,
+            $this->mockClient,
+            false,
+            $options,
+            function () use (&$refreshCalled): void {
+                $refreshCalled = true;
+                $this->tokenStore->setToken('fresh-token', 3600);
+            },
+        );
+
+        $this->assertSame(200, $response->getStatusCode());
+        $this->assertFalse($refreshCalled, 'Proactive refresh must not run when per-request override is set');
+        // The override token must not have been replaced in the outgoing request
+        $sentRequests = $this->mockClient->getRequests();
+        $this->assertSame('Bearer override-token', $sentRequests[0]->getHeaderLine('Authorization'));
     }
 
     #[Test]
-    public function refreshThrowsGoPaySdkExceptionWhenResponseBodyIsNotJson(): void
+    public function requestWithRetrySkips401RetryForPerRequestOverride(): void
     {
+        // If a per-request override token gets a 401, the stored token is not the right
+        // thing to refresh — return the 401 response directly.
         $this->tokenStore->setClientCredentials('client1', 'secret1', 'payment:read');
-        $this->mockClient->addResponse(new Response(200, [], 'null')); // json_decode('null') → null, not array
+        $this->tokenStore->setToken('stored-token', 3600);
 
-        $this->expectException(GoPaySdkException::class);
-        $this->expectExceptionMessage('Invalid token response: could not parse JSON');
-        $this->handler->refresh($this->mockClient);
-    }
+        $this->mockClient->addResponse(new Response(401));
 
-    #[Test]
-    public function refreshThrowsGoPaySdkExceptionWhenHttpClientThrows(): void
-    {
-        $this->tokenStore->setClientCredentials('client1', 'secret1', 'payment:read');
+        $refreshCalled = false;
+        $options = new RequestOptions(accessToken: 'override-token');
+        $request = $this->factory->createRequest('GET', 'https://example.com/payments/123')
+            ->withHeader('Authorization', 'Bearer override-token');
 
-        $networkEx = new class ('Connection refused', $this->factory->createRequest('POST', 'https://example.com/oauth2/token')) extends \RuntimeException implements \Psr\Http\Client\NetworkExceptionInterface {
-            public function __construct(string $message, private \Psr\Http\Message\RequestInterface $req)
-            {
-                parent::__construct($message);
-            }
+        $response = $this->handler->requestWithRetry(
+            $request,
+            $this->mockClient,
+            false,
+            $options,
+            function () use (&$refreshCalled): void {
+                $refreshCalled = true;
+            },
+        );
 
-            public function getRequest(): \Psr\Http\Message\RequestInterface
-            {
-                return $this->req;
-            }
-        };
-        $this->mockClient->addException($networkEx);
-
-        $this->expectException(GoPaySdkException::class);
-        $this->expectExceptionMessage('Token refresh failed');
-        $this->handler->refresh($this->mockClient);
+        $this->assertSame(401, $response->getStatusCode());
+        $this->assertFalse($refreshCalled, '401 retry must not run when per-request override is set');
     }
 }

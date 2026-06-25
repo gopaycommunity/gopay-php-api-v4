@@ -70,4 +70,23 @@ final class TokenStoreTest extends TestCase
         $store->setToken('tok_abc', 0);
         $this->assertTrue($store->isExpiringSoon(30));
     }
+
+    public function testClearTokenPreservesCredentials(): void
+    {
+        $store = new TokenStore();
+        $store->setClientCredentials('client1', 'secret1', 'payment:read');
+        $store->setToken('tok_abc', 3600);
+        $store->clearToken();
+        $this->assertFalse($store->hasAccessToken());
+        $this->assertTrue($store->hasClientCredentials());
+        $this->assertSame('client1', $store->getClientId());
+    }
+
+    public function testShareableKeyGetterSetter(): void
+    {
+        $store = new TokenStore();
+        $this->assertNull($store->getShareableKey());
+        $store->setShareableKey('sk_test');
+        $this->assertSame('sk_test', $store->getShareableKey());
+    }
 }

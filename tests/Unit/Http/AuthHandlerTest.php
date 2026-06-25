@@ -24,12 +24,7 @@ final class AuthHandlerTest extends TestCase
         $this->mockClient = new MockClient();
         $this->factory = new HttpFactory();
         $this->tokenStore = new TokenStore();
-        $this->handler = new AuthHandler(
-            $this->tokenStore,
-            'https://api.sandbox.gopay.com/api/merchant/payments/4.0',
-            $this->factory,
-            $this->factory,
-        );
+        $this->handler = new AuthHandler($this->tokenStore);
     }
 
     public function testInjectAuthAddsBearerToken(): void
@@ -64,51 +59,29 @@ final class AuthHandlerTest extends TestCase
         $this->handler->injectAuth($request, null, null, null);
     }
 
-    public function testRefreshStoresNewToken(): void
-    {
-        $this->tokenStore->setClientCredentials('client1', 'secret1', 'payment:read');
-        $tokenResponse = new Response(200, [], '{"access_token":"new-token","expires_in":3600,"token_type":"bearer"}');
-        $this->mockClient->addResponse($tokenResponse);
-        $this->handler->refresh($this->mockClient);
-        $this->assertSame('new-token', $this->tokenStore->getAccessToken());
-    }
-
-    public function testRefreshThrowsWhenNoCredentials(): void
-    {
-        $this->expectException(GoPaySdkException::class);
-        $this->handler->refresh($this->mockClient);
-    }
-
-    public function testRefreshThrowsOnInvalidResponse(): void
-    {
-        $this->tokenStore->setClientCredentials('client1', 'secret1', 'payment:read');
-        $this->mockClient->addResponse(new Response(200, [], '{"access_token":""}'));
-        $this->expectException(GoPaySdkException::class);
-        $this->handler->refresh($this->mockClient);
-    }
-
     public function testRequestWithRetryRetries401(): void
     {
         $this->tokenStore->setClientCredentials('client1', 'secret1', 'payment:read');
         $this->tokenStore->setToken('old-token', 3600);
 
-        // First response: 401
         $this->mockClient->addResponse(new Response(401));
-        // Token refresh response
-        $this->mockClient->addResponse(new Response(200, [], '{"access_token":"new-token","expires_in":3600,"token_type":"bearer"}'));
-        // Retry response: 200
         $this->mockClient->addResponse(new Response(200, [], '{}'));
 
         $request = $this->factory->createRequest('GET', 'https://example.com/payments/123')
             ->withHeader('Authorization', 'Bearer old-token');
 
-        $response = $this->handler->requestWithRetry($request, $this->mockClient);
+        $response = $this->handler->requestWithRetry(
+            $request,
+            $this->mockClient,
+            false,
+            null,
+            fn() => $this->tokenStore->setToken('new-token', 3600),
+        );
         $this->assertSame(200, $response->getStatusCode());
         $this->assertSame('new-token', $this->tokenStore->getAccessToken());
 
-        // Verify the retry request actually sent the new token
         $sentRequests = $this->mockClient->getRequests();
-        $this->assertCount(3, $sentRequests);
-        $this->assertSame('Bearer new-token', $sentRequests[2]->getHeaderLine('Authorization'));
+        $this->assertCount(2, $sentRequests);
+        $this->assertSame('Bearer new-token', $sentRequests[1]->getHeaderLine('Authorization'));
     }
 }
