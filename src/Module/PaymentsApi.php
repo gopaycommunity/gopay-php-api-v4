@@ -172,7 +172,7 @@ final class PaymentsApi
         }
         $path = "/payments/{$pid}/qr-payment/info";
         if ($format !== null) {
-            $path .= '?format=' . urlencode($format);
+            $path .= '?format=' . rawurlencode($format);
         }
 
         return $this->client->get($path, QRPaymentDetails::class);
@@ -217,7 +217,7 @@ final class PaymentsApi
                 throw new GoPaySdkException('[GoPaySDK] Charge failed.', ErrorCode::ChargeFailed);
             }
 
-            if ($chargeState === ChargeState::CANCELLED) {
+            if ($chargeState === 'CANCELLED') {
                 throw new GoPaySdkException('[GoPaySDK] Charge cancelled.', ErrorCode::ChargeFailed);
             }
 

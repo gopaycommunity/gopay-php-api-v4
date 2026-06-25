@@ -31,8 +31,6 @@ final class HttpClient
     private readonly TokenStore $tokenStore;
     private const APPLICATION_JSON = 'application/json';
 
-    private ?string $shareableKey;
-
     public function __construct(
         private readonly Config $config,
         ?ClientInterface $client = null,
@@ -43,13 +41,10 @@ final class HttpClient
         $this->requestFactory = $requestFactory ?? Psr17FactoryDiscovery::findRequestFactory();
         $this->streamFactory = $streamFactory ?? Psr17FactoryDiscovery::findStreamFactory();
         $this->tokenStore = new TokenStore();
-        $this->shareableKey = $config->shareableKey;
-        $this->authHandler = new AuthHandler(
-            $this->tokenStore,
-            $config->resolvedBaseUrl(),
-            $this->requestFactory,
-            $this->streamFactory,
-        );
+        if ($config->shareableKey !== null) {
+            $this->tokenStore->setShareableKey($config->shareableKey);
+        }
+        $this->authHandler = new AuthHandler($this->tokenStore);
     }
 
     // -------------------------------------------------------------------------
@@ -196,7 +191,7 @@ final class HttpClient
     {
         $this->tokenStore->setClientCredentials($clientId, $clientSecret, $scope);
         try {
-            $this->authHandler->refresh($this->client);
+            $this->refresh();
         } catch (GoPaySdkException $e) {
             $this->emitError($e);
         }
@@ -214,17 +209,102 @@ final class HttpClient
 
     public function setShareableKey(string $key): void
     {
-        $this->shareableKey = $key;
+        $this->tokenStore->setShareableKey($key);
     }
 
     public function getShareableKey(): ?string
     {
-        return $this->shareableKey;
+        return $this->tokenStore->getShareableKey();
     }
 
     public function getClientId(): ?string
     {
         return $this->tokenStore->getClientId();
+    }
+
+    /**
+     * Perform a client_credentials token refresh synchronously.
+     *
+     * Throws GoPaySdkException without calling emitError() — callers (authenticate(),
+     * requestWithRetry() via the refresh callable) are responsible for emitting.
+     *
+     * On transient failures only the token is cleared (not the client credentials),
+     * so long-running workers can recover on the next request without re-authenticating.
+     *
+     * @throws GoPaySdkException
+     */
+    public function refresh(): void
+    {
+        $clientId = $this->tokenStore->getClientId();
+        $clientSecret = $this->tokenStore->getClientSecret();
+        $scope = $this->tokenStore->getScope();
+
+        if ($clientId === null || $clientSecret === null || $scope === null) {
+            $this->tokenStore->clearToken();
+            throw new GoPaySdkException(
+                '[GoPaySDK] Access token expired and no client credentials available. Call authenticate() again.',
+                ErrorCode::AuthCredentialsMissing,
+            );
+        }
+
+        $url = rtrim($this->config->resolvedBaseUrl(), '/') . '/oauth2/token';
+        $body = http_build_query(['grant_type' => 'client_credentials', 'scope' => $scope]);
+        $credentials = base64_encode($clientId . ':' . $clientSecret);
+
+        $request = $this->requestFactory->createRequest('POST', $url)
+            ->withHeader('Content-Type', 'application/x-www-form-urlencoded')
+            ->withHeader('Accept', self::APPLICATION_JSON)
+            ->withHeader('Authorization', 'Basic ' . $credentials)
+            ->withBody($this->streamFactory->createStream($body));
+
+        if ($this->config->debugLoggingEnabled) {
+            error_log(sprintf('[GoPaySDK] → POST %s', $url));
+        }
+
+        try {
+            $response = $this->client->sendRequest($request);
+        } catch (\Throwable $e) {
+            $this->tokenStore->clearToken();
+            throw new GoPaySdkException(
+                '[GoPaySDK] Token refresh failed: ' . $e->getMessage(),
+                ErrorCode::AuthRefreshFailed,
+                $e,
+            );
+        }
+
+        if ($this->config->debugLoggingEnabled) {
+            error_log(sprintf('[GoPaySDK] ← %d %s', $response->getStatusCode(), $url));
+        }
+
+        if ($response->getStatusCode() < 200 || $response->getStatusCode() >= 300) {
+            $this->tokenStore->clearToken();
+            throw new GoPaySdkException(
+                sprintf('[GoPaySDK] Token refresh failed: HTTP %d.', $response->getStatusCode()),
+                ErrorCode::AuthRefreshFailed,
+            );
+        }
+
+        $decoded = json_decode((string) $response->getBody(), true);
+        if (!is_array($decoded)) {
+            $this->tokenStore->clearToken();
+            throw new GoPaySdkException(
+                '[GoPaySDK] Invalid token response: could not parse JSON.',
+                ErrorCode::AuthInvalidResponse,
+            );
+        }
+
+        $accessToken = $decoded['access_token'] ?? null;
+        $expiresIn = $decoded['expires_in'] ?? null;
+
+        if (!is_string($accessToken) || $accessToken === '' || !is_int($expiresIn)) {
+            $this->tokenStore->clearToken();
+            throw new GoPaySdkException(
+                '[GoPaySDK] Invalid token response: missing required fields.',
+                ErrorCode::AuthInvalidResponse,
+            );
+        }
+
+        $this->tokenStore->setToken($accessToken, $expiresIn);
     }
 
     // -------------------------------------------------------------------------
@@ -288,7 +368,7 @@ final class HttpClient
             $request = $this->authHandler->injectAuth(
                 $request,
                 $options,
-                $this->shareableKey,
+                $this->tokenStore->getShareableKey(),
                 $this->tokenStore->getClientId(),
             );
 
@@ -296,6 +376,8 @@ final class HttpClient
                 $request,
                 $this->client,
                 $isAuthRequest,
+                $options,
+                fn() => $this->refresh(),
             );
         } catch (GoPaySdkException $e) {
             $this->emitError($e);
@@ -343,7 +425,7 @@ final class HttpClient
         if (!is_array($data) || !array_is_list($data)) {
             $this->emitError(new GoPaySdkException(
                 '[GoPaySDK] Failed to parse API response as JSON list.',
-                ErrorCode::NetworkError,
+                ErrorCode::UnexpectedResponse,
             ));
         }
 
@@ -360,7 +442,7 @@ final class HttpClient
         if (!is_array($data) || array_is_list($data)) {
             $this->emitError(new GoPaySdkException(
                 '[GoPaySDK] Failed to parse API response as JSON object.',
-                ErrorCode::NetworkError,
+                ErrorCode::UnexpectedResponse,
             ));
         }
 
@@ -383,7 +465,7 @@ final class HttpClient
         if (json_last_error() !== JSON_ERROR_NONE || !($data instanceof \stdClass)) {
             $this->emitError(new GoPaySdkException(
                 '[GoPaySDK] Failed to parse API response as JSON.',
-                ErrorCode::NetworkError,
+                ErrorCode::UnexpectedResponse,
             ));
         }
 

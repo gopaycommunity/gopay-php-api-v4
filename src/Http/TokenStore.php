@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace GoPay\Payments\Http;
 
 /**
- * Stores the OAuth2 access token and the client credentials needed to refresh it.
+ * Stores the OAuth2 access token, client credentials, and shareable key.
  *
  * All state is in-memory and scoped to a single SDK instance (one web request
  * or CLI process). PHP is single-threaded, so no locking is required.
@@ -19,6 +19,8 @@ final class TokenStore
     private ?string $clientId = null;
     private ?string $clientSecret = null;
     private ?string $scope = null;
+
+    private ?string $shareableKey = null;
 
     public function setToken(string $accessToken, int $expiresIn): void
     {
@@ -42,6 +44,19 @@ final class TokenStore
         $this->clientId = null;
         $this->clientSecret = null;
         $this->scope = null;
+    }
+
+    /**
+     * Clear only the access token, preserving client credentials so the SDK
+     * can re-authenticate without the caller providing them again.
+     * Use this in transient error paths (network blip, bad token response)
+     * instead of clear() to avoid permanently logging out long-running workers.
+     */
+    public function clearToken(): void
+    {
+        $this->accessToken = null;
+        $this->expiresIn = null;
+        $this->issuedAt = null;
     }
 
     public function getAccessToken(): ?string
@@ -89,10 +104,13 @@ final class TokenStore
         return $this->clientId !== null && $this->clientSecret !== null && $this->scope !== null;
     }
 
-    private function clearToken(): void
+    public function setShareableKey(string $key): void
     {
-        $this->accessToken = null;
-        $this->expiresIn = null;
-        $this->issuedAt = null;
+        $this->shareableKey = $key;
+    }
+
+    public function getShareableKey(): ?string
+    {
+        return $this->shareableKey;
     }
 }

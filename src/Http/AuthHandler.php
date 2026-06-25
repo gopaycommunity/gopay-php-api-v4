@@ -8,26 +8,23 @@ use GoPay\Payments\Exception\ErrorCode;
 use GoPay\Payments\Exception\GoPayHttpException;
 use GoPay\Payments\Exception\GoPaySdkException;
 use Psr\Http\Client\ClientInterface;
-use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\RequestInterface;
-use Psr\Http\Message\StreamFactoryInterface;
 
 /**
  * Handles OAuth2 bearer-token injection, proactive refresh, and 401 retry.
  *
  * PHP is single-threaded, so no dedup/promise guard for concurrent refreshes
  * is needed (unlike the JS SDK which uses a refreshPromise sentinel).
+ *
+ * Token refresh is performed via a caller-supplied callable so that the actual
+ * HTTP call (and its debug logging) stays inside HttpClient.
  */
 final class AuthHandler
 {
-    private const AUTH_PATH = '/oauth2/token';
     private const BEARER_PREFIX = 'Bearer ';
 
     public function __construct(
         private readonly TokenStore $tokenStore,
-        private readonly string $baseUrl,
-        private readonly RequestFactoryInterface $requestFactory,
-        private readonly StreamFactoryInterface $streamFactory,
     ) {}
 
     /**
@@ -49,7 +46,7 @@ final class AuthHandler
         }
 
         // Auth endpoint doesn't get Bearer (it provides Basic credentials itself).
-        if (str_ends_with($request->getUri()->getPath(), self::AUTH_PATH)) {
+        if (str_ends_with($request->getUri()->getPath(), '/oauth2/token')) {
             return $request;
         }
 
@@ -98,6 +95,16 @@ final class AuthHandler
     /**
      * Sends the request and retries exactly once on 401 after refreshing the token.
      *
+     * $refresh is a callable that performs the token refresh (provided by HttpClient
+     * so the HTTP call and debug logging stay there). It is only invoked when client
+     * credentials are available and the request is not the auth endpoint itself.
+     *
+     * Per-request accessToken overrides bypass both proactive refresh and 401 retry:
+     * that token was intentionally chosen by the caller, so the stored token is not
+     * the right thing to refresh against.
+     *
+     * @param callable():void|null $refresh
+     *
      * @throws GoPaySdkException
      * @throws GoPayHttpException
      * @throws \Psr\Http\Client\ClientExceptionInterface
@@ -106,10 +113,14 @@ final class AuthHandler
         RequestInterface $request,
         ClientInterface $client,
         bool $isAuthRequest = false,
+        ?RequestOptions $options = null,
+        ?callable $refresh = null,
     ): \Psr\Http\Message\ResponseInterface {
-        // Proactive refresh before the first attempt.
-        if (!$isAuthRequest && $this->tokenStore->isExpiringSoon() && $this->tokenStore->hasClientCredentials()) {
-            $this->refresh($client);
+        $hasOverride = $options?->accessToken !== null;
+
+        // Proactive refresh — skip when request carries a per-request token override.
+        if (!$isAuthRequest && !$hasOverride && $this->tokenStore->isExpiringSoon() && $this->tokenStore->hasClientCredentials() && $refresh !== null) {
+            ($refresh)();
             $token = $this->tokenStore->getAccessToken();
             if ($token !== null) {
                 $request = $request->withHeader('Authorization', self::BEARER_PREFIX . $token);
@@ -118,12 +129,12 @@ final class AuthHandler
 
         $response = $client->sendRequest($request);
 
-        // Short-circuit: not a 401, or auth endpoint, or no credentials to refresh with.
-        if ($response->getStatusCode() !== 401 || $isAuthRequest || !$this->tokenStore->hasClientCredentials()) {
+        // Short-circuit: not a 401, auth endpoint, per-request override, or no credentials.
+        if ($response->getStatusCode() !== 401 || $isAuthRequest || $hasOverride || !$this->tokenStore->hasClientCredentials() || $refresh === null) {
             return $response;
         }
 
-        $this->refresh($client);
+        ($refresh)();
 
         $freshToken = $this->tokenStore->getAccessToken();
         if ($freshToken === null) {
@@ -134,7 +145,9 @@ final class AuthHandler
         $retryResponse = $client->sendRequest($retryRequest);
 
         if ($retryResponse->getStatusCode() === 401) {
-            $this->tokenStore->clear();
+            // Persistent auth failure: clear the token but preserve credentials so the
+            // caller can re-authenticate without providing client ID/secret again.
+            $this->tokenStore->clearToken();
             throw new GoPaySdkException(
                 '[GoPaySDK] Request unauthorized after token refresh. Check OAuth2 scopes.',
                 ErrorCode::AuthUnauthorized,
@@ -142,76 +155,5 @@ final class AuthHandler
         }
 
         return $retryResponse;
-    }
-
-    /**
-     * Perform a client_credentials token refresh synchronously.
-     *
-     * @throws GoPaySdkException
-     */
-    public function refresh(ClientInterface $client): void
-    {
-        $clientId = $this->tokenStore->getClientId();
-        $clientSecret = $this->tokenStore->getClientSecret();
-        $scope = $this->tokenStore->getScope();
-
-        if ($clientId === null || $clientSecret === null || $scope === null) {
-            $this->tokenStore->clear();
-            throw new GoPaySdkException(
-                '[GoPaySDK] Access token expired and no client credentials available. Call authenticate() again.',
-                ErrorCode::AuthCredentialsMissing,
-            );
-        }
-
-        $url = rtrim($this->baseUrl, '/') . self::AUTH_PATH;
-        $body = http_build_query(['grant_type' => 'client_credentials', 'scope' => $scope]);
-        $credentials = base64_encode($clientId . ':' . $clientSecret);
-
-        $request = $this->requestFactory->createRequest('POST', $url)
-            ->withHeader('Content-Type', 'application/x-www-form-urlencoded')
-            ->withHeader('Accept', 'application/json')
-            ->withHeader('Authorization', 'Basic ' . $credentials)
-            ->withBody($this->streamFactory->createStream($body));
-
-        try {
-            $response = $client->sendRequest($request);
-        } catch (\Throwable $e) {
-            $this->tokenStore->clear();
-            throw new GoPaySdkException(
-                '[GoPaySDK] Token refresh failed: ' . $e->getMessage(),
-                ErrorCode::AuthRefreshFailed,
-                $e,
-            );
-        }
-
-        if ($response->getStatusCode() < 200 || $response->getStatusCode() >= 300) {
-            $this->tokenStore->clear();
-            throw new GoPaySdkException(
-                sprintf('[GoPaySDK] Token refresh failed: HTTP %d.', $response->getStatusCode()),
-                ErrorCode::AuthRefreshFailed,
-            );
-        }
-
-        $decoded = json_decode((string) $response->getBody(), true);
-        if (!is_array($decoded)) {
-            $this->tokenStore->clear();
-            throw new GoPaySdkException(
-                '[GoPaySDK] Invalid token response: could not parse JSON.',
-                ErrorCode::AuthInvalidResponse,
-            );
-        }
-
-        $accessToken = $decoded['access_token'] ?? null;
-        $expiresIn = $decoded['expires_in'] ?? null;
-
-        if (!is_string($accessToken) || $accessToken === '' || !is_int($expiresIn)) {
-            $this->tokenStore->clear();
-            throw new GoPaySdkException(
-                '[GoPaySDK] Invalid token response: missing required fields.',
-                ErrorCode::AuthInvalidResponse,
-            );
-        }
-
-        $this->tokenStore->setToken($accessToken, $expiresIn);
     }
 }
