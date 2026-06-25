@@ -2027,7 +2027,6 @@ components:
         - ACTION_REQUIRED
         - SUCCEEDED
         - FAILED
-        - CANCELLED
       title: Charge State
       description: |-
         The lifecycle state of a payment charge.
@@ -2036,7 +2035,6 @@ components:
         - `ACTION_REQUIRED` - Additional action is required from the customer (e.g. 3DS authentication or bank redirect)
         - `SUCCEEDED` - The charge completed successfully
         - `FAILED` - The charge failed
-        - `CANCELLED` - The charge was cancelled
       examples:
         - REQUESTED
       x-stoplight:

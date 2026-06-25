@@ -165,7 +165,7 @@ $sdk->chargePayment(string $paymentId, array $params): PaymentChargeResponse
 // Get charge state (poll manually)
 $sdk->getChargeState(string $paymentId): PaymentChargeStatusResponse
 
-// Poll charge state until terminal (throws on FAILED / CANCELLED / timeout)
+// Poll charge state until terminal (throws on FAILED / timeout)
 $sdk->awaitChargeState(
     string $paymentId,
     int $timeoutSeconds = 30,
@@ -319,7 +319,7 @@ try {
 | `NetworkTimeout` | Request timed out |
 | `NetworkError` | Transport-level error |
 | `ChargeTimeout` | `awaitChargeState()` timed out |
-| `ChargeFailed` | Charge reached FAILED or CANCELLED state |
+| `ChargeFailed` | Charge reached FAILED or unknown state |
 | `InvalidConfig` | Bad configuration |
 | `InvalidArgument` | Empty required argument |
 

@@ -336,19 +336,6 @@ final class PaymentsApiTest extends ModuleTestCase
     }
 
     #[Test]
-    public function awaitChargeStateThrowsOnCancelled(): void
-    {
-        $this->queueJson($this->chargeStatusJson(['state' => 'CANCELLED']));
-
-        try {
-            $this->payments->awaitChargeState('pay-001', 30, 100);
-            $this->fail('Expected GoPaySdkException was not thrown.');
-        } catch (GoPaySdkException $e) {
-            $this->assertSame(ErrorCode::ChargeFailed, $e->errorCode);
-        }
-    }
-
-    #[Test]
     public function awaitChargeStateThrowsOnTimeout(): void
     {
         for ($i = 0; $i < 20; $i++) {

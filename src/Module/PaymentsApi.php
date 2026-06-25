@@ -182,7 +182,7 @@ final class PaymentsApi
      * Poll the charge state synchronously until a terminal outcome.
      *
      * Resolves on SUCCEEDED. Throws GoPaySdkException with CHARGE_FAILED on
-     * FAILED or CANCELLED state, or CHARGE_TIMEOUT if the charge does not settle
+     * FAILED state, or CHARGE_TIMEOUT if the charge does not settle
      * within $timeoutSeconds.
      *
      * @param int $timeoutSeconds Maximum total wait time (default 30 s).
@@ -215,10 +215,6 @@ final class PaymentsApi
 
             if ($chargeState === ChargeState::FAILED) {
                 throw new GoPaySdkException('[GoPaySDK] Charge failed.', ErrorCode::ChargeFailed);
-            }
-
-            if ($chargeState === 'CANCELLED') {
-                throw new GoPaySdkException('[GoPaySDK] Charge cancelled.', ErrorCode::ChargeFailed);
             }
 
             if (time() >= $deadline) {
