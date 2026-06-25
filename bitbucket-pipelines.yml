@@ -102,7 +102,7 @@ definitions:
         script:
           # Fetch master + tags after semantic-release has pushed its release commit and tag.
           - git fetch origin master --tags
-          - git remote add github https://${GITHUB_PERSONAL_ACCESS_TOKEN}@github.com/gopaycommunity/gopay-php-payments-sdk.git
+          - git remote add github https://${GITHUB_PERSONAL_ACCESS_TOKEN}@github.com/gopaycommunity/gopay-php-api-v4.git
           - git push github refs/remotes/origin/master:refs/heads/master --force
           - git push github --tags
 
@@ -119,7 +119,7 @@ definitions:
     #       - |
     #         curl -sf -XPOST -H 'content-type: application/json' \
     #           "https://packagist.org/api/update-package?username=${PACKAGIST_USERNAME}&apiToken=${PACKAGIST_TOKEN}" \
-    #           -d '{"repository":{"url":"https://github.com/gopaycommunity/gopay-php-payments-sdk"}}'
+    #           -d '{"repository":{"url":"https://github.com/gopaycommunity/gopay-php-api-v4"}}'
 
   services:
     docker2x:
