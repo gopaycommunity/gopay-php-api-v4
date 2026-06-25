@@ -1,7 +1,6 @@
 # Examples
 
-Runnable scripts that demonstrate the core SDK flows against the Stoplight mock server (no real
-card is charged).
+Runnable scripts that demonstrate the core SDK flows against the GoPay sandbox.
 
 ## Setup
 
@@ -9,7 +8,7 @@ card is charged).
 cp examples/.env.example examples/.env
 ```
 
-Open `examples/.env` and fill in your credentials from [portal.gopay.cz](https://portal.gopay.cz):
+Open `examples/.env` and fill in your sandbox credentials from [portal.gopay.cz](https://portal.gopay.cz):
 
 ```
 GOPAY_PAYMENTS_V4_CLIENT_ID=...
@@ -17,9 +16,6 @@ GOPAY_PAYMENTS_V4_CLIENT_SECRET=...
 GOPAY_PAYMENTS_V4_GOID=...
 GOPAY_PAYMENTS_V4_SHAREABLE_KEY=...   # optional — only needed for browser-sdk-integration.php
 ```
-
-`GOPAY_PAYMENTS_V4_BASE_URL` is pre-filled with the Stoplight mock server — safe to leave as-is for local
-testing. Change it to the sandbox URL when you want to hit a real environment.
 
 ## Run
 
@@ -44,7 +40,7 @@ docker compose run --rm php php examples/browser-sdk-integration.php
 Full payment lifecycle:
 
 1. `createPayment()` — opens a payment session
-2. `chargePayment()` — submits a mock card token
+2. `chargePayment()` — submits a card token (replace the placeholder with a real token from the browser SDK)
 3. `awaitChargeState()` — polls until a terminal state (or 3DS redirect URL is printed)
 4. `getPaymentStatus()` — reads the final payment record
 

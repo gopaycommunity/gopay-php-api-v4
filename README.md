@@ -395,8 +395,8 @@ Key changes:
 
 ## Examples
 
-Runnable scripts in [`examples/`](examples/) demonstrate the full payment flow against the Stoplight
-mock server. See [`examples/README.md`](examples/README.md) for setup and usage.
+Runnable scripts in [`examples/`](examples/) demonstrate the full payment flow against the GoPay
+sandbox. See [`examples/README.md`](examples/README.md) for setup and usage.
 
 ---
 

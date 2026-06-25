@@ -10,7 +10,7 @@ declare(strict_types=1);
  * The card token used here is the value the browser SDK's hosted iframe returns
  * after the customer enters their card details. In a real integration the token
  * comes from the browser (see browser-sdk-integration.php); here we use a
- * Stoplight mock token so the script is self-contained and never charges a card.
+ * placeholder token — replace it with a real token from the sandbox iframe.
  */
 
 require __DIR__ . '/bootstrap.php';
@@ -49,11 +49,11 @@ echo 'State      : ' . ($payment->getState() ?? 'n/a') . PHP_EOL;
 //   const { token } = await gopayBrowserSdk.mountCardForm(...)
 // That token is POSTed to your server, which calls chargePayment() below.
 //
-// For this example we use a placeholder token; the mock API accepts any value.
+// Replace with a real token from the GoPay-hosted iframe (browser SDK).
 
 echo PHP_EOL . '=== Step 2: chargePayment ===' . PHP_EOL;
 
-$cardToken = 'tok_mocktoken_example_12345';
+$cardToken = 'tok_placeholder_replace_with_real';
 
 try {
     $charge = $sdk->chargePayment($payment->getId(), [
