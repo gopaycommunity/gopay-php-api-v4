@@ -1,6 +1,6 @@
 # GoPay PHP SDK — Payments API v4
 
-Server-side PHP SDK for [GoPay Payments API v4](https://payments-api.beta.gopay.com/spec/en/payments.yaml).
+Server-side PHP SDK for [GoPay Payments API v4](https://api-docs.gopay.com/).
 
 Requires **PHP ≥ 8.1**. Transport-agnostic — works with any PSR-18 HTTP client.
 
