@@ -10,8 +10,6 @@ info:
     name: GoPay technical support
     email: integration@gopay.com
 servers:
-  - url: 'https://payments-api-mock.beta.gopay.com/'
-    description: Mock server
   - url: 'https://api.sandbox.gopay.com/api/merchant/payments/4.0'
     description: Sandbox
   - url: 'https://api.gopay.com/api/merchant/payments/4.0'
@@ -44,8 +42,6 @@ paths:
       security:
         - basic: []
       servers:
-        - url: 'https://payments-api-mock.beta.gopay.com/'
-          description: Mock server
         - url: 'https://api.sandbox.gopay.com/api/merchant/payments/4.0'
           description: Sandbox
         - url: 'https://api.gopay.com/api/merchant/payments/4.0'
@@ -78,8 +74,6 @@ paths:
         '500':
           $ref: '#/components/responses/Internal-Server-Error-500-Response'
       servers:
-        - url: 'https://payments-api-mock.beta.gopay.com/'
-          description: Mock server
         - url: 'https://api.sandbox.gopay.com/api/merchant/payments/4.0'
           description: Sandbox
         - url: 'https://api.gopay.com/api/merchant/payments/4.0'
@@ -123,8 +117,6 @@ paths:
         '500':
           $ref: '#/components/responses/Internal-Server-Error-500-Response'
       servers:
-        - url: 'https://payments-api-mock.beta.gopay.com/'
-          description: Mock server
         - url: 'https://api.sandbox.gopay.com/api/merchant/payments/4.0'
           description: Sandbox
         - url: 'https://api.gopay.com/api/merchant/payments/4.0'
@@ -169,8 +161,6 @@ paths:
         '500':
           $ref: '#/components/responses/Internal-Server-Error-500-Response'
       servers:
-        - url: 'https://payments-api-mock.beta.gopay.com/'
-          description: Mock server
         - url: 'https://api.sandbox.gopay.com/api/merchant/payments/4.0'
           description: Sandbox
         - url: 'https://api.gopay.com/api/merchant/payments/4.0'
@@ -208,8 +198,6 @@ paths:
         '500':
           $ref: '#/components/responses/Internal-Server-Error-500-Response'
       servers:
-        - url: 'https://payments-api-mock.beta.gopay.com/'
-          description: Mock server
         - url: 'https://api.sandbox.gopay.com/api/merchant/payments/4.0'
           description: Sandbox
         - url: 'https://api.gopay.com/api/merchant/payments/4.0'
@@ -264,8 +252,6 @@ paths:
         '500':
           $ref: '#/components/responses/Internal-Server-Error-500-Response'
       servers:
-        - url: 'https://payments-api-mock.beta.gopay.com/'
-          description: Mock server
         - url: 'https://api.sandbox.gopay.com/api/merchant/payments/4.0'
           description: Sandbox
         - url: 'https://api.gopay.com/api/merchant/payments/4.0'
@@ -304,8 +290,6 @@ paths:
         '500':
           $ref: '#/components/responses/Internal-Server-Error-500-Response'
       servers:
-        - url: 'https://payments-api-mock.beta.gopay.com/'
-          description: Mock server
         - url: 'https://api.sandbox.gopay.com/api/merchant/payments/4.0'
           description: Sandbox
         - url: 'https://api.gopay.com/api/merchant/payments/4.0'
@@ -344,8 +328,6 @@ paths:
         '500':
           $ref: '#/components/responses/Internal-Server-Error-500-Response'
       servers:
-        - url: 'https://payments-api-mock.beta.gopay.com/'
-          description: Mock server
         - url: 'https://api.sandbox.gopay.com/api/merchant/payments/4.0'
           description: Sandbox
         - url: 'https://api.gopay.com/api/merchant/payments/4.0'
@@ -384,8 +366,6 @@ paths:
         '500':
           $ref: '#/components/responses/Internal-Server-Error-500-Response'
       servers:
-        - url: 'https://payments-api-mock.beta.gopay.com/'
-          description: Mock server
         - url: 'https://api.sandbox.gopay.com/api/merchant/payments/4.0'
           description: Sandbox
         - url: 'https://api.gopay.com/api/merchant/payments/4.0'
@@ -437,8 +417,6 @@ paths:
         '500':
           $ref: '#/components/responses/Internal-Server-Error-500-Response'
       servers:
-        - url: 'https://payments-api-mock.beta.gopay.com/'
-          description: Mock server
         - url: 'https://api.sandbox.gopay.com/api/merchant/payments/4.0'
           description: Sandbox
         - url: 'https://api.gopay.com/api/merchant/payments/4.0'
@@ -488,8 +466,6 @@ paths:
         '500':
           $ref: '#/components/responses/Internal-Server-Error-500-Response'
       servers:
-        - url: 'https://payments-api-mock.beta.gopay.com/'
-          description: Mock server
         - url: 'https://api.sandbox.gopay.com/api/merchant/payments/4.0'
           description: Sandbox
         - url: 'https://api.gopay.com/api/merchant/payments/4.0'
@@ -601,8 +577,6 @@ paths:
         '500':
           $ref: '#/components/responses/Internal-Server-Error-500-Response'
       servers:
-        - url: 'https://payments-api-mock.beta.gopay.com/'
-          description: Mock server
         - url: 'https://api.sandbox.gopay.com/api/merchant/payments/4.0'
           description: Sandbox
         - url: 'https://api.gopay.com/api/merchant/payments/4.0'
@@ -645,8 +619,6 @@ paths:
         '500':
           $ref: '#/components/responses/Internal-Server-Error-500-Response'
       servers:
-        - url: 'https://payments-api-mock.beta.gopay.com/'
-          description: Mock server
         - url: 'https://api.sandbox.gopay.com/api/merchant/payments/4.0'
           description: Sandbox
         - url: 'https://api.gopay.com/api/merchant/payments/4.0'
@@ -679,8 +651,6 @@ paths:
         '500':
           $ref: '#/components/responses/Internal-Server-Error-500-Response'
       servers:
-        - url: 'https://payments-api-mock.beta.gopay.com/'
-          description: Mock server
         - url: 'https://api.sandbox.gopay.com/api/merchant/payments/4.0'
           description: Sandbox
         - url: 'https://api.gopay.com/api/merchant/payments/4.0'
@@ -721,8 +691,6 @@ paths:
         '500':
           $ref: '#/components/responses/Internal-Server-Error-500-Response'
       servers:
-        - url: 'https://payments-api-mock.beta.gopay.com/'
-          description: Mock server
         - url: 'https://api.sandbox.gopay.com/api/merchant/payments/4.0'
           description: Sandbox
         - url: 'https://api.gopay.com/api/merchant/payments/4.0'
@@ -754,8 +722,6 @@ paths:
         '500':
           $ref: '#/components/responses/Internal-Server-Error-500-Response'
       servers:
-        - url: 'https://payments-api-mock.beta.gopay.com/'
-          description: Mock server
         - url: 'https://api.sandbox.gopay.com/api/merchant/payments/4.0'
           description: Sandbox
         - url: 'https://api.gopay.com/api/merchant/payments/4.0'
@@ -1495,8 +1461,7 @@ components:
             properties:
               applepayVersion:
                 type: integer
-                examples:
-                  - 6
+                example: 6
               merchantIdentifier:
                 type: string
                 example: com.gopay.merchant.demo
@@ -1594,7 +1559,7 @@ components:
             - `payment:read` reads information about the payment
             - `payment:charge` allows only to charge the payment
           examples:
-            - 'payment:charge payment:read'
+            - 'payment:write payment:read'
           example: 'payment:charge payment:read'
     Access-Token:
       type: object
