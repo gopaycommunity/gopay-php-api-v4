@@ -95,6 +95,32 @@ definitions:
         artifacts:
           - CHANGELOG.md
 
+    - step: &github-sync
+        name: Mirror to GitHub
+        clone:
+          depth: full
+        script:
+          # Fetch master + tags after semantic-release has pushed its release commit and tag.
+          - git fetch origin master --tags
+          - git remote add github https://${GITHUB_PERSONAL_ACCESS_TOKEN}@github.com/gopaycommunity/gopay-php-payments-sdk.git
+          - git push github refs/remotes/origin/master:refs/heads/master --force
+          - git push github --tags
+
+    # Packagist publish — uncomment once the GitHub mirror is set up and the
+    # Packagist package is registered pointing at that GitHub repo.
+    # Required Bitbucket variables:
+    #   PACKAGIST_USERNAME  — your Packagist.org account username
+    #   PACKAGIST_TOKEN     — API token from https://packagist.org/profile/ → "API token"
+    # The GitHub repo URL below must match the URL registered on Packagist.
+    #
+    # - step: &packagist-sync
+    #     name: Notify Packagist of new release
+    #     script:
+    #       - |
+    #         curl -sf -XPOST -H 'content-type: application/json' \
+    #           "https://packagist.org/api/update-package?username=${PACKAGIST_USERNAME}&apiToken=${PACKAGIST_TOKEN}" \
+    #           -d '{"repository":{"url":"https://github.com/gopaycommunity/gopay-php-payments-sdk"}}'
+
   services:
     docker2x:
       type: docker
@@ -124,3 +150,4 @@ pipelines:
       - step: *audit
       - step: *sonar
       - step: *release
+      - step: *github-sync
