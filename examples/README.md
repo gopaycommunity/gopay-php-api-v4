@@ -26,13 +26,6 @@ php examples/create-and-charge.php
 php examples/browser-sdk-integration.php
 ```
 
-Via Docker (no local PHP needed):
-
-```bash
-docker compose run --rm php php examples/create-and-charge.php
-docker compose run --rm php php examples/browser-sdk-integration.php
-```
-
 ## Scripts
 
 ### `create-and-charge.php`

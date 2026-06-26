@@ -109,8 +109,8 @@ definitions:
     # Packagist publish — uncomment once the GitHub mirror is set up and the
     # Packagist package is registered pointing at that GitHub repo.
     # Required Bitbucket variables:
-    #   PACKAGIST_USERNAME  — your Packagist.org account username
-    #   PACKAGIST_TOKEN     — API token from https://packagist.org/profile/ → "API token"
+    #   PACKAGIST_PUSH_USERNAME  — your Packagist.org account username
+    #   PACKAGIST_PUSH_TOKEN     — API token from https://packagist.org/profile/ → "API token"
     # The GitHub repo URL below must match the URL registered on Packagist.
     #
     # - step: &packagist-sync
@@ -118,7 +118,7 @@ definitions:
     #     script:
     #       - |
     #         curl -sf -XPOST -H 'content-type: application/json' \
-    #           "https://packagist.org/api/update-package?username=${PACKAGIST_USERNAME}&apiToken=${PACKAGIST_TOKEN}" \
+    #           "https://packagist.org/api/update-package?username=${PACKAGIST_PUSH_USERNAME}&apiToken=${PACKAGIST_PUSH_TOKEN}" \
     #           -d '{"repository":{"url":"https://github.com/gopaycommunity/gopay-php-api-v4"}}'
 
   services:

@@ -48,13 +48,6 @@ composer phpstan     # static analysis (level 10, PHP 8.1)
 composer test        # run unit tests
 ```
 
-## Running via Docker (no local PHP required)
-
-```bash
-docker compose run --rm php composer ci
-docker compose run --rm php composer test
-```
-
 ## Architecture
 
 ```

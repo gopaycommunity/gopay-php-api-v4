@@ -1,9 +1,0 @@
-services:
-  php:
-    build: .
-    volumes:
-      - .:/app
-      - /tmp/composer-cache:/tmp/composer/cache
-    working_dir: /app
-    environment:
-      COMPOSER_CACHE_DIR: /tmp/composer/cache

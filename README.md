@@ -412,9 +412,6 @@ composer cs          # php-cs-fixer check
 composer cs:fix      # auto-fix code style
 composer phpstan     # PHPStan level 10
 composer test        # PHPUnit
-
-# Via Docker (no local PHP required)
-docker compose run --rm php composer ci
 ```
 
 ### Regenerating model classes
