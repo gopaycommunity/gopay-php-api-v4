@@ -144,3 +144,4 @@ pipelines:
       - step: *sonar
       - step: *release
       - step: *github-sync
+      - step: *packagist-sync

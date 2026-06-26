@@ -431,12 +431,11 @@ function getGoPayClient(): GoPayClient {
 
     $cached = apcu_fetch($cacheKey, $success);
     if ($success && is_array($cached)) {
-        // Restore token — the SDK will refresh it automatically if it expires
-        $sdk->getHttp()->getTokenStore()->setToken($cached['token'], $cached['expires_in']);
-        $sdk->getHttp()->getTokenStore()->setClientCredentials(CLIENT_ID, CLIENT_SECRET, SCOPE);
+        // pseudo-code — getHttp() is not yet public; see note below
+        // $sdk->getHttp()->getTokenStore()->setToken($cached['token'], $cached['expires_in']);
+        // $sdk->getHttp()->getTokenStore()->setClientCredentials(CLIENT_ID, CLIENT_SECRET, SCOPE);
     } else {
         $sdk->authenticate(CLIENT_ID, CLIENT_SECRET, SCOPE);
-        // Persist after a successful authenticate() — add your own getter once exposed
     }
 
     return $sdk;
