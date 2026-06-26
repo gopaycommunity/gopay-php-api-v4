@@ -6,26 +6,21 @@ GoPay Payments API v4 — PHP server-side SDK. Mirrors the JavaScript reference 
 `../gp-gw-js-sdk` (sdk/ = server). Browser SDK compatibility means the PHP server creates the
 payment and charges a card token produced by the GoPay-hosted iframe.
 
-## Model classes — hand-written (not generated)
+## Model classes — generated
 
-The model DTOs in `src/Generated/Model/` are currently **hand-written**, not generated. They
-implement `GoPay\Payments\Generated\ModelInterface`. `HttpClient::deserialize()` calls
-`ObjectSerializer::deserialize($data, $type, [])` directly.
+The model DTOs in `src/Generated/Model/` are **auto-generated** from the GoPay OpenAPI spec
+(`https://api-docs.gopay.com/spec/en/payments.yaml`). They implement
+`GoPay\Payments\Generated\Model\ModelInterface`. `HttpClient::deserialize()` calls
+`ObjectSerializer::deserialize($data, $type)` directly.
 
-**Toolchain status**: `@openapitools/openapi-generator-cli@2.39.0` + Docker mode is confirmed
-working (no Java needed — Docker image `openapitools/openapi-generator-cli:v7.9.0` must be
-available). Config lives in `openapitools.json`.
+Run `composer codegen` to regenerate (requires Docker — image
+`openapitools/openapi-generator-cli:v7.9.0`). Config lives in `openapitools.json`. The script
+fetches the latest spec, generates into `.codegen-tmp/`, and copies `lib/Model/*`,
+`ObjectSerializer.php`, and `HeaderSelector.php` into `src/Generated/`. Review the diff before
+committing — in particular check that the namespace (`GoPay\Payments\Generated\Model`) and
+`ModelInterface` compatibility are preserved.
 
-**Blocker before enabling codegen**: The generator produces models that implement a different
-`ModelInterface` (no `fromArray()`) and use `ObjectSerializer` for deserialization. Merging the
-generated output requires either:
-- Adding `fromArray()` to each generated model via a custom Mustache template, OR
-- Updating `HttpClient::deserialize()` to use `ObjectSerializer::deserialize()` instead.
-
-Run `composer codegen` to generate into `.codegen-tmp/` and inspect the diff before committing.
-The script copies `lib/Model/*`, `ObjectSerializer.php`, and `HeaderSelector.php` into
-`src/Generated/`. Review: namespace must be `GoPay\Payments\Generated\Model`, and `ModelInterface`
-compatibility must be preserved.
+Do **not** edit files in `src/Generated/` by hand. If a model class is wrong, fix the upstream spec.
 
 The entire `src/Generated/` directory is **excluded from PHPStan** analysis (see `phpstan.neon`).
 PHPStan still reads the class definitions for type inference in analysed files, it just doesn't
@@ -53,7 +48,7 @@ composer test        # run unit tests
 ```
 src/
 ├── GoPayClient.php          ← flat public API (one class, all methods)
-├── Config.php               ← readonly VO: environment, baseUrl, timeout, onError, shareableKey
+├── Config.php               ← readonly VO: environment, baseUrl, debugLoggingEnabled, onError, shareableKey
 ├── Environment.php          ← backed enum: Sandbox / Production
 ├── Exception/
 │   ├── ErrorCode.php        ← backed enum of machine-readable error codes
@@ -65,15 +60,17 @@ src/
 │   ├── TokenStore.php       ← in-memory token + credential store
 │   └── RequestOptions.php   ← per-request overrides
 ├── Module/
-│   ├── AuthApi.php          ← authenticate / isAuthenticated / logout / getBrowserKeys
+│   ├── AuthApi.php          ← authenticate / isAuthenticated / logout / setShareableKey / getBrowserKeys
 │   ├── PaymentsApi.php      ← createPayment / chargePayment / getPaymentStatus / …
 │   ├── CardsApi.php         ← getCardDetails / deleteCard / tokenizeEncryptedCard
 │   ├── RecurrencesApi.php   ← createRecurrence / startRecurrence / recurrenceNext / …
 │   ├── RefundsApi.php       ← refundPayment / listRefunds / getRefund
 │   └── LinksApi.php         ← createPaymentLink / linkStatus / disableLink
-└── Generated/               ← hand-written model DTOs (PHPStan-excluded from analysis)
-    ├── ModelInterface.php   ← fromArray(array): static contract
+└── Generated/               ← generated from OpenAPI spec (PHPStan-excluded from analysis)
+    ├── ObjectSerializer.php
+    ├── HeaderSelector.php
     └── Model/               ← PaymentDetails, PaymentChargeResponse, ChargeAction, …
+        └── ModelInterface.php
 ```
 
 ## `gw_url` — do not use
