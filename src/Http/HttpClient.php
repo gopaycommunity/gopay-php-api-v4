@@ -217,6 +217,7 @@ final class HttpClient
         return $this->tokenStore->getShareableKey();
     }
 
+    /** @internal Used by AuthApi::getBrowserKeys() only. */
     public function getClientId(): ?string
     {
         return $this->tokenStore->getClientId();

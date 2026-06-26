@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace GoPay\Payments\Http;
 
 use GoPay\Payments\Exception\ErrorCode;
-use GoPay\Payments\Exception\GoPayHttpException;
 use GoPay\Payments\Exception\GoPaySdkException;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestInterface;
@@ -106,7 +105,6 @@ final class AuthHandler
      * @param callable():void|null $refresh
      *
      * @throws GoPaySdkException
-     * @throws GoPayHttpException
      * @throws \Psr\Http\Client\ClientExceptionInterface
      */
     public function requestWithRetry(

@@ -61,8 +61,12 @@ $baseUrl      = env('GOPAY_PAYMENTS_V4_BASE_URL');
 $shareableKey = env('GOPAY_PAYMENTS_V4_SHAREABLE_KEY');
 $goid         = env_require('GOPAY_PAYMENTS_V4_GOID');
 
+$environment = env('GOPAY_PAYMENTS_V4_ENVIRONMENT', 'sandbox') === 'production'
+    ? Environment::Production
+    : Environment::Sandbox;
+
 $config = new Config(
-    environment: Environment::Sandbox,
+    environment: $environment,
     baseUrl: $baseUrl,
     shareableKey: $shareableKey,
 );

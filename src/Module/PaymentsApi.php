@@ -217,14 +217,15 @@ final class PaymentsApi
                 throw new GoPaySdkException('[GoPaySDK] Charge failed.', ErrorCode::ChargeFailed);
             }
 
-            if (time() >= $deadline) {
+            $now = time();
+            if ($now >= $deadline) {
                 throw new GoPaySdkException(
                     sprintf('[GoPaySDK] Charge timed out after %d seconds.', $timeoutSeconds),
                     ErrorCode::ChargeTimeout,
                 );
             }
 
-            $sleepUs = min($pollIntervalMs * 1_000, max(0, ($deadline - time()) * 1_000_000));
+            $sleepUs = min($pollIntervalMs * 1_000, max(0, ($deadline - $now) * 1_000_000));
             if ($sleepUs > 0) {
                 usleep($sleepUs);
             }

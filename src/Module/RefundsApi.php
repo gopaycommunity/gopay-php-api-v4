@@ -58,7 +58,7 @@ final class RefundsApi
         return array_map(
             static function (array $item): RefundDetails {
                 /** @var RefundDetails */
-                return ObjectSerializer::deserialize($item, RefundDetails::class);
+                return ObjectSerializer::deserialize((object) $item, RefundDetails::class);
             },
             $this->client->getJsonList("/payments/{$pid}/refunds"),
         );

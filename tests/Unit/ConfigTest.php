@@ -95,4 +95,32 @@ final class ConfigTest extends TestCase
         $config = new Config(debugLoggingEnabled: true);
         $this->assertTrue($config->debugLoggingEnabled);
     }
+
+    #[Test]
+    public function httpBaseUrlThrowsInvalidConfig(): void
+    {
+        $this->expectException(GoPaySdkException::class);
+        new Config(baseUrl: 'http://api.example.com/');
+    }
+
+    #[Test]
+    public function httpsBaseUrlIsAccepted(): void
+    {
+        $config = new Config(baseUrl: 'https://api.example.com/');
+        $this->assertSame('https://api.example.com/', $config->baseUrl);
+    }
+
+    #[Test]
+    public function localhostBaseUrlIsAccepted(): void
+    {
+        $config = new Config(baseUrl: 'http://localhost/api');
+        $this->assertSame('http://localhost/api', $config->baseUrl);
+    }
+
+    #[Test]
+    public function loopbackBaseUrlIsAccepted(): void
+    {
+        $config = new Config(baseUrl: 'http://127.0.0.1/api');
+        $this->assertSame('http://127.0.0.1/api', $config->baseUrl);
+    }
 }

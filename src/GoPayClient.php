@@ -268,7 +268,11 @@ final class GoPayClient
         int $timeoutSeconds = 30,
         int $pollIntervalMs = 1_000,
     ): PaymentChargeStatusResponse {
-        return $this->payments->awaitChargeState($paymentId, $timeoutSeconds, $pollIntervalMs);
+        try {
+            return $this->payments->awaitChargeState($paymentId, $timeoutSeconds, $pollIntervalMs);
+        } catch (GoPaySdkException $e) {
+            $this->http->emitError($e);
+        }
     }
 
     // =========================================================================
