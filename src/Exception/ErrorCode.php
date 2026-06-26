@@ -19,9 +19,7 @@ enum ErrorCode: string
     case AuthUnauthorized = 'AUTH_UNAUTHORIZED';
 
     // Network errors
-    /** Request timed out. */
-    case NetworkTimeout = 'NETWORK_TIMEOUT';
-    /** Network-level failure (no response received). */
+    /** Network-level failure (no response received), including timeouts. */
     case NetworkError = 'NETWORK_ERROR';
     /** API responded successfully but the body shape was unexpected (not a JSON object/array). */
     case UnexpectedResponse = 'UNEXPECTED_RESPONSE';

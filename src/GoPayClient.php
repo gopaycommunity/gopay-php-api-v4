@@ -261,6 +261,12 @@ final class GoPayClient
      * Poll the charge state synchronously until a terminal outcome.
      * Throws CHARGE_FAILED on FAILED state, CHARGE_TIMEOUT if it doesn't settle.
      *
+     * WARNING: This method calls usleep() in a loop and blocks the PHP process
+     * for up to $timeoutSeconds. In PHP-FPM or mod_php deployments this holds a
+     * worker unavailable to serve other requests for the full polling window.
+     * Prefer a webhook-driven approach for production web applications: let the
+     * GoPay notification call your server, then use getChargeState() once.
+     *
      * @throws GoPaySdkException
      */
     public function awaitChargeState(
@@ -268,11 +274,7 @@ final class GoPayClient
         int $timeoutSeconds = 30,
         int $pollIntervalMs = 1_000,
     ): PaymentChargeStatusResponse {
-        try {
-            return $this->payments->awaitChargeState($paymentId, $timeoutSeconds, $pollIntervalMs);
-        } catch (GoPaySdkException $e) {
-            $this->http->emitError($e);
-        }
+        return $this->payments->awaitChargeState($paymentId, $timeoutSeconds, $pollIntervalMs);
     }
 
     // =========================================================================

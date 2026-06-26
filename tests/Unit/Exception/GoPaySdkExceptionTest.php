@@ -63,7 +63,6 @@ final class GoPaySdkExceptionTest extends TestCase
             ErrorCode::AuthInvalidResponse,
             ErrorCode::AuthCredentialsMissing,
             ErrorCode::AuthUnauthorized,
-            ErrorCode::NetworkTimeout,
             ErrorCode::NetworkError,
             ErrorCode::ChargeTimeout,
             ErrorCode::ChargeFailed,

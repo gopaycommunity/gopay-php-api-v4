@@ -166,6 +166,7 @@ $sdk->chargePayment(string $paymentId, array $params): PaymentChargeResponse
 $sdk->getChargeState(string $paymentId): PaymentChargeStatusResponse
 
 // Poll charge state until terminal (throws on FAILED / timeout)
+// WARNING: blocks the PHP process — see "Production deployment" below.
 $sdk->awaitChargeState(
     string $paymentId,
     int $timeoutSeconds = 30,
@@ -280,6 +281,76 @@ $final = $sdk->awaitChargeState($paymentId);
 echo $final->getState(); // 'SUCCEEDED'
 ```
 
+### Polling payment state after a redirect
+
+After 3DS the customer is redirected to your `return_url`. At that point use
+`getPaymentStatus()` and `PaymentPoller` to determine the outcome:
+
+```php
+use GoPay\Payments\PaymentPoller;
+
+// On your return_url handler:
+$paymentId = $_GET['payment_id'];
+
+do {
+    sleep(2);
+    $payment = $sdk->getPaymentStatus($paymentId);
+} while (PaymentPoller::isPending($payment->getState()));
+
+if (PaymentPoller::isSuccessful($payment->getState())) {
+    // PAID or AUTHORIZED
+    echo 'Payment succeeded: ' . $payment->getState();
+} else {
+    // CANCELED or TIMEOUTED
+    echo 'Payment did not complete: ' . $payment->getState();
+}
+```
+
+`PaymentPoller` groups payment states into three buckets:
+
+| Group | States | Meaning |
+|---|---|---|
+| Pending | `CREATED`, `PAYMENT_METHOD_CHOSEN` | Still in progress — keep polling |
+| Successful | `PAID`, `AUTHORIZED` | Completed successfully |
+| Failed | `CANCELED`, `TIMEOUTED` | Did not complete |
+
+Post-success states (`REFUNDED`, `PARTIALLY_REFUNDED`) are terminal — `isTerminal()` returns `true` for them.
+
+---
+
+### QR payment flow
+
+```php
+// 1. Create the payment session (same as any other payment)
+$payment = $sdk->createPayment($goid, [
+    'amount'       => 1990,
+    'currency'     => 'CZK',
+    'order_number' => 'ORDER-001',
+    'customer'     => ['email' => 'customer@example.com'],
+    'callback'     => [
+        'notification_url' => 'https://yourshop.com/notify',
+        'return_url'       => 'https://yourshop.com/return',
+    ],
+]);
+
+// 2. Retrieve QR code and recipient details
+$qr = $sdk->getQrPaymentInfo($payment->getId());         // 'png' (default) or 'svg'
+$imageBase64 = $qr->getQrCode();      // base64-encoded image
+
+// 3. Render to the customer
+echo '<img src="data:image/png;base64,' . $imageBase64 . '" alt="QR payment">';
+echo 'Amount: ' . $qr->getAmount() . ' ' . $qr->getCurrency();
+
+// 4. Poll until the customer pays (webhook-preferred; polling shown for completeness)
+use GoPay\Payments\PaymentPoller;
+do {
+    sleep(3);
+    $status = $sdk->getPaymentStatus($payment->getId());
+} while (PaymentPoller::isPending($status->getState()));
+
+echo PaymentPoller::isSuccessful($status->getState()) ? 'Paid' : 'Not paid';
+```
+
 ---
 
 ## Error handling
@@ -316,8 +387,7 @@ try {
 | `AuthInvalidResponse` | Token response missing required fields |
 | `AuthCredentialsMissing` | No stored client credentials |
 | `AuthUnauthorized` | Still 401 after token refresh |
-| `NetworkTimeout` | Request timed out |
-| `NetworkError` | Transport-level error |
+| `NetworkError` | Transport-level failure, including timeouts |
 | `ChargeTimeout` | `awaitChargeState()` timed out |
 | `ChargeFailed` | Charge reached FAILED state |
 | `UnexpectedResponse` | API responded with an unexpected body shape |
@@ -334,6 +404,60 @@ $sdk = new GoPayClient(new Config(
     },
 ));
 ```
+
+---
+
+## Production deployment
+
+### Token caching
+
+`GoPayClient` stores the OAuth2 access token in memory inside a single instance.
+In conventional PHP-FPM / mod_php deployments **each HTTP request is a new process**,
+so every `new GoPayClient(...)` + `authenticate()` call makes a fresh round-trip to
+the GoPay token endpoint (typically 50–200 ms).
+
+Tokens are valid for several minutes. To avoid re-fetching on every request, store
+the raw token in a shared cache (APCu, Redis, Memcached) and restore it before
+making API calls:
+
+```php
+use GoPay\Payments\GoPayClient;
+use GoPay\Payments\Config;
+use GoPay\Payments\Environment;
+
+function getGoPayClient(): GoPayClient {
+    $cacheKey = 'gopay_token_' . md5(CLIENT_ID . SCOPE);
+    $sdk = new GoPayClient(new Config(environment: Environment::Production));
+
+    $cached = apcu_fetch($cacheKey, $success);
+    if ($success && is_array($cached)) {
+        // Restore token — the SDK will refresh it automatically if it expires
+        $sdk->getHttp()->getTokenStore()->setToken($cached['token'], $cached['expires_in']);
+        $sdk->getHttp()->getTokenStore()->setClientCredentials(CLIENT_ID, CLIENT_SECRET, SCOPE);
+    } else {
+        $sdk->authenticate(CLIENT_ID, CLIENT_SECRET, SCOPE);
+        // Persist after a successful authenticate() — add your own getter once exposed
+    }
+
+    return $sdk;
+}
+```
+
+> A first-class `TokenCacheInterface` (injectable into `Config`) is planned for a future
+> release. Until then, the pattern above or a singleton per worker process is the
+> recommended approach.
+
+### `awaitChargeState` in web contexts
+
+`awaitChargeState()` uses `usleep()` and **blocks the PHP worker process** for up to
+`$timeoutSeconds` (default 30 s). Under concurrent load this can exhaust the worker
+pool. Prefer the **webhook-driven pattern** for production web servers:
+
+1. GoPay POSTs a notification to your `notification_url`.
+2. Your handler calls `getChargeState()` once and records the result.
+3. Return HTTP 200 immediately.
+
+Use `awaitChargeState()` only in CLI scripts or environments with ample worker headroom.
 
 ---
 
