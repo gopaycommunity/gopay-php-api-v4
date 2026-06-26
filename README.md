@@ -302,7 +302,7 @@ try {
     echo $e->status;  // e.g. 422
     var_dump($e->body); // decoded JSON or raw string
 } catch (GoPaySdkException $e) {
-    echo $e->errorCode->value; // e.g. 'auth_token_missing'
+    echo $e->errorCode->value; // e.g. 'AUTH_TOKEN_MISSING'
     echo $e->getMessage();
 }
 ```
@@ -319,7 +319,8 @@ try {
 | `NetworkTimeout` | Request timed out |
 | `NetworkError` | Transport-level error |
 | `ChargeTimeout` | `awaitChargeState()` timed out |
-| `ChargeFailed` | Charge reached FAILED or unknown state |
+| `ChargeFailed` | Charge reached FAILED state |
+| `UnexpectedResponse` | API responded with an unexpected body shape |
 | `InvalidConfig` | Bad configuration |
 | `InvalidArgument` | Empty required argument |
 

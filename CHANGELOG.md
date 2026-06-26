@@ -13,7 +13,7 @@
 - `RefundsApi`: `refundPayment`, `listRefunds`, `getRefund`
 - `LinksApi`: `createPaymentLink`, `linkStatus`, `disableLink`
 - `AuthApi`: `authenticate`, `isAuthenticated`, `logout`, `setShareableKey`, `getBrowserKeys`
-- Typed response DTOs: `PaymentDetails`, `PaymentChargeResponse`, `PaymentChargeStatusResponse`, `PermanentCardTokenDetails`, `RecurrenceDetails`, `RefundDetails`, `LinkDetails`, `QrPaymentDetails`
+- Typed response DTOs: `PaymentDetails`, `PaymentChargeResponse`, `PaymentChargeStatusResponse`, `PermanentCardTokenDetails`, `RecurrenceDetails`, `RefundDetails`, `LinkDetails`, `QRPaymentDetails`
 - `GoPaySdkException` + `GoPayHttpException` with `ErrorCode` enum
 - `onError` callback for centralized error handling
 - Shareable-key Basic auth fallback for browser SDK compatibility
