@@ -211,7 +211,7 @@ $sdk->deleteCard(string $cardId): void
 $sdk->tokenizeEncryptedCard(string $payload): PermanentCardTokenDetails
 ```
 
-### Recurrences
+### Recurrences _(server-side API not available yet — SDK methods are present but calls will fail)_
 
 ```php
 // Create a recurring payment agreement
@@ -230,7 +230,7 @@ $sdk->startRecurrence(string $recId, ?array $params = null): PaymentDetails
 $sdk->recurrenceNext(string $recId, ?array $params = null): PaymentDetails
 ```
 
-### Refunds
+### Refunds _(server-side API not available yet — SDK methods are present but calls will fail)_
 
 ```php
 // Refund a payment (full or partial)
@@ -243,7 +243,7 @@ $sdk->listRefunds(string $paymentId): list<RefundDetails>
 $sdk->getRefund(string $refundId): RefundDetails
 ```
 
-### Payment links
+### Payment links _(server-side API not available yet — SDK methods are present but calls will fail)_
 
 ```php
 // Create a shareable payment link
