@@ -1,3 +1,9 @@
+## [1.0.1](https://bitbucket.org/gp-gopay/gopay-php-api-v4/compare/1.0.0...1.0.1) (2026-06-29)
+
+### Bug Fixes
+
+* install git in the GitHub sync step of the pipeline GPOMA-2291 ([3b2a78d](https://bitbucket.org/gp-gopay/gopay-php-api-v4/commit/3b2a78dceaea59a5654559900c5b7a6c9b843ee4))
+
 ## 1.0.0 (2026-06-29)
 
 ### Features
