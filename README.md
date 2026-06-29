@@ -1,15 +1,27 @@
 # GoPay PHP SDK — Payments API v4
 
-Server-side PHP SDK for [GoPay Payments API v4](https://api-docs.gopay.com/).
+Server-side PHP SDK for new [GoPay Payments API v4](https://api-docs.gopay.com/).
 
 Requires **PHP ≥ 8.1**. Transport-agnostic — works with any PSR-18 HTTP client.
+
+---
+
+## v3 → v4 migration
+
+See [MIGRATION.md](MIGRATION.md) for a full breakdown. The SDK is v4-only — not source-level compatible with `gopay/payments-sdk` v1.
+
+Key changes:
+- **Gateway URL changed** — update your `Config` initialization
+- **No redirect-based flow** — replace `header('Location: gw_url')` with `chargePayment()`
+- **Recurrences redesigned** — now standalone entities, not attached to a payment
+- **11 v3 methods removed** — pre-auth capture/void, EET, account statement, payment instruments
 
 ---
 
 ## Installation
 
 ```bash
-composer require gopay/payments-sdk
+composer require gopaycommunity/gopay-php-api-v4
 ```
 
 For the HTTP client you need a PSR-18 implementation. Guzzle 7 is the most common choice:
@@ -75,7 +87,7 @@ if ($charge->getAction()?->getRedirectUrl() !== null) {
 }
 ```
 
-> **`gw_url` — do not use.** The `PaymentDetails` object contains a `gw_url` field. Do **not** redirect the customer to it. It exists only for backward-compat with old redirect-based flows. This SDK's flow is always: `createPayment()` → `chargePayment()`.
+> **`gw_url` — backward compatibility.** The `PaymentDetails` object contains a `gw_url` field. Do **not** redirect the customer to it by default. It exists for backward-compat with old redirect-based flows for payment methods not yet implemented on v4. This SDK's flow is always: `createPayment()` → `chargePayment()`.
 
 ---
 
@@ -199,7 +211,7 @@ $sdk->deleteCard(string $cardId): void
 $sdk->tokenizeEncryptedCard(string $payload): PermanentCardTokenDetails
 ```
 
-### Recurrences
+### Recurrences - not implemented yet
 
 ```php
 // Create a recurring payment agreement
@@ -218,7 +230,7 @@ $sdk->startRecurrence(string $recId, ?array $params = null): PaymentDetails
 $sdk->recurrenceNext(string $recId, ?array $params = null): PaymentDetails
 ```
 
-### Refunds
+### Refunds - not implemented yet
 
 ```php
 // Refund a payment (full or partial)
@@ -231,7 +243,7 @@ $sdk->listRefunds(string $paymentId): list<RefundDetails>
 $sdk->getRefund(string $refundId): RefundDetails
 ```
 
-### Payment links
+### Payment links - not implemented yet
 
 ```php
 // Create a shareable payment link
@@ -502,18 +514,6 @@ $sdk->chargePayment($paymentId, [
     ],
 ]);
 ```
-
----
-
-## v3 → v4 migration
-
-See [MIGRATION.md](MIGRATION.md) for a full breakdown. The SDK is v4-only — not source-level compatible with `gopay/payments-sdk` v1.
-
-Key changes:
-- **Gateway URL changed** — update your `Config` initialization
-- **No redirect-based flow** — replace `header('Location: gw_url')` with `chargePayment()`
-- **Recurrences redesigned** — now standalone entities, not attached to a payment
-- **11 v3 methods removed** — pre-auth capture/void, EET, account statement, payment instruments
 
 ---
 
