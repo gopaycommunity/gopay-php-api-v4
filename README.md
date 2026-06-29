@@ -12,7 +12,7 @@ See [MIGRATION.md](MIGRATION.md) for a full breakdown. The SDK is v4-only — no
 
 Key changes:
 - **Gateway URL changed** — update your `Config` initialization
-- **No redirect-based flow** — replace `header('Location: gw_url')` with `chargePayment()`
+- **Legacy `gw_url` redirect removed** — replace `header('Location: gw_url')` with `chargePayment()`. 3DS challenges still redirect via `getAction()->getRedirectUrl()`
 - **Recurrences redesigned** — now standalone entities, not attached to a payment
 - **11 v3 methods removed** — pre-auth capture/void, EET, account statement, payment instruments
 
@@ -211,7 +211,7 @@ $sdk->deleteCard(string $cardId): void
 $sdk->tokenizeEncryptedCard(string $payload): PermanentCardTokenDetails
 ```
 
-### Recurrences - not implemented yet
+### Recurrences
 
 ```php
 // Create a recurring payment agreement
@@ -230,7 +230,7 @@ $sdk->startRecurrence(string $recId, ?array $params = null): PaymentDetails
 $sdk->recurrenceNext(string $recId, ?array $params = null): PaymentDetails
 ```
 
-### Refunds - not implemented yet
+### Refunds
 
 ```php
 // Refund a payment (full or partial)
@@ -243,7 +243,7 @@ $sdk->listRefunds(string $paymentId): list<RefundDetails>
 $sdk->getRefund(string $refundId): RefundDetails
 ```
 
-### Payment links - not implemented yet
+### Payment links
 
 ```php
 // Create a shareable payment link
