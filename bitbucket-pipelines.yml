@@ -106,14 +106,6 @@ definitions:
           - git push github refs/remotes/origin/master:refs/heads/master --force
           - git push github --tags
 
-    - step: &packagist-sync
-        name: Notify Packagist of new release
-        script:
-          - |
-            curl -sf -XPOST -H 'content-type: application/json' \
-              "https://packagist.org/api/update-package?username=${PACKAGIST_PUSH_USERNAME}&apiToken=${PACKAGIST_PUSH_TOKEN}" \
-              -d '{"repository":{"url":"https://github.com/gopay/gopay-php-api-v4"}}'
-
   services:
     docker2x:
       type: docker
@@ -144,4 +136,3 @@ pipelines:
       - step: *sonar
       - step: *release
       - step: *github-sync
-      - step: *packagist-sync
