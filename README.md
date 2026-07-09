@@ -1,5 +1,10 @@
 # GoPay PHP SDK — Payments API v4
 
+[![Packagist Version](https://img.shields.io/packagist/v/gopaycommunity/gopay-php-api-v4)](https://packagist.org/packages/gopaycommunity/gopay-php-api-v4)
+[![PHP Version](https://img.shields.io/packagist/php-v/gopaycommunity/gopay-php-api-v4)](https://packagist.org/packages/gopaycommunity/gopay-php-api-v4)
+[![License](https://img.shields.io/packagist/l/gopaycommunity/gopay-php-api-v4)](https://packagist.org/packages/gopaycommunity/gopay-php-api-v4)
+[![Pipeline Status](https://img.shields.io/bitbucket/pipelines/gp-gopay/gopay-php-api-v4/master)](https://bitbucket.org/gp-gopay/gopay-php-api-v4/addon/pipelines/home)
+
 Server-side PHP SDK for new [GoPay Payments API v4](https://api-docs.gopay.com/).
 
 Requires **PHP ≥ 8.1**. Transport-agnostic — works with any PSR-18 HTTP client.

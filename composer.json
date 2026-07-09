@@ -1,5 +1,5 @@
 {
-    "name": "gopay/payments-sdk",
+    "name": "gopaycommunity/gopay-php-api-v4",
     "description": "GoPay PHP SDK for server-side use — wraps the GoPay Payments API v4.0",
     "type": "library",
     "license": "MIT",
