@@ -1,3 +1,9 @@
+## [1.0.2](https://bitbucket.org/gp-gopay/gopay-php-api-v4/compare/1.0.1...1.0.2) (2026-07-09)
+
+### Bug Fixes
+
+* rename composer package to gopaycommunity/gopay-php-api-v4, add README badges GPOMA-2403 ([f1ac7f7](https://bitbucket.org/gp-gopay/gopay-php-api-v4/commit/f1ac7f78d9c9a79553394be60eeeb9304be19e0c))
+
 ## [1.0.1](https://bitbucket.org/gp-gopay/gopay-php-api-v4/compare/1.0.0...1.0.1) (2026-06-29)
 
 ### Bug Fixes
