@@ -4,6 +4,7 @@
 [![PHP Version](https://img.shields.io/packagist/php-v/gopaycommunity/gopay-php-api-v4)](https://packagist.org/packages/gopaycommunity/gopay-php-api-v4)
 [![License](https://img.shields.io/packagist/l/gopaycommunity/gopay-php-api-v4)](https://packagist.org/packages/gopaycommunity/gopay-php-api-v4)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=gp-gopay_gopay-php-api-v4&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=gp-gopay_gopay-php-api-v4)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=gp-gopay_gopay-php-api-v4&metric=coverage)](https://sonarcloud.io/summary/new_code?id=gp-gopay_gopay-php-api-v4)
 [![PHPStan Level](https://img.shields.io/badge/PHPStan-level%2010-brightgreen)](phpstan.neon)
 
 Server-side PHP SDK for new [GoPay Payments API v4](https://api-docs.gopay.com/).
