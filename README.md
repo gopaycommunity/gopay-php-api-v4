@@ -3,7 +3,6 @@
 [![Packagist Version](https://img.shields.io/packagist/v/gopaycommunity/gopay-php-api-v4)](https://packagist.org/packages/gopaycommunity/gopay-php-api-v4)
 [![PHP Version](https://img.shields.io/packagist/php-v/gopaycommunity/gopay-php-api-v4)](https://packagist.org/packages/gopaycommunity/gopay-php-api-v4)
 [![License](https://img.shields.io/packagist/l/gopaycommunity/gopay-php-api-v4)](https://packagist.org/packages/gopaycommunity/gopay-php-api-v4)
-[![Pipeline Status](https://img.shields.io/bitbucket/pipelines/gp-gopay/gopay-php-api-v4/master)](https://bitbucket.org/gp-gopay/gopay-php-api-v4/addon/pipelines/home)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=gp-gopay_gopay-php-api-v4&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=gp-gopay_gopay-php-api-v4)
 [![PHPStan Level](https://img.shields.io/badge/PHPStan-level%2010-brightgreen)](phpstan.neon)
 
