@@ -41,7 +41,10 @@ header('Location: ' . $payment->json['gw_url']); // REDIRECT the customer
 
 // v2 (API v4) — charge-based (server-side)
 $payment = $sdk->createPayment($goid, [...]);
-// The gw_url field is IGNORED — do NOT redirect the customer to it.
+// gw_url is not used by the flow below — only redirect to it deliberately,
+// for a payment method not yet supported by v4's charge API. Doing so hands
+// off control to the hosted (v3-backed) flow, but getPaymentStatus() still
+// reports the final state once the customer completes it.
 // Instead, obtain a card token from the browser iframe, then:
 $charge = $sdk->chargePayment($payment->getId(), [
     'payment_instrument' => [

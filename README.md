@@ -94,7 +94,7 @@ if ($charge->getAction()?->getRedirectUrl() !== null) {
 }
 ```
 
-> **`gw_url` — backward compatibility.** The `PaymentDetails` object contains a `gw_url` field. Do **not** redirect the customer to it by default. It exists for backward-compat with old redirect-based flows for payment methods not yet implemented on v4. This SDK's flow is always: `createPayment()` → `chargePayment()`.
+> **`gw_url` — escape hatch for methods not yet on v4.** The `PaymentDetails` object contains a `gw_url` field. Don't redirect to it by default — this SDK's own flow (`createPayment()` → `chargePayment()`) fully covers card payments. Use `gw_url` deliberately when the payment needs a method or feature not yet implemented in the v4 charge flow: redirecting there hands off real-time control to the hosted (v3-backed) flow while the customer is on it, but the payment remains fully v4-observable — `getPaymentStatus()` reports the final state once the customer completes it, exactly as it would for a payment charged directly through v4.
 
 ---
 

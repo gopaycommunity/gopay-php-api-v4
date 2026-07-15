@@ -73,11 +73,19 @@ src/
         └── ModelInterface.php
 ```
 
-## `gw_url` — do not use
+## `gw_url` — escape hatch, not a redirect target for this SDK's own flow
 
-`createPayment()` returns a `gw_url` field. **Do not use, suggest, or add it to examples.**
-It exists solely for backward-compat with old redirect-based flows (pre-SDK). This SDK's flow is
-always: `createPayment()` → `chargePayment()`. The same rule applies to the JavaScript SDK.
+`createPayment()` returns a `gw_url` field. **Do not redirect to it as part of this SDK's
+own flow** (`createPayment()` → `chargePayment()`), which fully covers card payments.
+
+`gw_url` is a deliberate escape hatch into the previous (v3) hosted-gateway processing —
+reach for it when a payment needs a method or feature not yet implemented in the v4 charge
+flow. Redirecting there hands off real-time control of the payment to the hosted flow for as
+long as the customer is on it, but the payment stays fully v4-observable throughout: once the
+customer completes it, `getPaymentStatus($paymentId)` reports the final state exactly as it
+would for a payment charged directly through v4. Don't present `gw_url` as unsafe or purely
+legacy in generated examples — it's the correct tool for methods v4 doesn't cover yet, not
+dead code to avoid. The same nuance applies to the JavaScript SDK.
 
 ## Browser SDK coordination
 
