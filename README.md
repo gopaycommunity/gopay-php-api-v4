@@ -125,8 +125,8 @@ $config = new Config(
 
 | Environment | Base URL |
 |---|---|
-| `Environment::Sandbox` | `https://api.sandbox.gopay.com/api/merchant/payments/4.0` |
-| `Environment::Production` | `https://api.gopay.com/api/merchant/payments/4.0` |
+| `Environment::Sandbox` | `https://gw.sandbox.gopay.com/gp-gw/api/4.0` |
+| `Environment::Production` | `https://gate.gopay.com/gp-gw/api/4.0` |
 
 ---
 

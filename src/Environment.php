@@ -12,8 +12,8 @@ enum Environment: string
     public function baseUrl(): string
     {
         return match ($this) {
-            self::Sandbox => 'https://api.sandbox.gopay.com/api/merchant/payments/4.0',
-            self::Production => 'https://api.gopay.com/api/merchant/payments/4.0',
+            self::Sandbox => 'https://gw.sandbox.gopay.com/gp-gw/api/4.0',
+            self::Production => 'https://gate.gopay.com/gp-gw/api/4.0',
         };
     }
 }

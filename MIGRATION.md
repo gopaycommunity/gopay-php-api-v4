@@ -27,7 +27,7 @@ new Config(['gatewayUrl' => 'https://gw.sandbox.gopay.com/api']);
 
 // v2 (API v4)
 new GoPayClient(new Config(environment: Environment::Sandbox));
-// baseUrl: 'https://api.sandbox.gopay.com/api/merchant/payments/4.0'
+// baseUrl: 'https://gw.sandbox.gopay.com/gp-gw/api/4.0'
 ```
 
 Every consumer must update their initialization config.

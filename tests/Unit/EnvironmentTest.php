@@ -14,7 +14,7 @@ final class EnvironmentTest extends TestCase
     public function sandboxBaseUrlPointsToSandboxApi(): void
     {
         $this->assertSame(
-            'https://api.sandbox.gopay.com/api/merchant/payments/4.0',
+            'https://gw.sandbox.gopay.com/gp-gw/api/4.0',
             Environment::Sandbox->baseUrl(),
         );
     }
@@ -23,7 +23,7 @@ final class EnvironmentTest extends TestCase
     public function productionBaseUrlPointsToProductionApi(): void
     {
         $this->assertSame(
-            'https://api.gopay.com/api/merchant/payments/4.0',
+            'https://gate.gopay.com/gp-gw/api/4.0',
             Environment::Production->baseUrl(),
         );
     }

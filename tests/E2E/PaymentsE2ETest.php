@@ -13,7 +13,7 @@ use GoPay\Payments\Generated\Model\PaymentDetails;
  * Run: phpunit --group e2e
  *
  * Targets the Stoplight mock API by default (GOPAY_PAYMENTS_V4_BASE_URL in .env).
- * Switch GOPAY_PAYMENTS_V4_BASE_URL to https://api.gopay.com/api/merchant/payments/4.0
+ * Switch GOPAY_PAYMENTS_V4_BASE_URL to https://gate.gopay.com/gp-gw/api/4.0
  * and supply sandbox credentials for live sandbox testing.
  */
 #[\PHPUnit\Framework\Attributes\Group('e2e')]

@@ -29,7 +29,7 @@ final class ConfigTest extends TestCase
     {
         $config = new Config(environment: Environment::Sandbox);
         $this->assertSame(
-            'https://api.sandbox.gopay.com/api/merchant/payments/4.0',
+            'https://gw.sandbox.gopay.com/gp-gw/api/4.0',
             $config->resolvedBaseUrl(),
         );
     }
@@ -39,7 +39,7 @@ final class ConfigTest extends TestCase
     {
         $config = new Config(environment: Environment::Production);
         $this->assertSame(
-            'https://api.gopay.com/api/merchant/payments/4.0',
+            'https://gate.gopay.com/gp-gw/api/4.0',
             $config->resolvedBaseUrl(),
         );
     }
