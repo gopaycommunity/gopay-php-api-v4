@@ -1708,8 +1708,17 @@ components:
           description: Customer data
         gw_url:
           type: string
-          description: URL of the hosted payment gateway
+          description: |
+            Escape hatch into the previous (v3) hosted-gateway flow, for payment methods
+            not yet covered by the v4 charge endpoint. Redirecting the customer here hands
+            off real-time control of the payment to the hosted flow while they are on it,
+            but the payment stays fully v4-observable throughout — GET /payments/{payment_id}
+            still reports the final state once the customer completes it, exactly as it
+            would for a payment charged directly through v4. Not a redirect target for
+            payment methods the v4 charge flow already covers.
           format: uri
+          examples:
+            - 'https://gate.gopay.com/gw/123456789'
         charge:
           $ref: '#/components/schemas/Payment-Charge-Status-Response'
         payment_secret:
