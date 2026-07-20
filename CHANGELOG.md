@@ -1,3 +1,12 @@
+## [1.0.3](https://bitbucket.org/gp-gopay/gopay-php-api-v4/compare/1.0.2...1.0.3) (2026-07-20)
+
+### Bug Fixes
+
+* fetch OpenAPI spec from beta source instead of stale public docs GPOMA-2418 ([9becb79](https://bitbucket.org/gp-gopay/gopay-php-api-v4/commit/9becb79028532ec1e4f424d0346d8ac3af66455a))
+* refresh spec/payments.yaml from beta source and regenerate models GPOMA-2418 ([f4e0e9f](https://bitbucket.org/gp-gopay/gopay-php-api-v4/commit/f4e0e9fbb32204f072e50128b78908d63220ad3a))
+* stamp generated files with public docs URL, not the beta fetch source GPOMA-2418 ([4a37dd0](https://bitbucket.org/gp-gopay/gopay-php-api-v4/commit/4a37dd06bfedc40748dd1db82d478448e11d1442))
+* update sandbox/production base URLs to new gp-gw gateway GPOMA-2418 ([4ac21bc](https://bitbucket.org/gp-gopay/gopay-php-api-v4/commit/4ac21bccd4394f96be4401dc553191c0f6be3340))
+
 ## [1.0.2](https://bitbucket.org/gp-gopay/gopay-php-api-v4/compare/1.0.1...1.0.2) (2026-07-09)
 
 ### Bug Fixes
