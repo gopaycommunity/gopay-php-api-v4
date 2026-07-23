@@ -62,10 +62,7 @@ src/
 ├── Module/
 │   ├── AuthApi.php          ← authenticate / isAuthenticated / logout / setShareableKey / getBrowserKeys
 │   ├── PaymentsApi.php      ← createPayment / chargePayment / getPaymentStatus / …
-│   ├── CardsApi.php         ← getCardDetails / deleteCard / tokenizeEncryptedCard
-│   ├── RecurrencesApi.php   ← createRecurrence / startRecurrence / recurrenceNext / …
-│   ├── RefundsApi.php       ← refundPayment / listRefunds / getRefund
-│   └── LinksApi.php         ← createPaymentLink / linkStatus / disableLink
+│   └── CardsApi.php         ← getCardDetails / deleteCard / tokenizeEncryptedCard
 └── Generated/               ← generated from OpenAPI spec (PHPStan-excluded from analysis)
     ├── ObjectSerializer.php
     ├── HeaderSelector.php
@@ -101,5 +98,7 @@ When the browser SDK's iframe yields a JWE payload (return-payload mode), the PH
 ## v3 → v4 migration
 
 See `MIGRATION.md`. The SDK is v4-only — no source-level compat with `gopay/payments-sdk` v1.
-The major changes: gateway URL, create→charge flow replacing redirects, recurrences redesign.
-11 v3 methods (pre-auth, EET, account statement, payment instruments) have no v4 equivalent.
+The major changes: gateway URL, create→charge flow replacing redirects.
+12 v3 methods (refunds, recurrences, pre-auth, EET, account statement, payment instruments)
+have no v4 equivalent — refunds/recurrences/payment-links were removed from the v4 API schema
+as unfinished endpoints, so the SDK modules for them were dropped entirely.
