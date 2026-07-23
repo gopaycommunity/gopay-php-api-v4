@@ -98,7 +98,8 @@ When the browser SDK's iframe yields a JWE payload (return-payload mode), the PH
 ## v3 → v4 migration
 
 See `MIGRATION.md`. The SDK is v4-only — no source-level compat with `gopay/payments-sdk` v1.
-The major changes: gateway URL, create→charge flow replacing redirects.
+The major changes: gateway URL and a create→charge flow replacing the default redirect flow;
+`gw_url` remains available as an escape hatch for unsupported payment methods.
 12 v3 methods (refunds, recurrences, pre-auth, EET, account statement, payment instruments)
 have no v4 equivalent — refunds/recurrences/payment-links were removed from the v4 API schema
 as unfinished endpoints, so the SDK modules for them were dropped entirely.
