@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace GoPay\Payments\Tests\Unit\Generated;
 
 use GoPay\Payments\Generated\Model\BankTransferRecipient;
-use GoPay\Payments\Generated\Model\LinkDetails;
 use GoPay\Payments\Generated\Model\PaymentChargeAction;
 use GoPay\Payments\Generated\Model\PaymentChargeResponse;
 use GoPay\Payments\Generated\Model\PaymentChargeStatusResponse;
@@ -13,8 +12,6 @@ use GoPay\Payments\Generated\Model\PaymentDetails;
 use GoPay\Payments\Generated\Model\PermanentCardTokenDetails;
 use GoPay\Payments\Generated\Model\QRCodeList;
 use GoPay\Payments\Generated\Model\QRPaymentDetails;
-use GoPay\Payments\Generated\Model\RecurrenceDetails;
-use GoPay\Payments\Generated\Model\RefundDetails;
 use GoPay\Payments\Generated\ObjectSerializer;
 use PHPUnit\Framework\TestCase;
 
@@ -128,56 +125,6 @@ final class ModelHydrationTest extends TestCase
         $this->assertFalse($card->getCorporate());
         $this->assertSame('perm-token-abc', $card->getToken());
         $this->assertSame('ACTIVE', $card->getStatus());
-    }
-
-    public function testRefundDetailsHydration(): void
-    {
-        /** @var RefundDetails $refund */
-        $refund = ObjectSerializer::deserialize([
-            'id'         => 'ref-001',
-            'state'      => 'SUCCESS',
-            'amount'     => 500,
-            'currency'   => 'CZK',
-            'created_at' => '2024-01-15T10:00:00Z',
-            'updated_at' => '2024-01-15T10:05:00Z',
-        ], RefundDetails::class);
-
-        $this->assertSame('ref-001', $refund->getId());
-        $this->assertSame('SUCCESS', $refund->getState());
-        $this->assertSame(500, $refund->getAmount());
-        $this->assertInstanceOf(\DateTime::class, $refund->getCreatedAt());
-    }
-
-    public function testRecurrenceDetailsHydration(): void
-    {
-        /** @var RecurrenceDetails $recurrence */
-        $recurrence = ObjectSerializer::deserialize([
-            'id'      => 'rec-001',
-            'type'    => 'ON_DEMAND',
-            'state'   => 'STARTED',
-            'payment' => ['id' => 'pay-002', 'state' => 'PAID'],
-        ], RecurrenceDetails::class);
-
-        $this->assertSame('rec-001', $recurrence->getId());
-        $this->assertSame('ON_DEMAND', $recurrence->getType());
-        $this->assertInstanceOf(PaymentDetails::class, $recurrence->getPayment());
-        $this->assertSame('pay-002', $recurrence->getPayment()->getId());
-    }
-
-    public function testLinkDetailsHydration(): void
-    {
-        /** @var LinkDetails $link */
-        $link = ObjectSerializer::deserialize([
-            'id'       => 'lnk-001',
-            'url'      => 'https://pay.gopay.com/lnk-001',
-            'active'   => true,
-            'reusable' => false,
-        ], LinkDetails::class);
-
-        $this->assertSame('lnk-001', $link->getId());
-        $this->assertSame('https://pay.gopay.com/lnk-001', $link->getUrl());
-        $this->assertTrue($link->getActive());
-        $this->assertFalse($link->getReusable());
     }
 
     public function testQrPaymentDetailsHydration(): void

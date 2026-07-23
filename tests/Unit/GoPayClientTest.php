@@ -6,14 +6,11 @@ namespace GoPay\Payments\Tests\Unit;
 
 use GoPay\Payments\Config;
 use GoPay\Payments\Environment;
-use GoPay\Payments\Generated\Model\LinkDetails;
 use GoPay\Payments\Generated\Model\PaymentChargeResponse;
 use GoPay\Payments\Generated\Model\PaymentChargeStatusResponse;
 use GoPay\Payments\Generated\Model\PaymentDetails;
 use GoPay\Payments\Generated\Model\PermanentCardTokenDetails;
 use GoPay\Payments\Generated\Model\QRPaymentDetails;
-use GoPay\Payments\Generated\Model\RecurrenceDetails;
-use GoPay\Payments\Generated\Model\RefundDetails;
 use GoPay\Payments\GoPayClient;
 use GuzzleHttp\Psr7\HttpFactory;
 use GuzzleHttp\Psr7\Response;
@@ -165,105 +162,6 @@ final class GoPayClientTest extends TestCase
         $this->queueJson(['card_id' => 'card-001', 'token' => 'tok-001', 'status' => 'ACTIVE', 'expiration_year' => '27']);
         $result = $this->sdk->tokenizeEncryptedCard('jwe-payload');
         $this->assertInstanceOf(PermanentCardTokenDetails::class, $result);
-    }
-
-    // ── Recurrences ───────────────────────────────────────────────────────────
-
-    #[Test]
-    public function createRecurrenceDelegates(): void
-    {
-        $this->queueJson(['id' => 'rec-001', 'type' => 'ON_DEMAND', 'state' => 'NEW']);
-        $result = $this->sdk->createRecurrence('goid-123', ['type' => 'ON_DEMAND']);
-        $this->assertInstanceOf(RecurrenceDetails::class, $result);
-    }
-
-    #[Test]
-    public function recurrenceStatusDelegates(): void
-    {
-        $this->queueJson(['id' => 'rec-001', 'type' => 'ON_DEMAND', 'state' => 'STARTED']);
-        $result = $this->sdk->recurrenceStatus('rec-001');
-        $this->assertInstanceOf(RecurrenceDetails::class, $result);
-    }
-
-    #[Test]
-    public function stopRecurrenceDelegates(): void
-    {
-        $this->mockClient->addResponse(new Response(204));
-        $this->sdk->stopRecurrence('rec-001');
-        $this->addToAssertionCount(1);
-    }
-
-    #[Test]
-    public function startRecurrenceDelegates(): void
-    {
-        $this->queueJson(['id' => 'pay-002', 'state' => 'CREATED']);
-        $result = $this->sdk->startRecurrence('rec-001');
-        $this->assertInstanceOf(PaymentDetails::class, $result);
-    }
-
-    #[Test]
-    public function recurrenceNextDelegates(): void
-    {
-        $this->queueJson(['id' => 'pay-003', 'state' => 'CREATED']);
-        $result = $this->sdk->recurrenceNext('rec-001');
-        $this->assertInstanceOf(PaymentDetails::class, $result);
-    }
-
-    // ── Refunds ───────────────────────────────────────────────────────────────
-
-    #[Test]
-    public function refundPaymentDelegates(): void
-    {
-        $this->queueJson(['id' => 'ref-001', 'state' => 'REQUESTED', 'amount' => 500, 'currency' => 'CZK']);
-        $result = $this->sdk->refundPayment('pay-001', ['amount' => 500]);
-        $this->assertInstanceOf(RefundDetails::class, $result);
-    }
-
-    #[Test]
-    public function listRefundsDelegates(): void
-    {
-        $this->mockClient->addResponse(new Response(
-            200,
-            [],
-            json_encode([['id' => 'ref-001', 'state' => 'REQUESTED', 'amount' => 500, 'currency' => 'CZK']], JSON_THROW_ON_ERROR),
-        ));
-        $results = $this->sdk->listRefunds('pay-001');
-        $this->assertCount(1, $results);
-        $this->assertInstanceOf(RefundDetails::class, $results[0]);
-    }
-
-    #[Test]
-    public function getRefundDelegates(): void
-    {
-        $this->queueJson(['id' => 'ref-001', 'state' => 'SUCCESS', 'amount' => 500, 'currency' => 'CZK']);
-        $result = $this->sdk->getRefund('ref-001');
-        $this->assertInstanceOf(RefundDetails::class, $result);
-    }
-
-    // ── Links ─────────────────────────────────────────────────────────────────
-
-    #[Test]
-    public function createPaymentLinkDelegates(): void
-    {
-        $this->queueJson(['id' => 'lnk-001', 'url' => 'https://pay.example.com', 'active' => true, 'reusable' => false]);
-        $result = $this->sdk->createPaymentLink('goid-123', ['amount' => 1990]);
-        $this->assertInstanceOf(LinkDetails::class, $result);
-    }
-
-    #[Test]
-    public function linkStatusDelegates(): void
-    {
-        $this->queueJson(['id' => 'lnk-001', 'url' => 'https://pay.example.com', 'active' => true, 'reusable' => false]);
-        $result = $this->sdk->linkStatus('lnk-001');
-        $this->assertInstanceOf(LinkDetails::class, $result);
-    }
-
-    #[Test]
-    public function disableLinkDelegates(): void
-    {
-        $this->mockClient->addResponse(new Response(204));
-        $this->sdk->disableLink('lnk-001');
-        $this->addToAssertionCount(1);
     }
 
     // ── Helper ────────────────────────────────────────────────────────────────

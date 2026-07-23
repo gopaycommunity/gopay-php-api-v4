@@ -20,8 +20,7 @@ See [MIGRATION.md](MIGRATION.md) for a full breakdown. The SDK is v4-only — no
 Key changes:
 - **Gateway URL changed** — update your `Config` initialization
 - **Legacy `gw_url` redirect removed** — replace `header('Location: gw_url')` with `chargePayment()`. 3DS challenges still redirect via `getAction()->getRedirectUrl()`
-- **Recurrences redesigned** — now standalone entities, not attached to a payment
-- **11 v3 methods removed** — pre-auth capture/void, EET, account statement, payment instruments
+- **12 v3 methods removed** — refunds, recurrences, pre-auth capture/void, EET, account statement, payment instruments
 
 ---
 
@@ -216,51 +215,6 @@ $sdk->deleteCard(string $cardId): void
 
 // Tokenize JWE payload from the browser iframe (returns permanent token)
 $sdk->tokenizeEncryptedCard(string $payload): PermanentCardTokenDetails
-```
-
-### Recurrences _(server-side API not available yet — SDK methods are present but calls will fail)_
-
-```php
-// Create a recurring payment agreement
-$sdk->createRecurrence(string $goid, array $params): RecurrenceDetails
-
-// Get recurrence status
-$sdk->recurrenceStatus(string $recId): RecurrenceDetails
-
-// Stop a recurrence permanently
-$sdk->stopRecurrence(string $recId): void
-
-// Start a recurrence (triggers first charge)
-$sdk->startRecurrence(string $recId, ?array $params = null): PaymentDetails
-
-// Create the next instalment
-$sdk->recurrenceNext(string $recId, ?array $params = null): PaymentDetails
-```
-
-### Refunds _(server-side API not available yet — SDK methods are present but calls will fail)_
-
-```php
-// Refund a payment (full or partial)
-$sdk->refundPayment(string $paymentId, array $params): RefundDetails
-
-// List all refunds for a payment
-$sdk->listRefunds(string $paymentId): list<RefundDetails>
-
-// Get a single refund
-$sdk->getRefund(string $refundId): RefundDetails
-```
-
-### Payment links _(server-side API not available yet — SDK methods are present but calls will fail)_
-
-```php
-// Create a shareable payment link
-$sdk->createPaymentLink(string $goid, array $params): LinkDetails
-
-// Get link status
-$sdk->linkStatus(string $linkId): LinkDetails
-
-// Disable a link
-$sdk->disableLink(string $linkId): void
 ```
 
 ---

@@ -64,32 +64,17 @@ if ($charge->getAction()?->getRedirectUrl()) {
 
 The embed.js concept is gone in v4. Use the browser SDK iframe instead.
 
-### 4. Recurrences completely redesigned
-
-```php
-// v1 (API v3) — recurrence attached to an existing payment
-$gopay->createRecurrence($paymentId, [...]);
-
-// v2 (API v4) — standalone recurrence entity
-$rec = $sdk->createRecurrence($goid, [
-    'type' => 'ON_DEMAND',
-    'payment' => ['amount' => 1000, 'currency' => 'CZK', ...],
-]);
-$sdk->startRecurrence($rec->getId()); // triggers first charge
-$sdk->recurrenceNext($rec->getId(), ['amount' => 1000]); // subsequent charges
-$sdk->stopRecurrence($rec->getId());
-```
-
 ---
 
 ## Methods removed — no v4 equivalent
 
-These 11 methods are gone in v4. They will throw HTTP 404 if called against the v4 API.
+These 12 methods are gone in v4. They will throw HTTP 404 if called against the v4 API.
 
 | v1 method | v3 endpoint | v4 status |
 |---|---|---|
-| `refundPayment` | `POST /payments/payment/{id}/refund` | ⟶ reimplemented as `refundPayment()` on new path `POST /payments/{id}/refunds`; refund resource now has its own ID |
-| `getHistoryRefunds` | `GET /payments/payment/{id}/refunds` | ⟶ replaced by `listRefunds($id)` + `getRefund($refundId)` on new v4 paths |
+| `refundPayment` | `POST /payments/payment/{id}/refund` | ✗ refunds were removed from the v4 API schema (unfinished endpoint), no v4 equivalent |
+| `getHistoryRefunds` | `GET /payments/payment/{id}/refunds` | ✗ refunds were removed from the v4 API schema (unfinished endpoint), no v4 equivalent |
+| `createRecurrence` | (v3 recurrence endpoint) | ✗ recurrences were removed from the v4 API schema (unfinished endpoint), no v4 equivalent |
 | `refundPaymentEET` | `POST /payments/payment/{id}/refund` | ✗ EET abolished Jan 2023, no v4 equivalent |
 | `captureAuthorization` / `captureAuthorizationPartial` | `POST /payments/payment/{id}/capture` | ✗ |
 | `voidAuthorization` | `POST /payments/payment/{id}/void-authorization` | ✗ |
@@ -113,11 +98,5 @@ to remove those calls — there is no v4 equivalent.
 | `validateApplePayMerchant($id, ...)` | Server-side Apple Pay merchant validation |
 | `getGooglePayInfo($id)` | Pre-filled Google Pay `paymentDataRequest` |
 | `getApplePayInfo($id)` | Apple Pay session configuration |
-| `refundPayment($id, $params)` | Refund a payment (new path, v4 resource with its own ID) |
-| `listRefunds($id)` | List all refunds for a payment |
-| `getRefund($refundId)` | Retrieve a single refund |
-| `createPaymentLink($goid, $params)` | Create shareable payment links |
-| `linkStatus($linkId)` | Payment link status |
-| `disableLink($linkId)` | Disable a payment link |
 | `getBrowserKeys()` | Return shareable_key + client_id for browser SDK initialisation |
 | `tokenizeEncryptedCard($jwePayload)` | Server-side card tokenization from iframe JWE |

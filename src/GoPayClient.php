@@ -5,21 +5,15 @@ declare(strict_types=1);
 namespace GoPay\Payments;
 
 use GoPay\Payments\Exception\GoPaySdkException;
-use GoPay\Payments\Generated\Model\LinkDetails;
 use GoPay\Payments\Generated\Model\PaymentChargeResponse;
 use GoPay\Payments\Generated\Model\PaymentChargeStatusResponse;
 use GoPay\Payments\Generated\Model\PaymentDetails;
 use GoPay\Payments\Generated\Model\PermanentCardTokenDetails;
 use GoPay\Payments\Generated\Model\QRPaymentDetails;
-use GoPay\Payments\Generated\Model\RecurrenceDetails;
-use GoPay\Payments\Generated\Model\RefundDetails;
 use GoPay\Payments\Http\HttpClient;
 use GoPay\Payments\Module\AuthApi;
 use GoPay\Payments\Module\CardsApi;
-use GoPay\Payments\Module\LinksApi;
 use GoPay\Payments\Module\PaymentsApi;
-use GoPay\Payments\Module\RecurrencesApi;
-use GoPay\Payments\Module\RefundsApi;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\StreamFactoryInterface;
@@ -56,9 +50,6 @@ final class GoPayClient
     private readonly AuthApi $auth;
     private readonly PaymentsApi $payments;
     private readonly CardsApi $cards;
-    private readonly RecurrencesApi $recurrences;
-    private readonly RefundsApi $refunds;
-    private readonly LinksApi $links;
 
     public function __construct(
         Config $config = new Config(),
@@ -70,9 +61,6 @@ final class GoPayClient
         $this->auth = new AuthApi($this->http);
         $this->payments = new PaymentsApi($this->http);
         $this->cards = new CardsApi($this->http);
-        $this->recurrences = new RecurrencesApi($this->http);
-        $this->refunds = new RefundsApi($this->http);
-        $this->links = new LinksApi($this->http);
     }
 
     // =========================================================================
@@ -318,172 +306,5 @@ final class GoPayClient
     public function tokenizeEncryptedCard(string $payload): PermanentCardTokenDetails
     {
         return $this->cards->tokenizeEncryptedCard($payload);
-    }
-
-    // =========================================================================
-    // Recurrences
-    // =========================================================================
-
-    /**
-     * Create a recurring payment agreement.
-     * Requires `payment:write` scope.
-     *
-     * POST /eshops/{goid}/recurrences
-     *
-     * @param array<string, mixed> $params
-     *
-     * @throws GoPaySdkException
-     */
-    public function createRecurrence(string $goid, array $params): RecurrenceDetails
-    {
-        return $this->recurrences->createRecurrence($goid, $params);
-    }
-
-    /**
-     * Retrieve the current state of a recurrence.
-     * Requires `payment:read` scope.
-     *
-     * GET /recurrences/{rec_id}
-     *
-     * @throws GoPaySdkException
-     */
-    public function recurrenceStatus(string $recId): RecurrenceDetails
-    {
-        return $this->recurrences->recurrenceStatus($recId);
-    }
-
-    /**
-     * Stop a recurrence permanently.
-     * Requires `payment:write` scope.
-     *
-     * DELETE /recurrences/{rec_id}
-     *
-     * @throws GoPaySdkException
-     */
-    public function stopRecurrence(string $recId): void
-    {
-        $this->recurrences->stopRecurrence($recId);
-    }
-
-    /**
-     * Start a recurrence — triggers the first charge.
-     * Requires `payment:write` scope.
-     *
-     * POST /recurrences/{rec_id}/start
-     *
-     * @param array<string, mixed>|null $params Optional payment overrides.
-     *
-     * @throws GoPaySdkException
-     */
-    public function startRecurrence(string $recId, ?array $params = null): PaymentDetails
-    {
-        return $this->recurrences->startRecurrence($recId, $params);
-    }
-
-    /**
-     * Create the next instalment payment for a STARTED recurrence.
-     * Requires `payment:write` scope.
-     *
-     * POST /recurrences/{rec_id}/next
-     *
-     * @param array<string, mixed>|null $params Optional payment overrides.
-     *
-     * @throws GoPaySdkException
-     */
-    public function recurrenceNext(string $recId, ?array $params = null): PaymentDetails
-    {
-        return $this->recurrences->recurrenceNext($recId, $params);
-    }
-
-    // =========================================================================
-    // Refunds
-    // =========================================================================
-
-    /**
-     * Refund a payment fully or partially.
-     * Requires `payment:write` scope.
-     *
-     * POST /payments/{payment_id}/refunds
-     *
-     * @param array<string, mixed> $params
-     *
-     * @throws GoPaySdkException
-     */
-    public function refundPayment(string $paymentId, array $params): RefundDetails
-    {
-        return $this->refunds->refundPayment($paymentId, $params);
-    }
-
-    /**
-     * List all refunds for a payment.
-     * Requires `payment:read` scope.
-     *
-     * GET /payments/{payment_id}/refunds
-     *
-     * @throws GoPaySdkException
-     *
-     * @return list<RefundDetails>
-     */
-    public function listRefunds(string $paymentId): array
-    {
-        return $this->refunds->listRefunds($paymentId);
-    }
-
-    /**
-     * Retrieve details of a single refund.
-     * Requires `payment:read` scope.
-     *
-     * GET /refunds/{refund_id}
-     *
-     * @throws GoPaySdkException
-     */
-    public function getRefund(string $refundId): RefundDetails
-    {
-        return $this->refunds->getRefund($refundId);
-    }
-
-    // =========================================================================
-    // Payment Links
-    // =========================================================================
-
-    /**
-     * Create a shareable payment link.
-     * Requires `payment:write` scope.
-     *
-     * POST /eshops/{goid}/links
-     *
-     * @param array<string, mixed> $params
-     *
-     * @throws GoPaySdkException
-     */
-    public function createPaymentLink(string $goid, array $params): LinkDetails
-    {
-        return $this->links->createPaymentLink($goid, $params);
-    }
-
-    /**
-     * Retrieve the current state of a payment link.
-     * Requires `payment:read` scope.
-     *
-     * GET /links/{link_id}
-     *
-     * @throws GoPaySdkException
-     */
-    public function linkStatus(string $linkId): LinkDetails
-    {
-        return $this->links->linkStatus($linkId);
-    }
-
-    /**
-     * Disable a payment link.
-     * Requires `payment:write` scope.
-     *
-     * DELETE /links/{link_id}
-     *
-     * @throws GoPaySdkException
-     */
-    public function disableLink(string $linkId): void
-    {
-        $this->links->disableLink($linkId);
     }
 }
