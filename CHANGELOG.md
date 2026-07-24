@@ -68,11 +68,8 @@
 - OAuth2 `client_credentials` grant with transparent token refresh and 401-retry
 - `PaymentsApi`: `createPayment`, `chargePayment`, `getPaymentStatus`, `getChargeState`, `awaitChargeState`, Google Pay / Apple Pay / QR payment support
 - `CardsApi`: `getCardDetails`, `deleteCard`, `tokenizeEncryptedCard` (browser iframe JWE)
-- `RecurrencesApi`: `createRecurrence`, `recurrenceStatus`, `startRecurrence`, `recurrenceNext`, `stopRecurrence`
-- `RefundsApi`: `refundPayment`, `listRefunds`, `getRefund`
-- `LinksApi`: `createPaymentLink`, `linkStatus`, `disableLink`
 - `AuthApi`: `authenticate`, `isAuthenticated`, `logout`, `setShareableKey`, `getBrowserKeys`
-- Typed response DTOs: `PaymentDetails`, `PaymentChargeResponse`, `PaymentChargeStatusResponse`, `PermanentCardTokenDetails`, `RecurrenceDetails`, `RefundDetails`, `LinkDetails`, `QRPaymentDetails`
+- Typed response DTOs: `PaymentDetails`, `PaymentChargeResponse`, `PaymentChargeStatusResponse`, `PermanentCardTokenDetails`, `QRPaymentDetails`
 - `GoPaySdkException` + `GoPayHttpException` with `ErrorCode` enum
 - `onError` callback for centralized error handling
 - Shareable-key Basic auth fallback for browser SDK compatibility
