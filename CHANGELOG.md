@@ -1,3 +1,11 @@
+## [1.0.4](https://bitbucket.org/gp-gopay/gopay-php-api-v4/compare/1.0.3...1.0.4) (2026-07-24)
+
+### Bug Fixes
+
+* address CodeRabbit review comment GPOMA-2453 ([d97d57b](https://bitbucket.org/gp-gopay/gopay-php-api-v4/commit/d97d57b213afad765266fe5585e4edee32757f47))
+* remove refunds/recurrences/payment-links (unfinished endpoints removed from schema) GPOMA-2453 ([69fa5cc](https://bitbucket.org/gp-gopay/gopay-php-api-v4/commit/69fa5ccd8021e748a7782acf74671aff87f7af44))
+* remove refunds/recurrences/payment-links (unfinished endpoints removed from schema) GPOMA-2453 ([c637225](https://bitbucket.org/gp-gopay/gopay-php-api-v4/commit/c6372252474c28ea8d68bed056a2a09dc84202b0))
+
 ## [1.0.3](https://bitbucket.org/gp-gopay/gopay-php-api-v4/compare/1.0.2...1.0.3) (2026-07-20)
 
 ### Bug Fixes
