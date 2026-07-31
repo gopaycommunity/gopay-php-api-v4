@@ -342,6 +342,9 @@ class BrowserData implements ModelInterface, ArrayAccess, \JsonSerializable
         if ($this->container['colorDepth'] === null) {
             $invalidProperties[] = "'colorDepth' can't be null";
         }
+        if ($this->container['acceptHeader'] === null) {
+            $invalidProperties[] = "'acceptHeader' can't be null";
+        }
         return $invalidProperties;
     }
 
@@ -522,7 +525,7 @@ class BrowserData implements ModelInterface, ArrayAccess, \JsonSerializable
     /**
      * Gets acceptHeader
      *
-     * @return string|null
+     * @return string
      */
     public function getAcceptHeader()
     {
@@ -532,7 +535,7 @@ class BrowserData implements ModelInterface, ArrayAccess, \JsonSerializable
     /**
      * Sets acceptHeader
      *
-     * @param string|null $acceptHeader JSON-encoded Accept headers from the customer's browser
+     * @param string $acceptHeader JSON-encoded Accept headers from the customer's browser
      *
      * @return self
      */

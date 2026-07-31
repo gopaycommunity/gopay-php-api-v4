@@ -69,6 +69,11 @@ final class PaymentsApi
      *
      * POST /payments/{payment_id}/charge
      *
+     * Card charges require `browser_data` with a REQUIRED `accept_header` — the
+     * JSON-encoded Accept headers of the customer's browser. Build it server-side
+     * from the incoming customer request with {@see \GoPay\Payments\AcceptHeader}:
+     * `AcceptHeader::fromServerGlobals()` or `AcceptHeader::fromServerRequest($request)`.
+     *
      * @param array<string, mixed> $params Charge parameters including the payment_instrument.
      *
      * @throws GoPaySdkException

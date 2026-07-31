@@ -15,6 +15,7 @@ declare(strict_types=1);
 
 require __DIR__ . '/bootstrap.php';
 
+use GoPay\Payments\AcceptHeader;
 use GoPay\Payments\Exception\GoPayHttpException;
 use GoPay\Payments\Exception\GoPaySdkException;
 
@@ -70,7 +71,18 @@ try {
                 'screen_height'       => 1080,
                 'color_depth'         => 24,
                 'user_agent'          => 'Mozilla/5.0 (example)',
-                'accept_header'       => 'text/html',
+                // accept_header is REQUIRED: the JSON-encoded Accept headers of the
+                // *customer's* browser, captured server-side from the request the
+                // browser made to you. In a real handler just call
+                //   AcceptHeader::fromServerGlobals()          — reads $_SERVER
+                //   AcceptHeader::fromServerRequest($request)  — PSR-7 alternative
+                // This CLI script has no incoming browser request, so we feed the
+                // helper a $_SERVER-shaped sample instead.
+                'accept_header'       => AcceptHeader::fromServerGlobals([
+                    'HTTP_ACCEPT'          => 'application/json, text/plain, */*',
+                    'HTTP_ACCEPT_LANGUAGE' => 'cs;q=0.5',
+                    'HTTP_ACCEPT_ENCODING' => 'gzip, deflate, br, zstd',
+                ]),
                 'javascript_enabled'  => true,
             ],
         ],

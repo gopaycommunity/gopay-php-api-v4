@@ -44,6 +44,7 @@ Any PSR-18-compatible client works (Symfony HttpClient, Buzz, …).
 
 ```php
 use GoPay\Payments\GoPayClient;
+use GoPay\Payments\AcceptHeader;
 use GoPay\Payments\Config;
 use GoPay\Payments\Environment;
 
@@ -76,6 +77,18 @@ $charge = $sdk->chargePayment($payment->getId(), [
         'input' => [
             'input_type' => 'CARD_TOKEN',
             'card_token' => $cardToken, // from the browser SDK iframe
+        ],
+        'browser_data' => [
+            // EMV 3DS device data — collect in the browser, POST to your server
+            'language'      => $browserData['language'],      // e.g. 'cs-CZ'
+            'timezone'      => $browserData['timezone'],      // e.g. -60
+            'screen_width'  => $browserData['screen_width'],  // e.g. 1920
+            'screen_height' => $browserData['screen_height'], // e.g. 1080
+            'color_depth'   => $browserData['color_depth'],   // e.g. 24
+            // REQUIRED: JSON-encoded Accept headers of the customer's browser.
+            // Capture them server-side from the incoming customer request:
+            'accept_header' => AcceptHeader::fromServerGlobals(),
+            // or with a PSR-7 stack: AcceptHeader::fromServerRequest($request)
         ],
     ],
 ]);
@@ -472,6 +485,10 @@ $sdk->chargePayment($paymentId, [
     'payment_instrument' => [
         'payment_instrument' => 'PAYMENT_CARD',
         'input' => ['input_type' => 'CARD_TOKEN', 'card_token' => $card->getToken()],
+        'browser_data' => [
+            // …see Quick start — accept_header is required, build it with
+            // AcceptHeader::fromServerGlobals() / ::fromServerRequest($request)
+        ],
     ],
 ]);
 ```

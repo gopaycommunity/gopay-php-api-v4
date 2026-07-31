@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace GoPay\Payments\Tests\Unit\Generated;
 
 use GoPay\Payments\Generated\Model\BankTransferRecipient;
+use GoPay\Payments\Generated\Model\BrowserData;
 use GoPay\Payments\Generated\Model\PaymentChargeAction;
 use GoPay\Payments\Generated\Model\PaymentChargeResponse;
 use GoPay\Payments\Generated\Model\PaymentChargeStatusResponse;
@@ -125,6 +126,29 @@ final class ModelHydrationTest extends TestCase
         $this->assertFalse($card->getCorporate());
         $this->assertSame('perm-token-abc', $card->getToken());
         $this->assertSame('ACTIVE', $card->getStatus());
+    }
+
+    public function testBrowserDataRequiresAcceptHeader(): void
+    {
+        $data = [
+            'language'      => 'cs-CZ',
+            'timezone'      => -60,
+            'screen_width'  => 1920,
+            'screen_height' => 1080,
+            'color_depth'   => 24,
+            'accept_header' => '{"accept":"text/html"}',
+        ];
+
+        /** @var BrowserData $complete */
+        $complete = ObjectSerializer::deserialize($data, BrowserData::class);
+        $this->assertTrue($complete->valid());
+
+        unset($data['accept_header']);
+
+        /** @var BrowserData $incomplete */
+        $incomplete = ObjectSerializer::deserialize($data, BrowserData::class);
+        $this->assertFalse($incomplete->valid());
+        $this->assertContains("'acceptHeader' can't be null", $incomplete->listInvalidProperties());
     }
 
     public function testQrPaymentDetailsHydration(): void
