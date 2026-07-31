@@ -486,8 +486,16 @@ $sdk->chargePayment($paymentId, [
         'payment_instrument' => 'PAYMENT_CARD',
         'input' => ['input_type' => 'CARD_TOKEN', 'card_token' => $card->getToken()],
         'browser_data' => [
-            // …see Quick start — accept_header is required, build it with
-            // AcceptHeader::fromServerGlobals() / ::fromServerRequest($request)
+            // EMV 3DS device data — collect in the browser, POST to your server
+            'language'      => $browserData['language'],
+            'timezone'      => $browserData['timezone'],
+            'screen_width'  => $browserData['screen_width'],
+            'screen_height' => $browserData['screen_height'],
+            'color_depth'   => $browserData['color_depth'],
+            // REQUIRED: JSON-encoded Accept headers of the customer's browser.
+            // Capture them server-side from the incoming customer request:
+            'accept_header' => AcceptHeader::fromServerGlobals(),
+            // or with a PSR-7 stack: AcceptHeader::fromServerRequest($request)
         ],
     ],
 ]);
