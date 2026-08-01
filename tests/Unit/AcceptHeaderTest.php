@@ -48,6 +48,38 @@ final class AcceptHeaderTest extends TestCase
         $this->assertSame('{}', AcceptHeader::fromServerGlobals([]));
     }
 
+    /**
+     * Header values arrive straight off the wire, so a client can send bytes that
+     * are not valid UTF-8. Those must be dropped rather than reaching json_encode()
+     * and aborting the entire charge with a JsonException.
+     */
+    public function testFromServerGlobalsDropsInvalidUtf8HeaderValues(): void
+    {
+        $this->assertSame(
+            '{"accept-language":"cs;q=0.5"}',
+            AcceptHeader::fromServerGlobals([
+                'HTTP_ACCEPT'          => "text/html\xB1\x31",
+                'HTTP_ACCEPT_LANGUAGE' => 'cs;q=0.5',
+            ]),
+        );
+    }
+
+    public function testFromServerGlobalsWithOnlyInvalidUtf8YieldsEmptyJsonObject(): void
+    {
+        $this->assertSame('{}', AcceptHeader::fromServerGlobals(['HTTP_ACCEPT' => "\xB1\x31"]));
+    }
+
+    public function testFromServerGlobalsPreservesValidMultibyteUtf8(): void
+    {
+        $this->assertSame(
+            '{"accept":"text/html","accept-language":"cs-CZ,čeština"}',
+            AcceptHeader::fromServerGlobals([
+                'HTTP_ACCEPT'          => 'text/html',
+                'HTTP_ACCEPT_LANGUAGE' => 'cs-CZ,čeština',
+            ]),
+        );
+    }
+
     public function testFromServerGlobalsDefaultsToServerSuperglobal(): void
     {
         $backup = $_SERVER;
@@ -87,6 +119,16 @@ final class AcceptHeaderTest extends TestCase
     public function testFromServerRequestWithoutAcceptHeadersYieldsEmptyJsonObject(): void
     {
         $this->assertSame('{}', AcceptHeader::fromServerRequest(new ServerRequest('GET', '/')));
+    }
+
+    public function testFromServerRequestDropsInvalidUtf8HeaderValues(): void
+    {
+        $request = new ServerRequest('POST', '/charge', [
+            'Accept'          => "text/html\xB1\x31",
+            'Accept-Language' => 'cs-CZ',
+        ]);
+
+        $this->assertSame('{"accept-language":"cs-CZ"}', AcceptHeader::fromServerRequest($request));
     }
 
     public function testResultDecodesBackToTheHeaderMap(): void
