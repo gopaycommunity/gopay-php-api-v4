@@ -8,8 +8,6 @@ info:
     name: GoPay technical support
     email: integration@gopay.com
 servers:
-  - url: 'https://payments-api-mock.beta.gopay.com/'
-    description: Mock server
   - url: 'https://gw.sandbox.gopay.com/gp-gw/api/4.0'
     description: Sandbox
   - url: 'https://gate.gopay.com/gp-gw/api/4.0'
@@ -1628,7 +1626,9 @@ components:
         - screen_width
         - screen_height
         - color_depth
+        - user_agent
         - accept_header
+        - javascript_enabled
       properties:
         language:
           type: string
@@ -1664,7 +1664,7 @@ components:
           type: string
           description: JSON-encoded Accept headers from the customer's browser
           examples:
-            - '{\"accept-language\":\"cs;q\\u003d0.5\",\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept\":\"application/json, text/plain, */*\"}'
+            - '{"accept-language":"cs;q=0.5","accept-encoding":"gzip, deflate, br, zstd","accept":"application/json, text/plain, */*"}'
         javascript_enabled:
           type: boolean
           description: Whether JavaScript is enabled in the customer's browser

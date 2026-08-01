@@ -128,27 +128,39 @@ final class ModelHydrationTest extends TestCase
         $this->assertSame('ACTIVE', $card->getStatus());
     }
 
-    public function testBrowserDataRequiresAcceptHeader(): void
+    public function testBrowserDataRequiresEmv3dsFields(): void
     {
         $data = [
-            'language'      => 'cs-CZ',
-            'timezone'      => -60,
-            'screen_width'  => 1920,
-            'screen_height' => 1080,
-            'color_depth'   => 24,
-            'accept_header' => '{"accept":"text/html"}',
+            'language'           => 'cs-CZ',
+            'timezone'           => -60,
+            'screen_width'       => 1920,
+            'screen_height'      => 1080,
+            'color_depth'        => 24,
+            'user_agent'         => 'Mozilla/5.0 (phpunit)',
+            'accept_header'      => '{"accept":"text/html"}',
+            'javascript_enabled' => true,
         ];
 
         /** @var BrowserData $complete */
         $complete = ObjectSerializer::deserialize($data, BrowserData::class);
         $this->assertTrue($complete->valid());
 
-        unset($data['accept_header']);
+        $requiredFields = [
+            'user_agent'         => "'userAgent' can't be null",
+            'accept_header'      => "'acceptHeader' can't be null",
+            'javascript_enabled' => "'javascriptEnabled' can't be null",
+        ];
 
-        /** @var BrowserData $incomplete */
-        $incomplete = ObjectSerializer::deserialize($data, BrowserData::class);
-        $this->assertFalse($incomplete->valid());
-        $this->assertContains("'acceptHeader' can't be null", $incomplete->listInvalidProperties());
+        foreach ($requiredFields as $field => $expectedError) {
+            $partial = $data;
+            unset($partial[$field]);
+
+            /** @var BrowserData $incomplete */
+            $incomplete = ObjectSerializer::deserialize($partial, BrowserData::class);
+
+            $this->assertFalse($incomplete->valid(), "BrowserData without {$field} must be invalid");
+            $this->assertContains($expectedError, $incomplete->listInvalidProperties());
+        }
     }
 
     public function testQrPaymentDetailsHydration(): void

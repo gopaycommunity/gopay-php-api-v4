@@ -342,8 +342,14 @@ class BrowserData implements ModelInterface, ArrayAccess, \JsonSerializable
         if ($this->container['colorDepth'] === null) {
             $invalidProperties[] = "'colorDepth' can't be null";
         }
+        if ($this->container['userAgent'] === null) {
+            $invalidProperties[] = "'userAgent' can't be null";
+        }
         if ($this->container['acceptHeader'] === null) {
             $invalidProperties[] = "'acceptHeader' can't be null";
+        }
+        if ($this->container['javascriptEnabled'] === null) {
+            $invalidProperties[] = "'javascriptEnabled' can't be null";
         }
         return $invalidProperties;
     }
@@ -498,7 +504,7 @@ class BrowserData implements ModelInterface, ArrayAccess, \JsonSerializable
     /**
      * Gets userAgent
      *
-     * @return string|null
+     * @return string
      */
     public function getUserAgent()
     {
@@ -508,7 +514,7 @@ class BrowserData implements ModelInterface, ArrayAccess, \JsonSerializable
     /**
      * Sets userAgent
      *
-     * @param string|null $userAgent User-Agent string of the customer's browser
+     * @param string $userAgent User-Agent string of the customer's browser
      *
      * @return self
      */
@@ -552,7 +558,7 @@ class BrowserData implements ModelInterface, ArrayAccess, \JsonSerializable
     /**
      * Gets javascriptEnabled
      *
-     * @return bool|null
+     * @return bool
      */
     public function getJavascriptEnabled()
     {
@@ -562,7 +568,7 @@ class BrowserData implements ModelInterface, ArrayAccess, \JsonSerializable
     /**
      * Sets javascriptEnabled
      *
-     * @param bool|null $javascriptEnabled Whether JavaScript is enabled in the customer's browser
+     * @param bool $javascriptEnabled Whether JavaScript is enabled in the customer's browser
      *
      * @return self
      */
