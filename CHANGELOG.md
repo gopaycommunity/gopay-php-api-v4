@@ -1,3 +1,14 @@
+## [1.1.0](https://bitbucket.org/gp-gopay/gopay-php-api-v4/compare/1.0.4...1.1.0) (2026-08-01)
+
+### Features
+
+* require accept_header in browser_data GPOMA-2474 ([0ae0a27](https://bitbucket.org/gp-gopay/gopay-php-api-v4/commit/0ae0a271e20bf2c26c694cb8c0f520af416867a6))
+* require user_agent and javascript_enabled in browser_data GPOMA-2474 ([6d12afc](https://bitbucket.org/gp-gopay/gopay-php-api-v4/commit/6d12afcbf91b7ff70773e2a99ce4a737950ab763)), closes [#18](https://bitbucket.org/gp-gopay/gopay-php-api-v4/issues/18)
+
+### Bug Fixes
+
+* skip non-UTF-8 Accept header values instead of failing the charge GPOMA-2474 ([00f6ec8](https://bitbucket.org/gp-gopay/gopay-php-api-v4/commit/00f6ec877321fd4b626596dc9557bb861ca9e8b4))
+
 ## [1.0.4](https://bitbucket.org/gp-gopay/gopay-php-api-v4/compare/1.0.3...1.0.4) (2026-07-24)
 
 ### Bug Fixes
