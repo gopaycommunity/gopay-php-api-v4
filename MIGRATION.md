@@ -53,6 +53,17 @@ $charge = $sdk->chargePayment($payment->getId(), [
             'input_type' => 'CARD_TOKEN',
             'card_token' => $cardToken, // from the browser SDK iframe
         ],
+        // v4 requires EMV 3DS browser data on a card charge — see README quick start
+        'browser_data' => [
+            'language'           => $browserData['language'],
+            'timezone'           => $browserData['timezone'],
+            'screen_width'       => $browserData['screen_width'],
+            'screen_height'      => $browserData['screen_height'],
+            'color_depth'        => $browserData['color_depth'],
+            'user_agent'         => $_SERVER['HTTP_USER_AGENT'],
+            'accept_header'      => AcceptHeader::fromServerGlobals(),
+            'javascript_enabled' => $browserData['javascript_enabled'],
+        ],
     ],
 ]);
 if ($charge->getAction()?->getRedirectUrl()) {

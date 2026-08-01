@@ -80,15 +80,17 @@ $charge = $sdk->chargePayment($payment->getId(), [
         ],
         'browser_data' => [
             // EMV 3DS device data — collect in the browser, POST to your server
-            'language'      => $browserData['language'],      // e.g. 'cs-CZ'
-            'timezone'      => $browserData['timezone'],      // e.g. -60
-            'screen_width'  => $browserData['screen_width'],  // e.g. 1920
-            'screen_height' => $browserData['screen_height'], // e.g. 1080
-            'color_depth'   => $browserData['color_depth'],   // e.g. 24
+            'language'           => $browserData['language'],      // e.g. 'cs-CZ'
+            'timezone'           => $browserData['timezone'],      // e.g. -60
+            'screen_width'       => $browserData['screen_width'],  // e.g. 1920
+            'screen_height'      => $browserData['screen_height'], // e.g. 1080
+            'color_depth'        => $browserData['color_depth'],   // e.g. 24
+            'user_agent'         => $_SERVER['HTTP_USER_AGENT'],   // customer's browser User-Agent
             // REQUIRED: JSON-encoded Accept headers of the customer's browser.
             // Capture them server-side from the incoming customer request:
-            'accept_header' => AcceptHeader::fromServerGlobals(),
+            'accept_header'      => AcceptHeader::fromServerGlobals(),
             // or with a PSR-7 stack: AcceptHeader::fromServerRequest($request)
+            'javascript_enabled' => $browserData['javascript_enabled'], // e.g. true
         ],
     ],
 ]);
@@ -487,15 +489,17 @@ $sdk->chargePayment($paymentId, [
         'input' => ['input_type' => 'CARD_TOKEN', 'card_token' => $card->getToken()],
         'browser_data' => [
             // EMV 3DS device data — collect in the browser, POST to your server
-            'language'      => $browserData['language'],
-            'timezone'      => $browserData['timezone'],
-            'screen_width'  => $browserData['screen_width'],
-            'screen_height' => $browserData['screen_height'],
-            'color_depth'   => $browserData['color_depth'],
+            'language'           => $browserData['language'],
+            'timezone'           => $browserData['timezone'],
+            'screen_width'       => $browserData['screen_width'],
+            'screen_height'      => $browserData['screen_height'],
+            'color_depth'        => $browserData['color_depth'],
+            'user_agent'         => $_SERVER['HTTP_USER_AGENT'],
             // REQUIRED: JSON-encoded Accept headers of the customer's browser.
             // Capture them server-side from the incoming customer request:
-            'accept_header' => AcceptHeader::fromServerGlobals(),
+            'accept_header'      => AcceptHeader::fromServerGlobals(),
             // or with a PSR-7 stack: AcceptHeader::fromServerRequest($request)
+            'javascript_enabled' => $browserData['javascript_enabled'],
         ],
     ],
 ]);
