@@ -430,6 +430,18 @@ final class HttpClient
             ));
         }
 
+        // Every element must be an object too — callers map over these as arrays,
+        // and a scalar item would surface as an uncatchable TypeError instead of
+        // a GoPaySdkException that onError can see.
+        foreach ($data as $item) {
+            if (!is_array($item)) {
+                $this->emitError(new GoPaySdkException(
+                    '[GoPaySDK] Failed to parse API response as JSON list: expected a list of objects.',
+                    ErrorCode::UnexpectedResponse,
+                ));
+            }
+        }
+
         /** @var list<array<string, mixed>> $data */
         return $data;
     }

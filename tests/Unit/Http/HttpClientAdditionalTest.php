@@ -344,6 +344,34 @@ final class HttpClientAdditionalTest extends TestCase
     }
 
     #[Test]
+    public function getJsonListThrowsUnexpectedResponseOnScalarItems(): void
+    {
+        // A list of scalars would otherwise reach callers that map over the items
+        // as arrays, surfacing as an uncatchable TypeError instead of an SDK error.
+        $this->mockClient->addResponse(new Response(200, [], '["ref-001","ref-002"]'));
+
+        try {
+            $this->http->getJsonList('/payments/pay-001/refunds');
+            $this->fail('Expected GoPaySdkException');
+        } catch (GoPaySdkException $e) {
+            $this->assertSame(ErrorCode::UnexpectedResponse, $e->errorCode);
+        }
+    }
+
+    #[Test]
+    public function getJsonListThrowsUnexpectedResponseOnNullItems(): void
+    {
+        $this->mockClient->addResponse(new Response(200, [], '[null]'));
+
+        try {
+            $this->http->getJsonList('/payments/pay-001/refunds');
+            $this->fail('Expected GoPaySdkException');
+        } catch (GoPaySdkException $e) {
+            $this->assertSame(ErrorCode::UnexpectedResponse, $e->errorCode);
+        }
+    }
+
+    #[Test]
     public function getJsonListThrowsUnexpectedResponseOnNonListResponse(): void
     {
         $this->mockClient->addResponse(new Response(200, [], '{"error":"unexpected"}'));

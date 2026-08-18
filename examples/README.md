@@ -49,10 +49,11 @@ Server-side half of the browser iframe integration:
 
 Refunds a payment and follows the refund to a terminal state:
 
-1. `getPaymentStatus()` — confirms the payment is refundable
-2. `refundPayment()` — full refund by default, or a partial one if an amount is given
-3. `getRefund()` — polls until the refund leaves `REQUESTED`
-4. `listRefunds()` — prints every refund on the payment, then the payment's new state
+1. `getPaymentStatus()` — refuses to continue unless the payment is `PAID` or `PARTIALLY_REFUNDED`
+2. `listRefunds()` — sums the settled refunds to work out how much is still refundable
+3. `refundPayment()` — refunds the remainder by default, or the amount given as the second argument
+4. `getRefund()` — polls until the refund leaves `REQUESTED` (exit code `2` if it never does)
+5. `listRefunds()` — prints every refund on the payment, then the payment's new state
 
 Needs the `payment:write` scope. Two rejections worth knowing: `400` when the amount is not
 positive, and `409` when the payment is not refundable — including a partial refund attempted

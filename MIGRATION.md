@@ -13,8 +13,6 @@ This SDK (v2) targets the GoPay Payments API **v4**. It has no source-level comp
 | `getStatus`: `/payments/payment/{id}` → `/payments/{id}` | Pure internal path change |
 | `getQrPayment`: path + `/info` suffix | Pure internal path change |
 | `getCardDetails` / `deleteCard`: `/payments/cards/` → `/cards/tokens/` | Pure internal path change |
-| `refundPayment`: `POST /payments/payment/{id}/refund` → `POST /payments/{id}/refunds` | Refund is a v4 resource with its own ID; the response is `RefundDetails`, not the payment |
-| `getHistoryRefunds` → `listRefunds($id)` + `getRefund($refundId)` | Split into a list endpoint and a per-refund read |
 | OAuth2 token endpoint | Same `/oauth2/token` path, same grant type |
 
 ---
@@ -76,6 +74,29 @@ if ($charge->getAction()?->getRedirectUrl()) {
 ### 3. `urlToEmbedJs()` is removed
 
 The embed.js concept is gone in v4. Use the browser SDK iframe instead.
+
+### 4. Refunds are a separate resource
+
+`refundPayment()` still exists but neither its signature nor its return type survives, and
+`getHistoryRefunds()` is gone entirely. Both need consumer changes.
+
+```php
+// v1 (API v3) — refund described by a nested EET-era payload, returns the payment
+$gopay->refundPayment($paymentId, ['amount' => 1000]);
+$gopay->getHistoryRefunds($paymentId);
+
+// v2 (API v4) — refund is its own resource with its own ID
+$refund = $sdk->refundPayment($paymentId, ['amount' => 1000]); // RefundDetails
+$refund->getId();                    // refund ID, not the payment ID
+$refund->getState();                 // REQUESTED → SUCCESS | FAILED (asynchronous)
+
+$sdk->listRefunds($paymentId);       // list<RefundDetails>
+$sdk->getRefund($refund->getId());   // read one refund back
+```
+
+The `201` response only means the refund was accepted — poll `getRefund()` until the state
+leaves `REQUESTED`. `RefundDetails` carries no `payment_id`, so keep your own mapping if you
+need to resolve a refund back to its payment.
 
 ---
 
