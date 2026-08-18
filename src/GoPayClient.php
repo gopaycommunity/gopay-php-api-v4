@@ -10,10 +10,12 @@ use GoPay\Payments\Generated\Model\PaymentChargeStatusResponse;
 use GoPay\Payments\Generated\Model\PaymentDetails;
 use GoPay\Payments\Generated\Model\PermanentCardTokenDetails;
 use GoPay\Payments\Generated\Model\QRPaymentDetails;
+use GoPay\Payments\Generated\Model\RefundDetails;
 use GoPay\Payments\Http\HttpClient;
 use GoPay\Payments\Module\AuthApi;
 use GoPay\Payments\Module\CardsApi;
 use GoPay\Payments\Module\PaymentsApi;
+use GoPay\Payments\Module\RefundsApi;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\StreamFactoryInterface;
@@ -50,6 +52,7 @@ final class GoPayClient
     private readonly AuthApi $auth;
     private readonly PaymentsApi $payments;
     private readonly CardsApi $cards;
+    private readonly RefundsApi $refunds;
 
     public function __construct(
         Config $config = new Config(),
@@ -61,6 +64,7 @@ final class GoPayClient
         $this->auth = new AuthApi($this->http);
         $this->payments = new PaymentsApi($this->http);
         $this->cards = new CardsApi($this->http);
+        $this->refunds = new RefundsApi($this->http);
     }
 
     // =========================================================================
@@ -306,5 +310,52 @@ final class GoPayClient
     public function tokenizeEncryptedCard(string $payload): PermanentCardTokenDetails
     {
         return $this->cards->tokenizeEncryptedCard($payload);
+    }
+
+    // =========================================================================
+    // Refunds
+    // =========================================================================
+
+    /**
+     * Refund a payment fully or partially.
+     * Requires `payment:write` scope.
+     *
+     * POST /payments/{payment_id}/refunds
+     *
+     * @param array<string, mixed> $params
+     *
+     * @throws GoPaySdkException
+     */
+    public function refundPayment(string $paymentId, array $params): RefundDetails
+    {
+        return $this->refunds->refundPayment($paymentId, $params);
+    }
+
+    /**
+     * List all refunds for a payment.
+     * Requires `payment:read` scope.
+     *
+     * GET /payments/{payment_id}/refunds
+     *
+     * @throws GoPaySdkException
+     *
+     * @return list<RefundDetails>
+     */
+    public function listRefunds(string $paymentId): array
+    {
+        return $this->refunds->listRefunds($paymentId);
+    }
+
+    /**
+     * Retrieve details of a single refund.
+     * Requires `payment:read` scope.
+     *
+     * GET /refunds/{refund_id}
+     *
+     * @throws GoPaySdkException
+     */
+    public function getRefund(string $refundId): RefundDetails
+    {
+        return $this->refunds->getRefund($refundId);
     }
 }

@@ -13,6 +13,8 @@ This SDK (v2) targets the GoPay Payments API **v4**. It has no source-level comp
 | `getStatus`: `/payments/payment/{id}` → `/payments/{id}` | Pure internal path change |
 | `getQrPayment`: path + `/info` suffix | Pure internal path change |
 | `getCardDetails` / `deleteCard`: `/payments/cards/` → `/cards/tokens/` | Pure internal path change |
+| `refundPayment`: `POST /payments/payment/{id}/refund` → `POST /payments/{id}/refunds` | Refund is a v4 resource with its own ID; the response is `RefundDetails`, not the payment |
+| `getHistoryRefunds` → `listRefunds($id)` + `getRefund($refundId)` | Split into a list endpoint and a per-refund read |
 | OAuth2 token endpoint | Same `/oauth2/token` path, same grant type |
 
 ---
@@ -79,12 +81,10 @@ The embed.js concept is gone in v4. Use the browser SDK iframe instead.
 
 ## Methods removed — no v4 equivalent
 
-These 12 methods are gone in v4. They will throw HTTP 404 if called against the v4 API.
+These 10 methods are gone in v4. They will throw HTTP 404 if called against the v4 API.
 
 | v1 method | v3 endpoint | v4 status |
 |---|---|---|
-| `refundPayment` | `POST /payments/payment/{id}/refund` | ✗ refunds were removed from the v4 API schema (unfinished endpoint), no v4 equivalent |
-| `getHistoryRefunds` | `GET /payments/payment/{id}/refunds` | ✗ refunds were removed from the v4 API schema (unfinished endpoint), no v4 equivalent |
 | `createRecurrence` | (v3 recurrence endpoint) | ✗ recurrences were removed from the v4 API schema (unfinished endpoint), no v4 equivalent |
 | `refundPaymentEET` | `POST /payments/payment/{id}/refund` | ✗ EET abolished Jan 2023, no v4 equivalent |
 | `captureAuthorization` / `captureAuthorizationPartial` | `POST /payments/payment/{id}/capture` | ✗ |
@@ -111,3 +111,5 @@ to remove those calls — there is no v4 equivalent.
 | `getApplePayInfo($id)` | Apple Pay session configuration |
 | `getBrowserKeys()` | Return shareable_key + client_id for browser SDK initialisation |
 | `tokenizeEncryptedCard($jwePayload)` | Server-side card tokenization from iframe JWE |
+| `listRefunds($id)` | List every refund issued against a payment |
+| `getRefund($refundId)` | Read a single refund by its own v4 refund ID |

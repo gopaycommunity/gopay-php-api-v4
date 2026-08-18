@@ -232,6 +232,40 @@ $sdk->deleteCard(string $cardId): void
 $sdk->tokenizeEncryptedCard(string $payload): PermanentCardTokenDetails
 ```
 
+### Refunds
+
+Server-side only — `refundPayment` needs the `payment:write` scope, which a payment-scoped
+browser token never carries.
+
+```php
+// Refund a payment; pass the full amount for a full refund
+$sdk->refundPayment(string $paymentId, array $params): RefundDetails
+
+// List all refunds for a payment
+$sdk->listRefunds(string $paymentId): list<RefundDetails>
+
+// Get a single refund by its own ID
+$sdk->getRefund(string $refundId): RefundDetails
+```
+
+```php
+$refund = $sdk->refundPayment($paymentId, ['amount' => 10000]);
+echo $refund->getState();   // 'REQUESTED' — refunds are asynchronous
+
+// Poll until terminal
+$current = $sdk->getRefund($refund->getId());
+echo $current->getState();  // 'REQUESTED' | 'SUCCESS' | 'FAILED'
+```
+
+`amount` is in minor units and must be positive — the API rejects `0` and negative values
+with `400`. A card payment can only be refunded in full until its transaction has been
+processed by the acquirer; a partial refund attempted before that is rejected with `409`.
+A `FAILED` refund does not consume the refundable amount, so it can be retried.
+
+`RefundDetails` carries `id`, `state`, `amount`, `currency`, `created_at` and `updated_at`.
+It has no `payment_id` and no failure reason — the gateway does not return them, so keep
+your own mapping if you need to resolve a refund back to its payment.
+
 ---
 
 ## Response objects

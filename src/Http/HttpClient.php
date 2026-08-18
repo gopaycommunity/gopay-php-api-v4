@@ -103,6 +103,24 @@ final class HttpClient
     }
 
     /**
+     * GET, returning a top-level JSON array as a list of decoded items.
+     * Use for list endpoints (e.g. GET /payments/{id}/refunds → [{...}, {...}]).
+     *
+     * @throws GoPaySdkException
+     * @throws GoPayHttpException
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function getJsonList(string $path, ?RequestOptions $options = null): array
+    {
+        $request = $this->buildRequest('GET', $path, null, $options);
+        $response = $this->send($request, $options);
+        $this->throwIfNotOk($response);
+
+        return $this->decodeJsonList((string) $response->getBody());
+    }
+
+    /**
      * GET, returning the decoded JSON as a plain PHP array (no DTO hydration).
      * Use for endpoints whose response shape varies or is opaque (object responses).
      *
@@ -397,6 +415,23 @@ final class HttpClient
         $parsedBody = json_last_error() === JSON_ERROR_NONE ? $decoded : $body;
 
         $this->emitError(new GoPayHttpException($status, $parsedBody));
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function decodeJsonList(string $json): array
+    {
+        $data = json_decode($json, true);
+        if (!is_array($data) || !array_is_list($data)) {
+            $this->emitError(new GoPaySdkException(
+                '[GoPaySDK] Failed to parse API response as JSON list.',
+                ErrorCode::UnexpectedResponse,
+            ));
+        }
+
+        /** @var list<array<string, mixed>> $data */
+        return $data;
     }
 
     /**

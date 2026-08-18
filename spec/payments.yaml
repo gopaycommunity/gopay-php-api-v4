@@ -8,6 +8,8 @@ info:
     name: GoPay technical support
     email: integration@gopay.com
 servers:
+  - url: 'https://payments-api-mock.beta.gopay.com/'
+    description: Mock server
   - url: 'https://gw.sandbox.gopay.com/gp-gw/api/4.0'
     description: Sandbox
   - url: 'https://gate.gopay.com/gp-gw/api/4.0'
@@ -369,6 +371,111 @@ paths:
         in: path
         required: true
         description: Payment ID
+  '/payments/{payment_id}/refunds':
+    post:
+      tags:
+        - Refunds
+      summary: Refund a payment
+      description: |
+        Refunds a paid payment in full or in part. Set `amount` to the payment amount for a
+        full refund, or to a lower value for a partial refund. A payment can be refunded
+        repeatedly until the sum of its refunds reaches the original amount.
+      operationId: post-payments-payment_id-refunds
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Refund-Details'
+        '400':
+          $ref: '#/components/responses/Bad-Request-400-Response'
+        '401':
+          $ref: '#/components/responses/Unauthorized-401-Response'
+        '403':
+          $ref: '#/components/responses/Forbidden-403-Response'
+        '404':
+          $ref: '#/components/responses/Not-Found-404-Response'
+        '409':
+          $ref: '#/components/responses/Conflict-409-Response'
+        '500':
+          $ref: '#/components/responses/Internal-Server-Error-500-Response'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Refund-Create-Request'
+      security:
+        - merchant_credentials:
+            - 'payment:write'
+    get:
+      tags:
+        - Refunds
+      summary: List payment refunds
+      description: Returns every refund issued against the payment.
+      operationId: get-payments-payment_id-refunds
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Refund-Details'
+        '401':
+          $ref: '#/components/responses/Unauthorized-401-Response'
+        '403':
+          $ref: '#/components/responses/Forbidden-403-Response'
+        '404':
+          $ref: '#/components/responses/Not-Found-404-Response'
+        '500':
+          $ref: '#/components/responses/Internal-Server-Error-500-Response'
+      security:
+        - merchant_credentials:
+            - 'payment:read'
+        - payment_credentials:
+            - 'payment:read'
+    parameters:
+      - schema:
+          type: string
+        name: payment_id
+        in: path
+        required: true
+        description: Payment ID
+  '/refunds/{refund_id}':
+    get:
+      tags:
+        - Refunds
+      summary: Refund details
+      description: Returns the current state and amount of a single refund.
+      operationId: get-refunds-refund_id
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Refund-Details'
+        '401':
+          $ref: '#/components/responses/Unauthorized-401-Response'
+        '403':
+          $ref: '#/components/responses/Forbidden-403-Response'
+        '404':
+          $ref: '#/components/responses/Not-Found-404-Response'
+        '500':
+          $ref: '#/components/responses/Internal-Server-Error-500-Response'
+      security:
+        - merchant_credentials:
+            - 'payment:read'
+    parameters:
+      - schema:
+          type: string
+        name: refund_id
+        in: path
+        required: true
+        description: Refund ID
   /cards/tokens:
     post:
       tags:
@@ -544,8 +651,8 @@ components:
           scopes:
             'card:write': Used to tokenize payment cards
             'card:read': Used to read data about payment cards
-            'payment:write': 'Used to create, charge or modify payments'
-            'payment:read': Used to read data about payments
+            'payment:write': 'Used to create, charge, modify or refund payments'
+            'payment:read': 'Used to read data about payments, charges and refunds'
             'shared:read': Used to get shared information like public keys and URLs.
           tokenUrl: /oauth2/token
       description: |-
@@ -1015,8 +1122,8 @@ components:
           type: string
           description: |-
             List of required token scopes, separated with a space.
-            - `payment:read` reads information about payments, recurrences and links
-            - `payment:write` allow creation and modification of payments, recurrences and links
+            - `payment:read` reads information about payments, charges and refunds
+            - `payment:write` allows creation, charging, modification and refunding of payments
             - `card:read` and `card:write` allow reading information about and deleting or modifying cards respectively
             - `shared:read` allows reading public global information
           examples:
@@ -2312,6 +2419,70 @@ components:
           example: ENCRYPTED_CARD
         payload:
           $ref: '#/components/schemas/JWE'
+    Refund-Create-Request:
+      title: Refund Create Request
+      type: object
+      required:
+        - amount
+      properties:
+        amount:
+          type: integer
+          description: 'Amount to be refunded in cents. For a full amount, set it equal to the payment amount'
+          minimum: 1
+          examples:
+            - 100
+    Refund-Details:
+      title: Refund Details
+      type: object
+      required:
+        - id
+        - state
+        - amount
+        - currency
+        - created_at
+      properties:
+        id:
+          type: string
+          description: Refund ID
+          examples:
+            - '3050123456'
+        state:
+          $ref: '#/components/schemas/Refund-State'
+          description: Refund state
+        amount:
+          type: integer
+          description: Refunded amount in cents
+          examples:
+            - 100
+        currency:
+          $ref: '#/components/schemas/Currency'
+          description: Refund currency
+        created_at:
+          type: string
+          format: date-time
+          description: When the refund was requested
+          examples:
+            - '2025-12-10T10:30:00Z'
+        updated_at:
+          type: string
+          format: date-time
+          description: When the refund state last changed
+          examples:
+            - '2025-12-10T10:35:00Z'
+    Refund-State:
+      type: string
+      title: Refund State
+      enum:
+        - REQUESTED
+        - SUCCESS
+        - FAILED
+      description: |
+        Refund lifecycle state:
+        - `REQUESTED` - The refund was accepted and is being processed
+        - `SUCCESS` - The refund was settled
+        - `FAILED` - The refund could not be processed
+      examples:
+        - SUCCESS
     Validate-Merchant-Request:
       title: Validate Merchant Request
       type: object

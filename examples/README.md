@@ -24,6 +24,7 @@ composer install   # first time only
 
 php examples/create-and-charge.php
 php examples/browser-sdk-integration.php
+php examples/refund-payment.php <payment_id> [amount]
 ```
 
 ## Scripts
@@ -43,3 +44,16 @@ Server-side half of the browser iframe integration:
 
 - Calls `getBrowserKeys()` and prints the `client_id` / `shareable_key` to embed in your HTML page.
 - Shows both iframe modes: standard token flow and JWE return-payload tokenization.
+
+### `refund-payment.php`
+
+Refunds a payment and follows the refund to a terminal state:
+
+1. `getPaymentStatus()` — confirms the payment is refundable
+2. `refundPayment()` — full refund by default, or a partial one if an amount is given
+3. `getRefund()` — polls until the refund leaves `REQUESTED`
+4. `listRefunds()` — prints every refund on the payment, then the payment's new state
+
+Needs the `payment:write` scope. Two rejections worth knowing: `400` when the amount is not
+positive, and `409` when the payment is not refundable — including a partial refund attempted
+before the card transaction has been processed by the acquirer.
