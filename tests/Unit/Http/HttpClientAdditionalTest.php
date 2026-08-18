@@ -304,4 +304,55 @@ final class HttpClientAdditionalTest extends TestCase
         $this->assertSame('sk_updated', $this->http->getShareableKey());
         $this->assertSame('sk_updated', $this->http->getTokenStore()->getShareableKey());
     }
+
+    #[Test]
+    public function getJsonListReturnsArray(): void
+    {
+        $body = json_encode([
+            ['id' => 'ref-001', 'state' => 'SUCCESS', 'amount' => 500, 'currency' => 'CZK'],
+            ['id' => 'ref-002', 'state' => 'SUCCESS', 'amount' => 200, 'currency' => 'CZK'],
+        ], JSON_THROW_ON_ERROR);
+        $this->mockClient->addResponse(new Response(200, [], $body));
+
+        $result = $this->http->getJsonList('/payments/pay-001/refunds');
+
+        $this->assertCount(2, $result);
+        $this->assertSame('ref-001', $result[0]['id']);
+        $this->assertSame('ref-002', $result[1]['id']);
+    }
+
+    #[Test]
+    public function getJsonListWithSingleItemReturnsCountOne(): void
+    {
+        $body = json_encode([
+            ['id' => 'ref-001', 'state' => 'SUCCESS'],
+        ], JSON_THROW_ON_ERROR);
+        $this->mockClient->addResponse(new Response(200, [], $body));
+
+        $result = $this->http->getJsonList('/payments/pay-001/refunds');
+
+        $this->assertCount(1, $result);
+        $this->assertSame('ref-001', $result[0]['id']);
+    }
+
+    #[Test]
+    public function getJsonListReturnsEmptyArrayForPaymentWithNoRefunds(): void
+    {
+        $this->mockClient->addResponse(new Response(200, [], '[]'));
+
+        $this->assertSame([], $this->http->getJsonList('/payments/pay-001/refunds'));
+    }
+
+    #[Test]
+    public function getJsonListThrowsUnexpectedResponseOnNonListResponse(): void
+    {
+        $this->mockClient->addResponse(new Response(200, [], '{"error":"unexpected"}'));
+
+        try {
+            $this->http->getJsonList('/payments/pay-001/refunds');
+            $this->fail('Expected GoPaySdkException');
+        } catch (GoPaySdkException $e) {
+            $this->assertSame(ErrorCode::UnexpectedResponse, $e->errorCode);
+        }
+    }
 }

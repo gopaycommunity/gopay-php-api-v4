@@ -13,6 +13,7 @@ use GoPay\Payments\Generated\Model\PaymentDetails;
 use GoPay\Payments\Generated\Model\PermanentCardTokenDetails;
 use GoPay\Payments\Generated\Model\QRCodeList;
 use GoPay\Payments\Generated\Model\QRPaymentDetails;
+use GoPay\Payments\Generated\Model\RefundDetails;
 use GoPay\Payments\Generated\ObjectSerializer;
 use PHPUnit\Framework\TestCase;
 
@@ -177,5 +178,42 @@ final class ModelHydrationTest extends TestCase
         $this->assertSame('CZK', $qr->getCurrency());
         $this->assertInstanceOf(BankTransferRecipient::class, $qr->getRecipient());
         $this->assertInstanceOf(QRCodeList::class, $qr->getQrCode());
+    }
+
+    public function testRefundDetailsHydration(): void
+    {
+        /** @var RefundDetails $refund */
+        $refund = ObjectSerializer::deserialize([
+            'id'         => 'ref-001',
+            'state'      => 'SUCCESS',
+            'amount'     => 500,
+            'currency'   => 'CZK',
+            'created_at' => '2024-01-15T10:00:00Z',
+            'updated_at' => '2024-01-15T10:05:00Z',
+        ], RefundDetails::class);
+
+        $this->assertSame('ref-001', $refund->getId());
+        $this->assertSame('SUCCESS', $refund->getState());
+        $this->assertSame(500, $refund->getAmount());
+        $this->assertInstanceOf(\DateTime::class, $refund->getCreatedAt());
+    }
+
+    /**
+     * A FAILED refund carries no updated_at and no failure reason — the gateway
+     * simply omits them, so hydration must tolerate their absence.
+     */
+    public function testFailedRefundDetailsHydrationWithoutUpdatedAt(): void
+    {
+        /** @var RefundDetails $refund */
+        $refund = ObjectSerializer::deserialize([
+            'id'         => 'ref-002',
+            'state'      => 'FAILED',
+            'amount'     => 40,
+            'currency'   => 'CZK',
+            'created_at' => '2024-01-15T10:00:00Z',
+        ], RefundDetails::class);
+
+        $this->assertSame('FAILED', $refund->getState());
+        $this->assertNull($refund->getUpdatedAt());
     }
 }

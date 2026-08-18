@@ -11,6 +11,7 @@ use GoPay\Payments\Generated\Model\PaymentChargeStatusResponse;
 use GoPay\Payments\Generated\Model\PaymentDetails;
 use GoPay\Payments\Generated\Model\PermanentCardTokenDetails;
 use GoPay\Payments\Generated\Model\QRPaymentDetails;
+use GoPay\Payments\Generated\Model\RefundDetails;
 use GoPay\Payments\GoPayClient;
 use GuzzleHttp\Psr7\HttpFactory;
 use GuzzleHttp\Psr7\Response;
@@ -172,5 +173,36 @@ final class GoPayClientTest extends TestCase
         $this->mockClient->addResponse(
             new Response($status, ['Content-Type' => 'application/json'], json_encode($data, JSON_THROW_ON_ERROR)),
         );
+    }
+
+    // ── Refunds ───────────────────────────────────────────────────────────────
+
+    #[Test]
+    public function refundPaymentDelegates(): void
+    {
+        $this->queueJson(['id' => 'ref-001', 'state' => 'REQUESTED', 'amount' => 500, 'currency' => 'CZK']);
+        $result = $this->sdk->refundPayment('pay-001', ['amount' => 500]);
+        $this->assertInstanceOf(RefundDetails::class, $result);
+    }
+
+    #[Test]
+    public function listRefundsDelegates(): void
+    {
+        $this->mockClient->addResponse(new Response(
+            200,
+            [],
+            json_encode([['id' => 'ref-001', 'state' => 'REQUESTED', 'amount' => 500, 'currency' => 'CZK']], JSON_THROW_ON_ERROR),
+        ));
+        $results = $this->sdk->listRefunds('pay-001');
+        $this->assertCount(1, $results);
+        $this->assertInstanceOf(RefundDetails::class, $results[0]);
+    }
+
+    #[Test]
+    public function getRefundDelegates(): void
+    {
+        $this->queueJson(['id' => 'ref-001', 'state' => 'SUCCESS', 'amount' => 500, 'currency' => 'CZK']);
+        $result = $this->sdk->getRefund('ref-001');
+        $this->assertInstanceOf(RefundDetails::class, $result);
     }
 }
