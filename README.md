@@ -20,7 +20,7 @@ See [MIGRATION.md](MIGRATION.md) for a full breakdown. The SDK is v4-only — no
 Key changes:
 - **Gateway URL changed** — update your `Config` initialization
 - **Legacy `gw_url` redirect removed** — replace `header('Location: gw_url')` with `chargePayment()`. 3DS challenges still redirect via `getAction()->getRedirectUrl()`
-- **12 v3 methods removed** — refunds, recurrences, pre-auth capture/void, EET, account statement, payment instruments
+- **10 v3 methods removed** — recurrences, pre-auth capture/void, EET, account statement, payment instruments. Refunds are back in v4 on new paths, see [Refunds](#refunds)
 
 ---
 
@@ -258,9 +258,14 @@ echo $current->getState();  // 'REQUESTED' | 'SUCCESS' | 'FAILED'
 ```
 
 `amount` is in minor units and must be positive — the API rejects `0` and negative values
-with `400`. A card payment can only be refunded in full until its transaction has been
-processed by the acquirer; a partial refund attempted before that is rejected with `409`.
-A `FAILED` refund does not consume the refundable amount, so it can be retried.
+with `400`. A `FAILED` refund does not consume the refundable amount, so it can be retried.
+
+A card payment can only be refunded in full at first; a partial refund attempted too early is
+rejected with `409`. This is not in the OpenAPI spec — it is the gateway's own rejection,
+reproduced against the sandbox, which words it as:
+
+> Partial refund is not allowed for this payment; only a full refund is possible
+> (e.g. a card payment before settlement can only be fully reversed)
 
 `RefundDetails` carries `id`, `state`, `amount`, `currency`, `created_at` and `updated_at`.
 It has no `payment_id` and no failure reason — the gateway does not return them, so keep
