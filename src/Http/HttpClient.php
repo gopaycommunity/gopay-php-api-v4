@@ -488,10 +488,8 @@ final class HttpClient
         return array_map(
             /** @return array<string, mixed> */
             static function (\stdClass $item): array {
-                /** @var array<string, mixed> $assoc */
-                $assoc = json_decode((string) json_encode($item), true);
-
-                return $assoc;
+                /** @var array<string, mixed> */
+                return json_decode((string) json_encode($item), true);
             },
             $this->decodeJsonObjectList($json),
         );
