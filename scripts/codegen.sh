@@ -31,6 +31,26 @@ STAMP_SPEC_URL="https://api-docs.gopay.com/spec/en/payments.yaml"
 echo "→ Fetching latest spec from payments-api.beta.gopay.com ..."
 curl -fsSL "$FETCH_SPEC_URL" -o spec/payments.yaml
 
+# The beta deployment injects a Prism mock server as the FIRST servers entry; the
+# canonical spec (api-docs.gopay.com) lists only Sandbox and Production. Shipping it
+# would leave servers[0] pointing at a mock host in a published SDK, so strip it.
+echo "→ Stripping the beta-injected mock server from servers ..."
+python3 - <<'PY'
+import pathlib
+import re
+
+path = pathlib.Path("spec/payments.yaml")
+text = path.read_text(encoding="utf-8")
+# One list item: the "- url:" line plus its indented continuation lines.
+pattern = re.compile(
+    r"\n  - url: '[^']*payments-api-mock[^']*'\n(?:    [^\n]*\n)*",
+)
+new_text, count = pattern.subn("\n", text)
+if count:
+    path.write_text(new_text, encoding="utf-8")
+print(f"   removed {count} mock server entr{'y' if count == 1 else 'ies'}")
+PY
+
 echo "→ Generating PHP models from spec/payments.yaml ..."
 
 # The CLI reads openapitools.json for generator config and Docker settings.
