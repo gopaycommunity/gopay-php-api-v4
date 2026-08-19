@@ -13,6 +13,11 @@ declare(strict_types=1);
  *
  * Refunds need the `payment:write` scope, so this is a server-side flow only —
  * a payment-scoped browser token cannot issue one.
+ *
+ * Amounts are in minor units (e.g. 10000 = 100.00 CZK).
+ *
+ * Exit codes: 0 the refund reached SUCCESS, 1 it was rejected or reached FAILED,
+ * 2 it was accepted but still REQUESTED when polling gave up.
  */
 
 require __DIR__ . '/bootstrap.php';
@@ -75,8 +80,37 @@ try {
     }
     $remaining = (int) $payment->getAmount() - $alreadyRefunded;
 
-    $amount = isset($argv[2]) && $argv[2] !== '' ? (int) $argv[2] : $remaining;
-    printf('Refunding %d of %d remaining.%s', $amount, $remaining, PHP_EOL);
+    if (isset($argv[2]) && $argv[2] !== '') {
+        // Reject locally what the API would reject anyway, with a clearer message.
+        if (!ctype_digit($argv[2])) {
+            fwrite(STDERR, sprintf(
+                'Amount must be a positive whole number of minor units, got "%s".%s',
+                $argv[2],
+                PHP_EOL,
+            ));
+            exit(1);
+        }
+        $amount = (int) $argv[2];
+    } else {
+        $amount = $remaining;
+    }
+
+    if ($amount < 1) {
+        fwrite(STDERR, sprintf('Amount must be at least 1 minor unit, got %d.%s', $amount, PHP_EOL));
+        exit(1);
+    }
+
+    if ($amount > $remaining) {
+        fwrite(STDERR, sprintf(
+            'Amount %d exceeds the %d still refundable on this payment.%s',
+            $amount,
+            $remaining,
+            PHP_EOL,
+        ));
+        exit(1);
+    }
+
+    printf('Refunding %d of %d remaining (minor units).%s', $amount, $remaining, PHP_EOL);
 
     try {
         $refund = $sdk->refundPayment($paymentId, ['amount' => $amount]);
@@ -104,9 +138,14 @@ try {
         $current   = $sdk->getRefund($refundId);
         $currState = (string) $current->getState();
         printf('  poll %d: %s%s', $attempt, $currState, PHP_EOL);
-        if ($currState !== RefundState::REQUESTED) {
+        if ($currState === RefundState::SUCCESS) {
             $settled = true;
             break;
+        }
+        if ($currState === RefundState::FAILED) {
+            // Terminal, but not a settlement — never report this as success.
+            fwrite(STDERR, sprintf('Refund %s FAILED.%s', $refundId, PHP_EOL));
+            exit(1);
         }
     }
 
