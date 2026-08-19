@@ -372,6 +372,30 @@ final class HttpClientAdditionalTest extends TestCase
     }
 
     #[Test]
+    public function getJsonListThrowsUnexpectedResponseOnNestedArrayItems(): void
+    {
+        // json_decode(..., true) turns both {} and [] into a PHP array, so a nested
+        // array would otherwise pass for an object and hydrate an empty model.
+        $this->mockClient->addResponse(new Response(200, [], '[[]]'));
+
+        try {
+            $this->http->getJsonList('/payments/pay-001/refunds');
+            $this->fail('Expected GoPaySdkException');
+        } catch (GoPaySdkException $e) {
+            $this->assertSame(ErrorCode::UnexpectedResponse, $e->errorCode);
+        }
+    }
+
+    #[Test]
+    public function getJsonListAcceptsEmptyObjectItems(): void
+    {
+        // An empty JSON object is still an object — it must not be confused with [].
+        $this->mockClient->addResponse(new Response(200, [], '[{}]'));
+
+        $this->assertSame([[]], $this->http->getJsonList('/payments/pay-001/refunds'));
+    }
+
+    #[Test]
     public function getJsonListThrowsUnexpectedResponseOnNonListResponse(): void
     {
         $this->mockClient->addResponse(new Response(200, [], '{"error":"unexpected"}'));

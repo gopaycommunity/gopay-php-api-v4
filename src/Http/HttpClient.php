@@ -422,24 +422,32 @@ final class HttpClient
      */
     private function decodeJsonList(string $json): array
     {
-        $data = json_decode($json, true);
-        if (!is_array($data) || !array_is_list($data)) {
+        // Decoded without associative mode on purpose: with it, a JSON object and a
+        // JSON array both become a PHP array, so a body like [[]] would pass for a
+        // list of objects and hydrate an empty model instead of raising.
+        $decoded = json_decode($json);
+        if (!is_array($decoded) || !array_is_list($decoded)) {
             $this->emitError(new GoPaySdkException(
                 '[GoPaySDK] Failed to parse API response as JSON list.',
                 ErrorCode::UnexpectedResponse,
             ));
         }
 
-        // Every element must be an object too — callers map over these as arrays,
-        // and a scalar item would surface as an uncatchable TypeError instead of
-        // a GoPaySdkException that onError can see.
-        foreach ($data as $item) {
-            if (!is_array($item)) {
+        $data = [];
+        foreach ($decoded as $item) {
+            // Callers map over these as arrays; a scalar or nested-array item would
+            // otherwise surface as an uncatchable TypeError rather than a
+            // GoPaySdkException that onError can see.
+            if (!$item instanceof \stdClass) {
                 $this->emitError(new GoPaySdkException(
                     '[GoPaySDK] Failed to parse API response as JSON list: expected a list of objects.',
                     ErrorCode::UnexpectedResponse,
                 ));
             }
+
+            /** @var array<string, mixed> $assoc */
+            $assoc  = json_decode((string) json_encode($item), true);
+            $data[] = $assoc;
         }
 
         /** @var list<array<string, mixed>> $data */
