@@ -38,17 +38,29 @@ echo "→ Stripping the beta-injected mock server from servers ..."
 python3 - <<'PY'
 import pathlib
 import re
+import sys
 
 path = pathlib.Path("spec/payments.yaml")
 text = path.read_text(encoding="utf-8")
-# One list item: the "- url:" line plus its indented continuation lines.
+
+# One servers list item: the "- url:" line plus its indented continuation lines.
+# The url may be single-quoted, double-quoted or bare, so match all three.
 pattern = re.compile(
-    r"\n  - url: '[^']*payments-api-mock[^']*'\n(?:    [^\n]*\n)*",
+    r"\n  - url:[ \t]*['\"]?[^\n'\"]*payments-api-mock[^\n'\"]*['\"]?[^\n]*\n(?:    [^\n]*\n)*",
 )
-new_text, count = pattern.subn("\n", text)
+text, count = pattern.subn("\n", text)
 if count:
-    path.write_text(new_text, encoding="utf-8")
+    path.write_text(text, encoding="utf-8")
 print(f"   removed {count} mock server entr{'y' if count == 1 else 'ies'}")
+
+# Fail closed: if the strip missed a form we did not anticipate, stop rather than
+# generate — shipping a vendored spec pointing at a mock host is the bug we are
+# preventing, and a silent no-op here is how it would come back.
+if "payments-api-mock" in path.read_text(encoding="utf-8"):
+    sys.exit(
+        "   ERROR: payments-api-mock still present in spec/payments.yaml after stripping.\n"
+        "   The beta feed changed the shape of this entry — update the pattern in scripts/codegen.sh."
+    )
 PY
 
 echo "→ Generating PHP models from spec/payments.yaml ..."
