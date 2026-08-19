@@ -10,6 +10,7 @@ use GoPay\Payments\Exception\ErrorCode;
 use GoPay\Payments\Exception\GoPaySdkException;
 use GoPay\Payments\Generated\Model\PaymentChargeResponse;
 use GoPay\Payments\Generated\Model\PaymentDetails;
+use GoPay\Payments\Generated\Model\RefundDetails;
 use GoPay\Payments\Http\HttpClient;
 use GoPay\Payments\Http\RequestOptions;
 use GuzzleHttp\Psr7\HttpFactory;
@@ -303,6 +304,60 @@ final class HttpClientAdditionalTest extends TestCase
         $this->http->setShareableKey('sk_updated');
         $this->assertSame('sk_updated', $this->http->getShareableKey());
         $this->assertSame('sk_updated', $this->http->getTokenStore()->getShareableKey());
+    }
+
+    #[Test]
+    public function getListDeserializesEachItemIntoTheGivenType(): void
+    {
+        $body = json_encode([
+            ['id' => 'ref-001', 'state' => 'SUCCESS', 'amount' => 500, 'currency' => 'CZK'],
+            ['id' => 'ref-002', 'state' => 'FAILED', 'amount' => 200, 'currency' => 'CZK'],
+        ], JSON_THROW_ON_ERROR);
+        $this->mockClient->addResponse(new Response(200, [], $body));
+
+        $result = $this->http->getList('/payments/pay-001/refunds', RefundDetails::class);
+
+        $this->assertCount(2, $result);
+        $this->assertContainsOnlyInstancesOf(RefundDetails::class, $result);
+        $this->assertSame('ref-001', $result[0]->getId());
+        $this->assertSame('SUCCESS', $result[0]->getState());
+        $this->assertSame('FAILED', $result[1]->getState());
+    }
+
+    #[Test]
+    public function getListReturnsEmptyArrayForPaymentWithNoRefunds(): void
+    {
+        $this->mockClient->addResponse(new Response(200, [], '[]'));
+
+        $this->assertSame([], $this->http->getList('/payments/pay-001/refunds', RefundDetails::class));
+    }
+
+    #[Test]
+    public function getListThrowsUnexpectedResponseOnScalarItems(): void
+    {
+        // The typed path must reject the same malformed bodies as getJsonList,
+        // rather than handing a scalar to ObjectSerializer.
+        $this->mockClient->addResponse(new Response(200, [], '["ref-001"]'));
+
+        try {
+            $this->http->getList('/payments/pay-001/refunds', RefundDetails::class);
+            $this->fail('Expected GoPaySdkException');
+        } catch (GoPaySdkException $e) {
+            $this->assertSame(ErrorCode::UnexpectedResponse, $e->errorCode);
+        }
+    }
+
+    #[Test]
+    public function getListThrowsUnexpectedResponseOnNestedArrayItems(): void
+    {
+        $this->mockClient->addResponse(new Response(200, [], '[[]]'));
+
+        try {
+            $this->http->getList('/payments/pay-001/refunds', RefundDetails::class);
+            $this->fail('Expected GoPaySdkException');
+        } catch (GoPaySdkException $e) {
+            $this->assertSame(ErrorCode::UnexpectedResponse, $e->errorCode);
+        }
     }
 
     #[Test]

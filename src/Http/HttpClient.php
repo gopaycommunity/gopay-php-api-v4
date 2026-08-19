@@ -103,6 +103,35 @@ final class HttpClient
     }
 
     /**
+     * GET a top-level JSON array and deserialize each item into $type.
+     * Typed sibling of {@see get()} for list endpoints (e.g. GET /payments/{id}/refunds).
+     *
+     * @template T of ModelInterface
+     *
+     * @param class-string<T> $type
+     *
+     * @throws GoPaySdkException
+     * @throws GoPayHttpException
+     *
+     * @return list<T>
+     */
+    public function getList(string $path, string $type, ?RequestOptions $options = null): array
+    {
+        $request = $this->buildRequest('GET', $path, null, $options);
+        $response = $this->send($request, $options);
+        $this->throwIfNotOk($response);
+
+        $items = [];
+        foreach ($this->decodeJsonObjectList((string) $response->getBody()) as $item) {
+            /** @var T $model */
+            $model   = ObjectSerializer::deserialize($item, $type);
+            $items[] = $model;
+        }
+
+        return $items;
+    }
+
+    /**
      * GET, returning a top-level JSON array as a list of decoded items.
      * Use for list endpoints (e.g. GET /payments/{id}/refunds → [{...}, {...}]).
      *
@@ -418,13 +447,16 @@ final class HttpClient
     }
 
     /**
-     * @return list<array<string, mixed>>
+     * Decode a top-level JSON array into a list of objects.
+     *
+     * Decoded without associative mode on purpose: with it, a JSON object and a JSON
+     * array both become a PHP array, so a body like [[]] would pass for a list of
+     * objects and hydrate an empty model instead of raising.
+     *
+     * @return list<\stdClass>
      */
-    private function decodeJsonList(string $json): array
+    private function decodeJsonObjectList(string $json): array
     {
-        // Decoded without associative mode on purpose: with it, a JSON object and a
-        // JSON array both become a PHP array, so a body like [[]] would pass for a
-        // list of objects and hydrate an empty model instead of raising.
         $decoded = json_decode($json);
         if (!is_array($decoded) || !array_is_list($decoded)) {
             $this->emitError(new GoPaySdkException(
@@ -433,25 +465,36 @@ final class HttpClient
             ));
         }
 
-        $data = [];
         foreach ($decoded as $item) {
-            // Callers map over these as arrays; a scalar or nested-array item would
-            // otherwise surface as an uncatchable TypeError rather than a
-            // GoPaySdkException that onError can see.
+            // A scalar or nested-array item would otherwise surface downstream as an
+            // uncatchable TypeError rather than a GoPaySdkException that onError sees.
             if (!$item instanceof \stdClass) {
                 $this->emitError(new GoPaySdkException(
                     '[GoPaySDK] Failed to parse API response as JSON list: expected a list of objects.',
                     ErrorCode::UnexpectedResponse,
                 ));
             }
-
-            /** @var array<string, mixed> $assoc */
-            $assoc  = json_decode((string) json_encode($item), true);
-            $data[] = $assoc;
         }
 
-        /** @var list<array<string, mixed>> $data */
-        return $data;
+        /** @var list<\stdClass> $decoded */
+        return $decoded;
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function decodeJsonList(string $json): array
+    {
+        return array_map(
+            /** @return array<string, mixed> */
+            static function (\stdClass $item): array {
+                /** @var array<string, mixed> $assoc */
+                $assoc = json_decode((string) json_encode($item), true);
+
+                return $assoc;
+            },
+            $this->decodeJsonObjectList($json),
+        );
     }
 
     /**
