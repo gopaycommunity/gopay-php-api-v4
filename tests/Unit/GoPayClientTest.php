@@ -165,16 +165,6 @@ final class GoPayClientTest extends TestCase
         $this->assertInstanceOf(PermanentCardTokenDetails::class, $result);
     }
 
-    // ── Helper ────────────────────────────────────────────────────────────────
-
-    /** @param array<mixed> $data */
-    private function queueJson(array $data, int $status = 200): void
-    {
-        $this->mockClient->addResponse(
-            new Response($status, ['Content-Type' => 'application/json'], json_encode($data, JSON_THROW_ON_ERROR)),
-        );
-    }
-
     // ── Refunds ───────────────────────────────────────────────────────────────
 
     #[Test]
@@ -205,4 +195,15 @@ final class GoPayClientTest extends TestCase
         $result = $this->sdk->getRefund('ref-001');
         $this->assertInstanceOf(RefundDetails::class, $result);
     }
+
+    // ── Helper ────────────────────────────────────────────────────────────────
+
+    /** @param array<mixed> $data */
+    private function queueJson(array $data, int $status = 200): void
+    {
+        $this->mockClient->addResponse(
+            new Response($status, ['Content-Type' => 'application/json'], json_encode($data, JSON_THROW_ON_ERROR)),
+        );
+    }
+
 }
