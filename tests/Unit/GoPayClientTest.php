@@ -196,6 +196,15 @@ final class GoPayClientTest extends TestCase
         $this->assertInstanceOf(RefundDetails::class, $result);
     }
 
+    #[Test]
+    public function awaitRefundStateDelegates(): void
+    {
+        $this->queueJson(['id' => 'ref-001', 'state' => 'SUCCESS', 'amount' => 500, 'currency' => 'CZK']);
+        $result = $this->sdk->awaitRefundState('ref-001', timeoutSeconds: 30, pollIntervalMs: 1);
+        $this->assertInstanceOf(RefundDetails::class, $result);
+        $this->assertSame('SUCCESS', $result->getState());
+    }
+
     // ── Helper ────────────────────────────────────────────────────────────────
 
     /** @param array<mixed> $data */

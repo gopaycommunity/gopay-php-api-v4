@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace GoPay\Payments\Tests\Unit\Module;
 
+use GoPay\Payments\Exception\ErrorCode;
 use GoPay\Payments\Exception\GoPaySdkException;
 use GoPay\Payments\Generated\Model\RefundDetails;
 use GoPay\Payments\Module\RefundsApi;
@@ -186,5 +187,23 @@ final class RefundsApiTest extends ModuleTestCase
         $refund = $this->refunds->awaitRefundState('ref-001');
 
         $this->assertSame('FAILED', $refund->getState());
+    }
+
+    #[Test]
+    public function awaitRefundStateThrowsOnTimeout(): void
+    {
+        // A refund that never leaves REQUESTED must time out rather than spin
+        // forever — the one error path in this method.
+        for ($i = 0; $i < 20; $i++) {
+            $this->queueJson($this->refundDetailsJson(['state' => 'REQUESTED']));
+        }
+
+        try {
+            $this->refunds->awaitRefundState('ref-001', 1, 100);
+            $this->fail('Expected GoPaySdkException was not thrown.');
+        } catch (GoPaySdkException $e) {
+            $this->assertSame(ErrorCode::ChargeTimeout, $e->errorCode);
+            $this->assertStringContainsString('did not settle', $e->getMessage());
+        }
     }
 }
