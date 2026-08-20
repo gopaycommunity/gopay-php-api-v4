@@ -246,16 +246,22 @@ $sdk->listRefunds(string $paymentId): list<RefundDetails>
 
 // Get a single refund by its own ID
 $sdk->getRefund(string $refundId): RefundDetails
+
+// Poll a refund until it reaches SUCCESS or FAILED
+$sdk->awaitRefundState(string $refundId, int $timeoutSeconds = 30, int $pollIntervalMs = 1000): RefundDetails
 ```
 
 ```php
 $refund = $sdk->refundPayment($paymentId, ['amount' => 10000]);
 echo $refund->getState();   // 'REQUESTED' — refunds are asynchronous
 
-// Poll until terminal
-$current = $sdk->getRefund($refund->getId());
-echo $current->getState();  // 'REQUESTED' | 'SUCCESS' | 'FAILED'
+// Poll until it settles; awaitRefundState does the loop for you
+$settled = $sdk->awaitRefundState($refund->getId());
+echo $settled->getState();  // 'SUCCESS' | 'FAILED'
 ```
+
+A `FAILED` refund is returned rather than raised — unlike `awaitChargeState()`, which raises on
+failure. The refundable amount is untouched, so the caller decides whether to retry.
 
 `amount` is in minor units and must be positive — the API rejects `0` and negative values
 with `400`. A `FAILED` refund does not consume the refundable amount, so it can be retried.

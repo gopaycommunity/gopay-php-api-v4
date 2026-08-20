@@ -63,7 +63,7 @@ src/
 │   ├── AuthApi.php          ← authenticate / isAuthenticated / logout / setShareableKey / getBrowserKeys
 │   ├── PaymentsApi.php      ← createPayment / chargePayment / getPaymentStatus / …
 │   ├── CardsApi.php         ← getCardDetails / deleteCard / tokenizeEncryptedCard
-│   └── RefundsApi.php       ← refundPayment / listRefunds / getRefund
+│   └── RefundsApi.php       ← refundPayment / listRefunds / getRefund / awaitRefundState
 └── Generated/               ← generated from OpenAPI spec (PHPStan-excluded from analysis)
     ├── ObjectSerializer.php
     ├── HeaderSelector.php

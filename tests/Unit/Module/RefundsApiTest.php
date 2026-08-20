@@ -127,4 +127,64 @@ final class RefundsApiTest extends ModuleTestCase
         $this->assertSame('GET', $requests[0]->getMethod());
         $this->assertStringEndsWith('/refunds/ref-123', (string) $requests[0]->getUri());
     }
+
+    // -------------------------------------------------------------------------
+    // awaitRefundState
+    // -------------------------------------------------------------------------
+
+    #[Test]
+    public function awaitRefundStateThrowsWhenRefundIdIsEmpty(): void
+    {
+        $this->expectException(GoPaySdkException::class);
+        $this->refunds->awaitRefundState('');
+    }
+
+    #[Test]
+    public function awaitRefundStateRejectsNonPositiveTimeout(): void
+    {
+        $this->expectException(GoPaySdkException::class);
+        $this->refunds->awaitRefundState('ref-001', 0);
+    }
+
+    #[Test]
+    public function awaitRefundStateRejectsNonPositivePollInterval(): void
+    {
+        $this->expectException(GoPaySdkException::class);
+        $this->refunds->awaitRefundState('ref-001', 30, 0);
+    }
+
+    #[Test]
+    public function awaitRefundStateReturnsImmediatelyWhenAlreadySuccess(): void
+    {
+        $this->queueJson($this->refundDetailsJson(['state' => 'SUCCESS']));
+
+        $refund = $this->refunds->awaitRefundState('ref-001');
+
+        $this->assertInstanceOf(RefundDetails::class, $refund);
+        $this->assertSame('SUCCESS', $refund->getState());
+    }
+
+    #[Test]
+    public function awaitRefundStatePollsWhileRequested(): void
+    {
+        $this->queueJson($this->refundDetailsJson(['state' => 'REQUESTED']));
+        $this->queueJson($this->refundDetailsJson(['state' => 'SUCCESS']));
+
+        $refund = $this->refunds->awaitRefundState('ref-001', 30, 1);
+
+        $this->assertSame('SUCCESS', $refund->getState());
+    }
+
+    #[Test]
+    public function awaitRefundStateReturnsFailedInsteadOfRaising(): void
+    {
+        // A failed refund leaves the refundable amount intact, so the caller needs
+        // the object to decide whether to retry — unlike awaitChargeState, which
+        // raises on FAILED. Matches awaitRefundState in the JavaScript SDK.
+        $this->queueJson($this->refundDetailsJson(['state' => 'FAILED']));
+
+        $refund = $this->refunds->awaitRefundState('ref-001');
+
+        $this->assertSame('FAILED', $refund->getState());
+    }
 }

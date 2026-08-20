@@ -358,4 +358,23 @@ final class GoPayClient
     {
         return $this->refunds->getRefund($refundId);
     }
+
+    /**
+     * Poll a refund until it reaches `SUCCESS` or `FAILED`.
+     * Requires `payment:read` scope.
+     *
+     * GET /refunds/{refund_id}
+     *
+     * A `FAILED` refund is returned, not raised — the refundable amount is untouched,
+     * so the caller decides whether to retry.
+     *
+     * @throws GoPaySdkException
+     */
+    public function awaitRefundState(
+        string $refundId,
+        int $timeoutSeconds = 30,
+        int $pollIntervalMs = 1_000,
+    ): RefundDetails {
+        return $this->refunds->awaitRefundState($refundId, $timeoutSeconds, $pollIntervalMs);
+    }
 }

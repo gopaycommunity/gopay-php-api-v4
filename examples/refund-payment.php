@@ -17,7 +17,7 @@ declare(strict_types=1);
  * Amounts are in minor units (e.g. 10000 = 100.00 CZK).
  *
  * Exit codes: 0 the refund reached SUCCESS, 1 it was rejected or reached FAILED,
- * 2 it was accepted but still REQUESTED when polling gave up.
+ * 2 it was accepted but had not settled before the poll timeout.
  */
 
 require __DIR__ . '/bootstrap.php';
@@ -27,8 +27,7 @@ use GoPay\Payments\Exception\GoPaySdkException;
 use GoPay\Payments\Generated\Model\RefundState;
 
 const REFUNDABLE_STATES = ['PAID', 'PARTIALLY_REFUNDED'];
-const POLL_ATTEMPTS     = 10;
-const POLL_SLEEP        = 3;
+const POLL_TIMEOUT_SECONDS = 30;
 
 $paymentId = $argv[1] ?? null;
 if ($paymentId === null) {
@@ -130,29 +129,26 @@ try {
         PHP_EOL,
     );
 
-    // Refunds are asynchronous: the 201 only means "accepted".
+    // Refunds are asynchronous: the 201 only means "accepted". awaitRefundState
+    // does the polling, and returns FAILED rather than raising on it.
     $refundId = (string) $refund->getId();
     $settled  = false;
-    for ($attempt = 1; $attempt <= POLL_ATTEMPTS; $attempt++) {
-        sleep(POLL_SLEEP);
-        $current   = $sdk->getRefund($refundId);
+    try {
+        $current   = $sdk->awaitRefundState($refundId, POLL_TIMEOUT_SECONDS);
         $currState = (string) $current->getState();
-        printf('  poll %d: %s%s', $attempt, $currState, PHP_EOL);
-        if ($currState === RefundState::SUCCESS) {
-            $settled = true;
-            break;
-        }
+        printf('  settled as %s%s', $currState, PHP_EOL);
+
         if ($currState === RefundState::FAILED) {
             // Terminal, but not a settlement — never report this as success.
             fwrite(STDERR, sprintf('Refund %s FAILED.%s', $refundId, PHP_EOL));
             exit(1);
         }
-    }
-
-    if (!$settled) {
+        $settled = true;
+    } catch (GoPaySdkException $e) {
+        // Timed out while still REQUESTED — the refund may yet settle.
         printf(
-            'Still REQUESTED after %d polls — refund %s has not settled yet.%s',
-            POLL_ATTEMPTS,
+            'Still REQUESTED after %d seconds — refund %s has not settled yet.%s',
+            POLL_TIMEOUT_SECONDS,
             $refundId,
             PHP_EOL,
         );

@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace GoPay\Payments\Module;
 
+use GoPay\Payments\Exception\ErrorCode;
 use GoPay\Payments\Exception\GoPaySdkException;
 use GoPay\Payments\Generated\Model\RefundDetails;
+use GoPay\Payments\Generated\Model\RefundState;
 use GoPay\Payments\Http\HttpClient;
 
 /**
@@ -70,5 +72,58 @@ final class RefundsApi
         $rid = $this->requireNonEmpty($refundId, 'refundId');
 
         return $this->client->get("/refunds/{$rid}", RefundDetails::class);
+    }
+
+    /**
+     * Poll a refund until it settles.
+     *
+     * `refundPayment()` only ever returns `REQUESTED` — the refund is accepted, not
+     * settled — so callers would otherwise write this loop themselves.
+     *
+     * Unlike {@see PaymentsApi::awaitChargeState()}, a `FAILED` refund is returned
+     * rather than raised: the refundable amount is untouched, so the caller needs the
+     * object to decide whether to retry. This also matches `awaitRefundState()` in the
+     * JavaScript SDK, which resolves on `FAILED`.
+     *
+     * @param int $timeoutSeconds Maximum total wait time (default 30 s).
+     * @param int $pollIntervalMs Polling interval in milliseconds (default 1 000 ms).
+     *
+     * @throws GoPaySdkException
+     */
+    public function awaitRefundState(
+        string $refundId,
+        int $timeoutSeconds = 30,
+        int $pollIntervalMs = 1_000,
+    ): RefundDetails {
+        $rid = $this->requireNonEmpty($refundId, 'refundId');
+        if ($timeoutSeconds <= 0) {
+            throw new GoPaySdkException('[GoPaySDK] timeoutSeconds must be > 0.', ErrorCode::InvalidArgument);
+        }
+        if ($pollIntervalMs <= 0) {
+            throw new GoPaySdkException('[GoPaySDK] pollIntervalMs must be > 0.', ErrorCode::InvalidArgument);
+        }
+        $deadline = time() + $timeoutSeconds;
+
+        while (true) {
+            $refund = $this->client->get("/refunds/{$rid}", RefundDetails::class);
+            $state  = $refund->getState();
+
+            if ($state === RefundState::SUCCESS || $state === RefundState::FAILED) {
+                return $refund;
+            }
+
+            $now = time();
+            if ($now >= $deadline) {
+                $this->client->emitError(new GoPaySdkException(
+                    sprintf('[GoPaySDK] Refund did not settle within %d seconds.', $timeoutSeconds),
+                    ErrorCode::ChargeTimeout,
+                ));
+            }
+
+            $sleepUs = min($pollIntervalMs * 1_000, max(0, ($deadline - $now) * 1_000_000));
+            if ($sleepUs > 0) {
+                usleep($sleepUs);
+            }
+        }
     }
 }
