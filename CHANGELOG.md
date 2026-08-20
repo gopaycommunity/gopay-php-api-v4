@@ -1,3 +1,13 @@
+## [1.3.0](https://bitbucket.org/gp-gopay/gopay-php-api-v4/compare/1.2.0...1.3.0) (2026-08-20)
+
+### Features
+
+* **refunds:** add awaitRefundState GPOMA-2522 ([0340bd5](https://bitbucket.org/gp-gopay/gopay-php-api-v4/commit/0340bd5d536661d2d3f9b660f9a0683b103b8854))
+
+### Bug Fixes
+
+* **refunds:** address awaitRefundState review GPOMA-2542 ([72df7ce](https://bitbucket.org/gp-gopay/gopay-php-api-v4/commit/72df7ce377cdf937de388e3cd573608b93680ab6)), closes [#10](https://bitbucket.org/gp-gopay/gopay-php-api-v4/issues/10)
+
 ## [1.2.0](https://bitbucket.org/gp-gopay/gopay-php-api-v4/compare/1.1.0...1.2.0) (2026-08-20)
 
 ### Features
