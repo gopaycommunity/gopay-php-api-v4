@@ -1,3 +1,18 @@
+## [1.2.0](https://bitbucket.org/gp-gopay/gopay-php-api-v4/compare/1.1.0...1.2.0) (2026-08-20)
+
+### Features
+
+* **refunds:** restore refunds support GPOMA-2522 ([2193ddf](https://bitbucket.org/gp-gopay/gopay-php-api-v4/commit/2193ddfc2554df5090dce53a0239351e5558706b))
+
+### Bug Fixes
+
+* **codegen:** fail closed if the mock server survives stripping GPOMA-2522 ([9a4d1f4](https://bitbucket.org/gp-gopay/gopay-php-api-v4/commit/9a4d1f4c218ac69ad9a1d793c5ef29d453ef9273))
+* **codegen:** strip the beta-injected mock server from the vendored spec GPOMA-2522 ([3fac61b](https://bitbucket.org/gp-gopay/gopay-php-api-v4/commit/3fac61b0034518b91526b4e6b3f5db451b8c00e8))
+* **examples:** never report a FAILED refund as success GPOMA-2522 ([6a84960](https://bitbucket.org/gp-gopay/gopay-php-api-v4/commit/6a84960321877aba6bf4c028444e38e26dd3d708))
+* **http:** reject nested arrays in decodeJsonList GPOMA-2522 ([cc89067](https://bitbucket.org/gp-gopay/gopay-php-api-v4/commit/cc8906705b9e5be16719453291fcd93c4b347760))
+* **refunds:** address self-review findings GPOMA-2522 ([841d1e3](https://bitbucket.org/gp-gopay/gopay-php-api-v4/commit/841d1e3d4dc9e2609dbd2adb7556b446d620f637))
+* resolve SonarCloud S1488 in decodeJsonList GPOMA-2522 ([87f8279](https://bitbucket.org/gp-gopay/gopay-php-api-v4/commit/87f82793ec40ee1f4f0569dd9b9bb6d055cc24e9))
+
 ## [1.1.0](https://bitbucket.org/gp-gopay/gopay-php-api-v4/compare/1.0.4...1.1.0) (2026-08-01)
 
 ### Features
