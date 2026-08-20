@@ -16,12 +16,14 @@ declare(strict_types=1);
  *
  * Amounts are in minor units (e.g. 10000 = 100.00 CZK).
  *
- * Exit codes: 0 the refund reached SUCCESS, 1 it was rejected or reached FAILED,
- * 2 it was accepted but had not settled before the poll timeout.
+ * Exit codes: 0 the refund reached SUCCESS, 1 it was rejected, reached FAILED, or the
+ * SDK raised anything other than a poll timeout, 2 it was accepted but had not settled
+ * before the poll timeout.
  */
 
 require __DIR__ . '/bootstrap.php';
 
+use GoPay\Payments\Exception\ErrorCode;
 use GoPay\Payments\Exception\GoPayHttpException;
 use GoPay\Payments\Exception\GoPaySdkException;
 use GoPay\Payments\Generated\Model\RefundState;
@@ -145,6 +147,13 @@ try {
         }
         $settled = true;
     } catch (GoPaySdkException $e) {
+        // Only a poll timeout means "accepted, not settled yet" (exit 2). A network,
+        // auth or malformed-response failure is a real error — rethrow it so the outer
+        // handler reports it as such instead of mislabelling it as still REQUESTED.
+        if ($e->errorCode !== ErrorCode::ChargeTimeout) {
+            throw $e;
+        }
+
         // Timed out while still REQUESTED — the refund may yet settle.
         printf(
             'Still REQUESTED after %d seconds — refund %s has not settled yet.%s',

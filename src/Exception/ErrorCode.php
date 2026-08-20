@@ -24,8 +24,12 @@ enum ErrorCode: string
     /** API responded successfully but the body shape was unexpected (not a JSON object/array). */
     case UnexpectedResponse = 'UNEXPECTED_RESPONSE';
 
-    // Charge polling errors
-    /** Charge did not leave REQUESTED/PROCESSING within the timeout. */
+    // Polling errors
+    /**
+     * Polling gave up: a charge did not leave REQUESTED/PROCESSING, or a refund did not
+     * leave REQUESTED, within the timeout. Raised by both awaitChargeState() and
+     * awaitRefundState() — the refund poller reuses this case rather than adding its own.
+     */
     case ChargeTimeout = 'CHARGE_TIMEOUT';
     /** Charge reached terminal FAILED state. */
     case ChargeFailed = 'CHARGE_FAILED';

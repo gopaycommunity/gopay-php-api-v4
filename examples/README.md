@@ -52,15 +52,16 @@ Refunds a payment and follows the refund to a terminal state:
 1. `getPaymentStatus()` — refuses to continue unless the payment is `PAID` or `PARTIALLY_REFUNDED`
 2. `listRefunds()` — sums the settled refunds to work out how much is still refundable
 3. `refundPayment()` — refunds the remainder by default, or the amount given as the second argument
-4. `getRefund()` — polls until the refund leaves `REQUESTED` (exit code `2` if it never does)
+4. `awaitRefundState()` — polls until the refund settles as `SUCCESS` or `FAILED` (exit code `2` if it is still `REQUESTED` when the 30 s timeout is reached)
 5. `listRefunds()` — prints every refund on the payment, then the payment's new state
 
 Amounts are in **minor units** (e.g. `10000` = 100.00 CZK). With no amount the script refunds
 whatever is still refundable, and it rejects a malformed, zero, negative or too-large amount
 before calling the API.
 
-Exit codes: `0` the refund reached `SUCCESS`, `1` it was rejected or reached `FAILED`, `2` it was
-accepted but still `REQUESTED` when polling gave up.
+Exit codes: `0` the refund reached `SUCCESS`, `1` it was rejected, reached `FAILED`, or the SDK
+raised anything other than a poll timeout, `2` it was accepted but still `REQUESTED` when polling
+gave up.
 
 Needs the `payment:write` scope. Two rejections worth knowing: `400` when the amount is not
 positive, and `409` when the payment is not refundable — including a partial refund attempted

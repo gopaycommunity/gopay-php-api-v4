@@ -35,6 +35,23 @@ final class RefundsApiTest extends ModuleTestCase
         ], $overrides);
     }
 
+    /**
+     * Argument validation must report `InvalidArgument`, not just any GoPaySdkException —
+     * a regression that raised the wrong code would otherwise still pass.
+     *
+     * @param callable(): mixed $call
+     */
+    private function assertRejectsArgument(callable $call, string $expectedMessage): void
+    {
+        try {
+            $call();
+            $this->fail('Expected GoPaySdkException was not thrown.');
+        } catch (GoPaySdkException $e) {
+            $this->assertSame(ErrorCode::InvalidArgument, $e->errorCode);
+            $this->assertStringContainsString($expectedMessage, $e->getMessage());
+        }
+    }
+
     // -------------------------------------------------------------------------
     // refundPayment
     // -------------------------------------------------------------------------
@@ -136,22 +153,46 @@ final class RefundsApiTest extends ModuleTestCase
     #[Test]
     public function awaitRefundStateThrowsWhenRefundIdIsEmpty(): void
     {
-        $this->expectException(GoPaySdkException::class);
-        $this->refunds->awaitRefundState('');
+        $this->assertRejectsArgument(
+            fn(): mixed => $this->refunds->awaitRefundState(''),
+            'refundId must not be empty',
+        );
     }
 
     #[Test]
-    public function awaitRefundStateRejectsNonPositiveTimeout(): void
+    public function awaitRefundStateRejectsZeroTimeout(): void
     {
-        $this->expectException(GoPaySdkException::class);
-        $this->refunds->awaitRefundState('ref-001', 0);
+        $this->assertRejectsArgument(
+            fn(): mixed => $this->refunds->awaitRefundState('ref-001', 0),
+            'timeoutSeconds must be > 0',
+        );
     }
 
     #[Test]
-    public function awaitRefundStateRejectsNonPositivePollInterval(): void
+    public function awaitRefundStateRejectsNegativeTimeout(): void
     {
-        $this->expectException(GoPaySdkException::class);
-        $this->refunds->awaitRefundState('ref-001', 30, 0);
+        $this->assertRejectsArgument(
+            fn(): mixed => $this->refunds->awaitRefundState('ref-001', -1),
+            'timeoutSeconds must be > 0',
+        );
+    }
+
+    #[Test]
+    public function awaitRefundStateRejectsZeroPollInterval(): void
+    {
+        $this->assertRejectsArgument(
+            fn(): mixed => $this->refunds->awaitRefundState('ref-001', 30, 0),
+            'pollIntervalMs must be > 0',
+        );
+    }
+
+    #[Test]
+    public function awaitRefundStateRejectsNegativePollInterval(): void
+    {
+        $this->assertRejectsArgument(
+            fn(): mixed => $this->refunds->awaitRefundState('ref-001', 30, -100),
+            'pollIntervalMs must be > 0',
+        );
     }
 
     #[Test]

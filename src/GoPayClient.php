@@ -368,6 +368,12 @@ final class GoPayClient
      * A `FAILED` refund is returned, not raised — the refundable amount is untouched,
      * so the caller decides whether to retry.
      *
+     * WARNING: This method calls usleep() in a loop and blocks the PHP process
+     * for up to $timeoutSeconds. In PHP-FPM or mod_php deployments this holds a
+     * worker unavailable to serve other requests for the full polling window.
+     * Prefer a webhook-driven approach for production web applications: let the
+     * GoPay notification call your server, then use getRefund() once.
+     *
      * @throws GoPaySdkException
      */
     public function awaitRefundState(

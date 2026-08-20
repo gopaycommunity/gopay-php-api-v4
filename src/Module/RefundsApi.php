@@ -85,11 +85,11 @@ final class RefundsApi
      * object to decide whether to retry. This also matches `awaitRefundState()` in the
      * JavaScript SDK, which resolves on `FAILED`.
      *
-     * `$timeoutSeconds` bounds how long this waits between polls, not the wall clock
-     * at which it gives up: a poll that comes back terminal is returned even if the
-     * deadline elapsed while it was in flight, since a real answer beats raising a
-     * timeout over one that already arrived. Same semantics as
-     * {@see PaymentsApi::awaitChargeState()}.
+     * `$timeoutSeconds` bounds how long this keeps polling, not the wall clock at which
+     * it returns: the deadline is only checked between polls, so a poll that comes back
+     * terminal is returned even if the deadline elapsed while it was in flight, since a
+     * real answer beats raising a timeout over one that already arrived. Same semantics
+     * as {@see PaymentsApi::awaitChargeState()}.
      *
      * @param int $timeoutSeconds Maximum total wait time (default 30 s).
      * @param int $pollIntervalMs Polling interval in milliseconds (default 1 000 ms).

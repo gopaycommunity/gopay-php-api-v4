@@ -134,3 +134,4 @@ to remove those calls — there is no v4 equivalent.
 | `tokenizeEncryptedCard($jwePayload)` | Server-side card tokenization from iframe JWE |
 | `listRefunds($id)` | List every refund issued against a payment |
 | `getRefund($refundId)` | Read a single refund by its own v4 refund ID |
+| `awaitRefundState($refundId)` | Synchronous poll loop until a refund settles (SUCCESS/FAILED) |

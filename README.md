@@ -264,7 +264,7 @@ A `FAILED` refund is returned rather than raised — unlike `awaitChargeState()`
 failure. The refundable amount is untouched, so the caller decides whether to retry.
 
 `amount` is in minor units and must be positive — the API rejects `0` and negative values
-with `400`. A `FAILED` refund does not consume the refundable amount, so it can be retried.
+with `400`.
 
 A card payment can only be refunded in full at first; a partial refund attempted too early is
 rejected with `409`. This is not in the OpenAPI spec — it is the gateway's own rejection,
@@ -421,7 +421,7 @@ try {
 | `AuthCredentialsMissing` | No stored client credentials |
 | `AuthUnauthorized` | Still 401 after token refresh |
 | `NetworkError` | Transport-level failure, including timeouts |
-| `ChargeTimeout` | `awaitChargeState()` timed out |
+| `ChargeTimeout` | `awaitChargeState()` or `awaitRefundState()` timed out |
 | `ChargeFailed` | Charge reached FAILED state |
 | `UnexpectedResponse` | API responded with an unexpected body shape |
 | `InvalidConfig` | Bad configuration |
@@ -479,17 +479,18 @@ function getGoPayClient(): GoPayClient {
 > release. Until then, the pattern above or a singleton per worker process is the
 > recommended approach.
 
-### `awaitChargeState` in web contexts
+### `awaitChargeState` / `awaitRefundState` in web contexts
 
-`awaitChargeState()` uses `usleep()` and **blocks the PHP worker process** for up to
-`$timeoutSeconds` (default 30 s). Under concurrent load this can exhaust the worker
-pool. Prefer the **webhook-driven pattern** for production web servers:
+`awaitChargeState()` and `awaitRefundState()` both `usleep()` in a loop and **block the PHP
+worker process** for up to `$timeoutSeconds` (default 30 s). Under concurrent load this can
+exhaust the worker pool. Prefer the **webhook-driven pattern** for production web servers:
 
 1. GoPay POSTs a notification to your `notification_url`.
-2. Your handler calls `getChargeState()` once and records the result.
+2. Your handler calls `getChargeState()` — or `getRefund()` for a refund — once and records
+   the result.
 3. Return HTTP 200 immediately.
 
-Use `awaitChargeState()` only in CLI scripts or environments with ample worker headroom.
+Use either poller only in CLI scripts or environments with ample worker headroom.
 
 ---
 
