@@ -116,7 +116,7 @@ if ($charge->getAction()?->getRedirectUrl() !== null) {
 > explicit that a server-side call returns the server's own values, and the card issuer rejects
 > those during 3-D Secure authentication. This is why the SDK has no server-side method for that
 > endpoint: calling it from PHP would produce exactly the wrong values.
-
+>
 > **`gw_url` — escape hatch for methods not yet on v4.** The `PaymentDetails` object contains a `gw_url` field. Don't redirect to it by default — this SDK's own flow (`createPayment()` → `chargePayment()`) fully covers card payments. Use `gw_url` deliberately when the payment needs a method or feature not yet implemented in the v4 charge flow: redirecting there hands off real-time control to the hosted (v3-backed) flow while the customer is on it, but the payment remains fully v4-observable — `getPaymentStatus()` reports the final state once the customer completes it, exactly as it would for a payment charged directly through v4.
 
 ---
