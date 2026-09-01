@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace GoPay\Payments\Tests\E2E;
 
-use GoPay\Payments\AcceptHeader;
 use GoPay\Payments\Generated\Model\PaymentChargeResponse;
 use GoPay\Payments\Generated\Model\PaymentDetails;
 
@@ -70,16 +69,13 @@ class PaymentsE2ETest extends E2ETestCase
                     'screen_width'       => 1920,
                     'screen_height'      => 1080,
                     'color_depth'        => 24,
-                    'user_agent'         => 'Mozilla/5.0 (phpunit)',
-                    // In a real handler: AcceptHeader::fromServerGlobals() on the
-                    // incoming customer request. No such request exists in phpunit,
-                    // so feed the helper a $_SERVER-shaped sample.
-                    'accept_header'      => AcceptHeader::fromServerGlobals([
-                        'HTTP_ACCEPT'          => 'application/json, text/plain, */*',
-                        'HTTP_ACCEPT_LANGUAGE' => 'en-US;q=0.8',
-                        'HTTP_ACCEPT_ENCODING' => 'gzip, deflate, br',
-                    ]),
                     'javascript_enabled' => true,
+                    // In a real integration ip, user_agent and accept_header all come
+                    // from GET /cards/browser-data, fetched by the customer's browser.
+                    // There is no browser behind phpunit, so these are literals.
+                    'ip'                 => '192.0.2.42',
+                    'user_agent'         => 'Mozilla/5.0 (phpunit)',
+                    'accept_header'      => '{"accept":"application/json, text/plain, */*","accept-language":"en-US;q=0.8","accept-encoding":"gzip, deflate, br"}',
                 ],
             ],
         ]);
