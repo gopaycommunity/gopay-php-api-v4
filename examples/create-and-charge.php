@@ -23,6 +23,20 @@ use GoPay\Payments\Exception\GoPaySdkException;
 
 echo PHP_EOL . '=== Step 1: createPayment ===' . PHP_EOL;
 
+// `amount` is minor units ("cents"), not major units — 1990 means 19.90 CZK.
+// Every currency this API accepts (CZK, EUR, PLN, USD, GBP, HUF, RON) uses a
+// two-decimal minor unit, so `* 100` is arithmetically right today. Put it in
+// one toMinorUnit(major, currency) helper anyway instead of inline at each
+// call site: rounding a float price is where this actually goes wrong.
+//
+// GoPay has no idempotency key for createPayment() — a double-submit or a
+// client retry after a timeout calls this endpoint again with nothing
+// stopping GoPay from creating a second, separate payment (new id, new
+// gw_url) for the same order. A real create-payment route must check for an
+// existing pending/paid order with this order_number *first* and return that
+// payment's details instead of calling createPayment() again. This example
+// always mints a fresh timestamp-based order_number so it's safe to re-run,
+// but that dedup check is not optional in production.
 $payment = $sdk->createPayment($goid, [
     'amount'       => 1990,        // minor units — 19.90 CZK
     'currency'     => 'CZK',
@@ -38,8 +52,15 @@ $payment = $sdk->createPayment($goid, [
     ],
 ]);
 
-// Do NOT use $payment->gw_url — it is a backward-compat field for old redirects.
-// This SDK always uses createPayment() → chargePayment().
+// $payment->gw_url also exists here — it's a deliberate, still-supported
+// escape hatch into the previous (v3) hosted-gateway flow, for payment methods
+// the v4 charge endpoint does not yet cover, not a legacy field to avoid.
+// Redirecting to it hands off real-time control of this payment to the hosted
+// flow while the customer is on it, but getPaymentStatus() still reports the
+// final state once they complete it — exactly as it would for a payment
+// charged directly through v4. This example demonstrates the create → charge
+// (card-only) flow, so gw_url is simply unused below; the only rule is not to
+// redirect to it *and* call chargePayment() for the same payment attempt.
 
 echo 'Payment ID : ' . $payment->getId() . PHP_EOL;
 echo 'State      : ' . ($payment->getState() ?? 'n/a') . PHP_EOL;
