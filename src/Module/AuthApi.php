@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace GoPay\Payments\Module;
 
 use GoPay\Payments\Exception\ErrorCode;
+use GoPay\Payments\Exception\GoPayHttpException;
 use GoPay\Payments\Exception\GoPaySdkException;
 use GoPay\Payments\Http\HttpClient;
 
@@ -33,6 +34,7 @@ final class AuthApi
      * POST /oauth2/token
      *
      * @throws GoPaySdkException
+     * @throws GoPayHttpException
      */
     public function authenticate(string $clientId, string $clientSecret, string $scope): void
     {

@@ -86,6 +86,7 @@ final class GoPayClient
      * POST /oauth2/token
      *
      * @throws GoPaySdkException
+     * @throws GoPayHttpException
      */
     public function authenticate(string $clientId, string $clientSecret, string $scope): void
     {
@@ -151,6 +152,7 @@ final class GoPayClient
      * @param array<string, mixed> $params
      *
      * @throws GoPaySdkException
+     * @throws GoPayHttpException
      */
     public function createPayment(string $goid, array $params): PaymentDetails
     {
@@ -163,6 +165,7 @@ final class GoPayClient
      * GET /payments/{payment_id}
      *
      * @throws GoPaySdkException
+     * @throws GoPayHttpException
      */
     public function getPaymentStatus(string $paymentId): PaymentDetails
     {
@@ -177,6 +180,7 @@ final class GoPayClient
      * @param array<string, mixed> $params
      *
      * @throws GoPaySdkException
+     * @throws GoPayHttpException
      */
     public function chargePayment(string $paymentId, array $params): PaymentChargeResponse
     {
@@ -189,6 +193,7 @@ final class GoPayClient
      * GET /payments/{payment_id}/charge
      *
      * @throws GoPaySdkException
+     * @throws GoPayHttpException
      */
     public function getChargeState(string $paymentId): PaymentChargeStatusResponse
     {
@@ -201,6 +206,7 @@ final class GoPayClient
      * GET /payments/{payment_id}/google-pay/info
      *
      * @throws GoPaySdkException
+     * @throws GoPayHttpException
      *
      * @return array<string, mixed>
      */
@@ -215,6 +221,7 @@ final class GoPayClient
      * GET /payments/{payment_id}/apple-pay/info
      *
      * @throws GoPaySdkException
+     * @throws GoPayHttpException
      *
      * @return array<string, mixed>
      */
@@ -233,6 +240,7 @@ final class GoPayClient
      * @param array<string, mixed>|null $body
      *
      * @throws GoPaySdkException
+     * @throws GoPayHttpException
      *
      * @return array<string, mixed>
      */
@@ -250,6 +258,7 @@ final class GoPayClient
      * GET /payments/{payment_id}/qr-payment/info
      *
      * @throws GoPaySdkException
+     * @throws GoPayHttpException
      */
     public function getQrPaymentInfo(string $paymentId, ?string $format = null): QRPaymentDetails
     {
@@ -267,6 +276,7 @@ final class GoPayClient
      * GoPay notification call your server, then use getChargeState() once.
      *
      * @throws GoPaySdkException
+     * @throws GoPayHttpException
      */
     public function awaitChargeState(
         string $paymentId,
@@ -287,6 +297,7 @@ final class GoPayClient
      * GET /cards/tokens/{card_id}
      *
      * @throws GoPaySdkException
+     * @throws GoPayHttpException
      */
     public function getCardDetails(string $cardId): PermanentCardTokenDetails
     {
@@ -300,6 +311,7 @@ final class GoPayClient
      * DELETE /cards/tokens/{card_id}
      *
      * @throws GoPaySdkException
+     * @throws GoPayHttpException
      */
     public function deleteCard(string $cardId): void
     {
@@ -313,6 +325,7 @@ final class GoPayClient
      * POST /cards/tokens
      *
      * @throws GoPaySdkException
+     * @throws GoPayHttpException
      */
     public function tokenizeEncryptedCard(string $payload): PermanentCardTokenDetails
     {
@@ -332,6 +345,7 @@ final class GoPayClient
      * @param array<string, mixed> $params
      *
      * @throws GoPaySdkException
+     * @throws GoPayHttpException
      */
     public function refundPayment(string $paymentId, array $params): RefundDetails
     {
@@ -345,6 +359,7 @@ final class GoPayClient
      * GET /payments/{payment_id}/refunds
      *
      * @throws GoPaySdkException
+     * @throws GoPayHttpException
      *
      * @return list<RefundDetails>
      */
@@ -360,6 +375,7 @@ final class GoPayClient
      * GET /refunds/{refund_id}
      *
      * @throws GoPaySdkException
+     * @throws GoPayHttpException
      */
     public function getRefund(string $refundId): RefundDetails
     {
@@ -382,6 +398,7 @@ final class GoPayClient
      * GoPay notification call your server, then use getRefund() once.
      *
      * @throws GoPaySdkException
+     * @throws GoPayHttpException
      */
     public function awaitRefundState(
         string $refundId,

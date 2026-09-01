@@ -44,7 +44,7 @@ final class LinksApi
      */
     public function createPaymentLink(string $goid, array $params): LinkDetails
     {
-        $gid = rawurlencode($this->requireNonEmpty($goid, 'goid'));
+        $gid = $this->requirePathSegment($goid, 'goid');
 
         return $this->client->post("/eshops/{$gid}/links", $params, LinkDetails::class);
     }
@@ -63,8 +63,8 @@ final class LinksApi
      */
     public function linkStatus(string $goid, string $linkId): LinkDetails
     {
-        $gid = rawurlencode($this->requireNonEmpty($goid, 'goid'));
-        $lid = rawurlencode($this->requireNonEmpty($linkId, 'linkId'));
+        $gid = $this->requirePathSegment($goid, 'goid');
+        $lid = $this->requirePathSegment($linkId, 'linkId');
 
         return $this->client->get("/eshops/{$gid}/links/{$lid}", LinkDetails::class);
     }
@@ -85,8 +85,8 @@ final class LinksApi
      */
     public function disableLink(string $goid, string $linkId): void
     {
-        $gid = rawurlencode($this->requireNonEmpty($goid, 'goid'));
-        $lid = rawurlencode($this->requireNonEmpty($linkId, 'linkId'));
+        $gid = $this->requirePathSegment($goid, 'goid');
+        $lid = $this->requirePathSegment($linkId, 'linkId');
         $this->client->delete("/eshops/{$gid}/links/{$lid}");
     }
 }

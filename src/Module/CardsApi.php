@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace GoPay\Payments\Module;
 
+use GoPay\Payments\Exception\GoPayHttpException;
 use GoPay\Payments\Exception\GoPaySdkException;
 use GoPay\Payments\Generated\Model\PermanentCardTokenDetails;
 use GoPay\Payments\Http\HttpClient;
@@ -33,10 +34,11 @@ final class CardsApi
      * GET /cards/tokens/{card_id}
      *
      * @throws GoPaySdkException
+     * @throws GoPayHttpException
      */
     public function getCardDetails(string $cardId): PermanentCardTokenDetails
     {
-        $cid = $this->requireNonEmpty($cardId, 'cardId');
+        $cid = $this->requirePathSegment($cardId, 'cardId');
 
         return $this->client->get("/cards/tokens/{$cid}", PermanentCardTokenDetails::class);
     }
@@ -48,10 +50,11 @@ final class CardsApi
      * DELETE /cards/tokens/{card_id}
      *
      * @throws GoPaySdkException
+     * @throws GoPayHttpException
      */
     public function deleteCard(string $cardId): void
     {
-        $cid = $this->requireNonEmpty($cardId, 'cardId');
+        $cid = $this->requirePathSegment($cardId, 'cardId');
         $this->client->delete("/cards/tokens/{$cid}");
     }
 
@@ -68,6 +71,7 @@ final class CardsApi
      * POST /cards/tokens
      *
      * @throws GoPaySdkException
+     * @throws GoPayHttpException
      */
     public function tokenizeEncryptedCard(string $payload): PermanentCardTokenDetails
     {

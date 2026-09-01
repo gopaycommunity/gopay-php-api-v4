@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace GoPay\Payments\Module;
 
 use GoPay\Payments\Exception\ErrorCode;
+use GoPay\Payments\Exception\GoPayHttpException;
 use GoPay\Payments\Exception\GoPaySdkException;
 use GoPay\Payments\Generated\Model\RefundDetails;
 use GoPay\Payments\Generated\Model\RefundState;
@@ -34,10 +35,11 @@ final class RefundsApi
      * @param array<string, mixed> $params Refund parameters (amount in cents, etc.).
      *
      * @throws GoPaySdkException
+     * @throws GoPayHttpException
      */
     public function refundPayment(string $paymentId, array $params): RefundDetails
     {
-        $pid = $this->requireNonEmpty($paymentId, 'paymentId');
+        $pid = $this->requirePathSegment($paymentId, 'paymentId');
 
         return $this->client->post("/payments/{$pid}/refunds", $params, RefundDetails::class);
     }
@@ -49,12 +51,13 @@ final class RefundsApi
      * GET /payments/{payment_id}/refunds
      *
      * @throws GoPaySdkException
+     * @throws GoPayHttpException
      *
      * @return list<RefundDetails>
      */
     public function listRefunds(string $paymentId): array
     {
-        $pid = $this->requireNonEmpty($paymentId, 'paymentId');
+        $pid = $this->requirePathSegment($paymentId, 'paymentId');
 
         return $this->client->getList("/payments/{$pid}/refunds", RefundDetails::class);
     }
@@ -66,10 +69,11 @@ final class RefundsApi
      * GET /refunds/{refund_id}
      *
      * @throws GoPaySdkException
+     * @throws GoPayHttpException
      */
     public function getRefund(string $refundId): RefundDetails
     {
-        $rid = $this->requireNonEmpty($refundId, 'refundId');
+        $rid = $this->requirePathSegment($refundId, 'refundId');
 
         return $this->client->get("/refunds/{$rid}", RefundDetails::class);
     }
@@ -95,13 +99,14 @@ final class RefundsApi
      * @param int $pollIntervalMs Polling interval in milliseconds (default 1 000 ms).
      *
      * @throws GoPaySdkException
+     * @throws GoPayHttpException
      */
     public function awaitRefundState(
         string $refundId,
         int $timeoutSeconds = 30,
         int $pollIntervalMs = 1_000,
     ): RefundDetails {
-        $rid = $this->requireNonEmpty($refundId, 'refundId');
+        $rid = $this->requirePathSegment($refundId, 'refundId');
         if ($timeoutSeconds <= 0) {
             throw new GoPaySdkException('[GoPaySDK] timeoutSeconds must be > 0.', ErrorCode::InvalidArgument);
         }
