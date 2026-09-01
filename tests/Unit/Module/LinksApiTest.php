@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace GoPay\Payments\Tests\Unit\Module;
 
+use GoPay\Payments\Exception\GoPayHttpException;
 use GoPay\Payments\Exception\GoPaySdkException;
 use GoPay\Payments\Generated\Model\LinkDetails;
 use GoPay\Payments\Generated\Model\LinkStopReason;
@@ -75,6 +76,16 @@ final class LinksApiTest extends ModuleTestCase
         $this->assertCount(1, $requests);
         $this->assertSame('POST', $requests[0]->getMethod());
         $this->assertStringEndsWith('/eshops/8398119642/links', (string) $requests[0]->getUri());
+
+        // createPaymentLink is pure pass-through — pin that the params reach the wire
+        // verbatim, unwrapped.
+        /** @var array{expires_in: int, reusable: bool, payment: array{amount: int, order_number: string, customer: array{email: string}}} $body */
+        $body = json_decode((string) $requests[0]->getBody(), true);
+        $this->assertSame(3600, $body['expires_in']);
+        $this->assertTrue($body['reusable']);
+        $this->assertSame(15000, $body['payment']['amount']);
+        $this->assertSame('2026-00042', $body['payment']['order_number']);
+        $this->assertSame('payer@example.com', $body['payment']['customer']['email']);
     }
 
     // -------------------------------------------------------------------------
@@ -172,10 +183,16 @@ final class LinksApiTest extends ModuleTestCase
     }
 
     #[Test]
-    public function disableLinkCompletesWithoutThrowingOnSuccess(): void
+    public function disableLinkSurfacesConflictWhenTheLinkIsAlreadyInactive(): void
     {
-        $this->queue204();
-        $this->links->disableLink('8398119642', '3405871122');
-        $this->addToAssertionCount(1);
+        // A link that is already disabled, expired, or a consumed one-shot answers 409.
+        $this->queueJson(['error' => 'CONFLICT', 'message' => 'Link is not active'], 409);
+
+        try {
+            $this->links->disableLink('8398119642', '3405871122');
+            $this->fail('Expected GoPayHttpException for an already-inactive link.');
+        } catch (GoPayHttpException $e) {
+            $this->assertSame(409, $e->status);
+        }
     }
 }

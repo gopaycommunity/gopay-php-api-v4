@@ -6,6 +6,9 @@ namespace GoPay\Payments\Tests\Unit\Generated;
 
 use GoPay\Payments\Generated\Model\BankTransferRecipient;
 use GoPay\Payments\Generated\Model\BrowserData;
+use GoPay\Payments\Generated\Model\LinkDetails;
+use GoPay\Payments\Generated\Model\LinkStopReason;
+use GoPay\Payments\Generated\Model\PaymentFromLinkRequest;
 use GoPay\Payments\Generated\Model\PaymentChargeAction;
 use GoPay\Payments\Generated\Model\PaymentChargeResponse;
 use GoPay\Payments\Generated\Model\PaymentChargeStatusResponse;
@@ -180,6 +183,75 @@ final class ModelHydrationTest extends TestCase
         $this->assertSame('CZK', $qr->getCurrency());
         $this->assertInstanceOf(BankTransferRecipient::class, $qr->getRecipient());
         $this->assertInstanceOf(QRCodeList::class, $qr->getQrCode());
+    }
+
+    public function testLinkDetailsHydration(): void
+    {
+        /** @var LinkDetails $link */
+        $link = ObjectSerializer::deserialize([
+            'id'         => '3405871122',
+            'url'        => 'https://gate.gopay.com/gp-gw/l/Xk8mQ2pR7t',
+            'active'     => true,
+            'reusable'   => true,
+            'expires_at' => '2026-08-18T14:35:12Z',
+            'payment'    => [
+                'amount'       => 15000,
+                'currency'     => 'CZK',
+                'order_number' => '2026-00042',
+                'customer'     => ['email' => 'payer@example.com'],
+                'callback'     => [
+                    'notification_url' => 'https://eshop.example.com/gopay/notify',
+                    'return_url'       => 'https://eshop.example.com/gopay/return',
+                ],
+                'additional_params' => [
+                    ['name' => 'invoice', 'value' => 'INV-2026-001'],
+                ],
+            ],
+        ], LinkDetails::class);
+
+        $this->assertSame('3405871122', $link->getId());
+        $this->assertTrue($link->getActive());
+        $this->assertInstanceOf(\DateTime::class, $link->getExpiresAt());
+        $this->assertInstanceOf(PaymentFromLinkRequest::class, $link->getPayment());
+        $this->assertSame(15000, $link->getPayment()->getAmount());
+        $this->assertSame('payer@example.com', $link->getPayment()->getCustomer()->getEmail());
+        $this->assertTrue($link->valid());
+    }
+
+    /**
+     * An active link carries no stop_reason and a never-expiring one no expires_at —
+     * the v4 mapper omits nulls, so hydration must tolerate both being absent.
+     */
+    public function testLinkDetailsHydrationWithoutOptionalFields(): void
+    {
+        /** @var LinkDetails $link */
+        $link = ObjectSerializer::deserialize([
+            'id'       => '3405871122',
+            'url'      => 'https://gate.gopay.com/gp-gw/l/Xk8mQ2pR7t',
+            'active'   => true,
+            'reusable' => true,
+        ], LinkDetails::class);
+
+        $this->assertNull($link->getExpiresAt());
+        $this->assertNull($link->getStopReason());
+        $this->assertNull($link->getPayment());
+        $this->assertTrue($link->valid());
+    }
+
+    public function testLinkDetailsHydrationOfAConsumedOneShotLink(): void
+    {
+        /** @var LinkDetails $link */
+        $link = ObjectSerializer::deserialize([
+            'id'          => '3405871122',
+            'url'         => 'https://gate.gopay.com/gp-gw/l/Xk8mQ2pR7t',
+            'active'      => false,
+            'reusable'    => false,
+            'stop_reason' => 'USED',
+        ], LinkDetails::class);
+
+        $this->assertFalse($link->getActive());
+        $this->assertSame(LinkStopReason::USED, $link->getStopReason());
+        $this->assertTrue($link->valid());
     }
 
     public function testRefundDetailsHydration(): void
