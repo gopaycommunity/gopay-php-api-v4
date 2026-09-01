@@ -279,6 +279,67 @@ your own mapping if you need to resolve a refund back to its payment.
 
 ---
 
+### Payment links
+
+A payment link lets you collect a payment without an integration: you create the link, share
+its `url`, and the payment is created when the customer opens it. Server-side only — creating
+and disabling a link need the `payment:write` scope, reading one needs `payment:read`.
+
+```php
+// Create a link; `payment` is required, `expires_in` (seconds) and `reusable` are optional
+$sdk->createPaymentLink(string $goid, array $params): LinkDetails
+
+// Read a link's current settings and state
+$sdk->linkStatus(string $goid, string $linkId): LinkDetails
+
+// Disable a link so it can no longer start a new payment
+$sdk->disableLink(string $goid, string $linkId): void
+```
+
+```php
+$link = $sdk->createPaymentLink($goid, [
+    'expires_in' => 3600,   // omit for a link that never expires
+    'reusable'   => false,  // one-shot; default is true
+    'payment'    => [
+        'amount'       => 15000,
+        'currency'     => 'CZK',
+        'order_number' => '2026-00042',
+        'customer'     => ['email' => 'payer@example.com'],
+        'callback'     => [
+            'notification_url' => 'https://yourshop.example.com/gopay/notify',
+            'return_url'       => 'https://yourshop.example.com/gopay/return',
+        ],
+    ],
+]);
+
+echo $link->getUrl();   // share this with the customer
+echo $link->getId();    // use this on linkStatus() / disableLink()
+```
+
+`id` and `url` are two different identifiers and neither can be derived from the other: `id`
+is the numeric link ID used by this API, while `url` ends in a random ten-character code that
+is the only thing protecting the link.
+
+A **reusable** link (the default) creates a new payment on every visit — and every one of them
+carries the same `order_number` and the same `notification_url`, so your shop can receive
+notifications for several payments that all look like one order. Check that it tolerates this
+before sharing a reusable link.
+
+A **one-shot** link (`reusable => false`) is consumed by the first visit and then keeps
+redirecting to the payment it created, so a customer who refreshes or comes back later still
+reaches their payment. It cannot be disabled afterwards — `disableLink()` answers `409`,
+because the link is already inactive. To stop that payment, cancel the payment itself.
+
+Expiry is evaluated on read: once a link is past its `expires_at`, `linkStatus()` reports
+`active: false` with stop reason `EXPIRED` without anything being written first.
+
+`LinkDetails` carries `id`, `url`, `active`, `reusable`, and — once the link is no longer
+active — `stop_reason` (`FROM_API`, `USED` or `EXPIRED`). While the link is active,
+`getStopReason()` returns `null`. A link that belongs to another eshop answers `404`, not
+`403`, so the response does not reveal whether it exists.
+
+---
+
 ## Response objects
 
 All API methods return typed objects. Use the provided getters to access fields:

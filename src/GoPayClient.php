@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace GoPay\Payments;
 
 use GoPay\Payments\Exception\GoPaySdkException;
+use GoPay\Payments\Generated\Model\LinkDetails;
 use GoPay\Payments\Generated\Model\PaymentChargeResponse;
 use GoPay\Payments\Generated\Model\PaymentChargeStatusResponse;
 use GoPay\Payments\Generated\Model\PaymentDetails;
@@ -14,6 +15,7 @@ use GoPay\Payments\Generated\Model\RefundDetails;
 use GoPay\Payments\Http\HttpClient;
 use GoPay\Payments\Module\AuthApi;
 use GoPay\Payments\Module\CardsApi;
+use GoPay\Payments\Module\LinksApi;
 use GoPay\Payments\Module\PaymentsApi;
 use GoPay\Payments\Module\RefundsApi;
 use Psr\Http\Client\ClientInterface;
@@ -53,6 +55,7 @@ final class GoPayClient
     private readonly PaymentsApi $payments;
     private readonly CardsApi $cards;
     private readonly RefundsApi $refunds;
+    private readonly LinksApi $links;
 
     public function __construct(
         Config $config = new Config(),
@@ -65,6 +68,7 @@ final class GoPayClient
         $this->payments = new PaymentsApi($this->http);
         $this->cards = new CardsApi($this->http);
         $this->refunds = new RefundsApi($this->http);
+        $this->links = new LinksApi($this->http);
     }
 
     // =========================================================================
@@ -137,9 +141,11 @@ final class GoPayClient
      *
      * POST /eshops/{goid}/payments
      *
-     * IMPORTANT: The returned `gw_url` field must NOT be used. It exists only
-     * for backward-compat with old redirect-based flows. This SDK's flow is
-     * always: createPayment() → chargePayment().
+     * The returned `gw_url` is the escape hatch into the previous (v3) hosted
+     * flow, for payment methods the v4 charge endpoint does not cover yet — a
+     * supported alternative to createPayment() → chargePayment(), not a legacy
+     * field. Drive one or the other for a given payment attempt, never both;
+     * getPaymentStatus() reports the outcome either way.
      *
      * @param array<string, mixed> $params
      *
@@ -382,5 +388,57 @@ final class GoPayClient
         int $pollIntervalMs = 1_000,
     ): RefundDetails {
         return $this->refunds->awaitRefundState($refundId, $timeoutSeconds, $pollIntervalMs);
+    }
+
+    // =========================================================================
+    // Payment links
+    // =========================================================================
+
+    /**
+     * Create a payment link.
+     * Requires `payment:write` scope.
+     *
+     * POST /eshops/{goid}/links
+     *
+     * The link stores the payment data; the payment itself is created when a customer
+     * opens the returned `url`. A reusable link creates a new payment on every visit,
+     * all of them carrying the same `order_number` and `notification_url`.
+     *
+     * @param array<string, mixed> $params
+     *
+     * @throws GoPaySdkException
+     */
+    public function createPaymentLink(string $goid, array $params): LinkDetails
+    {
+        return $this->links->createPaymentLink($goid, $params);
+    }
+
+    /**
+     * Retrieve the current settings and state of a payment link.
+     * Requires `payment:read` scope.
+     *
+     * GET /eshops/{goid}/links/{link_id}
+     *
+     * @throws GoPaySdkException
+     */
+    public function linkStatus(string $goid, string $linkId): LinkDetails
+    {
+        return $this->links->linkStatus($goid, $linkId);
+    }
+
+    /**
+     * Disable a link so it can no longer start a new payment.
+     * Requires `payment:write` scope.
+     *
+     * DELETE /eshops/{goid}/links/{link_id}
+     *
+     * Not a delete — the link stays readable and reports stop reason `FROM_API`.
+     * Disabling an already-inactive link answers 409.
+     *
+     * @throws GoPaySdkException
+     */
+    public function disableLink(string $goid, string $linkId): void
+    {
+        $this->links->disableLink($goid, $linkId);
     }
 }
