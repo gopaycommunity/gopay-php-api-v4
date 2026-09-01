@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace GoPay\Payments;
 
+use GoPay\Payments\Exception\GoPayHttpException;
 use GoPay\Payments\Exception\GoPaySdkException;
 use GoPay\Payments\Generated\Model\LinkDetails;
 use GoPay\Payments\Generated\Model\PaymentChargeResponse;
@@ -407,6 +408,7 @@ final class GoPayClient
      * @param array<string, mixed> $params
      *
      * @throws GoPaySdkException
+     * @throws GoPayHttpException
      */
     public function createPaymentLink(string $goid, array $params): LinkDetails
     {
@@ -420,6 +422,7 @@ final class GoPayClient
      * GET /eshops/{goid}/links/{link_id}
      *
      * @throws GoPaySdkException
+     * @throws GoPayHttpException
      */
     public function linkStatus(string $goid, string $linkId): LinkDetails
     {
@@ -436,6 +439,7 @@ final class GoPayClient
      * Disabling an already-inactive link answers 409.
      *
      * @throws GoPaySdkException
+     * @throws GoPayHttpException
      */
     public function disableLink(string $goid, string $linkId): void
     {
