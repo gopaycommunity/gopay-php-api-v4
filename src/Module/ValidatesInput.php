@@ -31,9 +31,25 @@ trait ValidatesInput
      * Use this for anything that lands between slashes in a path. Values that go
      * into a body or a query string want {@see self::requireNonEmpty()} instead:
      * encoding those would double-encode them further down.
+     *
+     * Encoding alone is not enough. `.` and `..` are unreserved in RFC 3986, so
+     * `rawurlencode()` returns them untouched, and a bare `..` is a dot segment
+     * in its own right — `/payments/..` needs no slash of its own to escape the
+     * endpoint, and anything that normalises the path resolves it to `/`. Those
+     * two exact values are therefore rejected rather than encoded. Longer runs
+     * of dots (`...`) are ordinary segments and pass through.
      */
     private function requirePathSegment(string $value, string $paramName): string
     {
-        return rawurlencode($this->requireNonEmpty($value, $paramName));
+        $validated = $this->requireNonEmpty($value, $paramName);
+
+        if ($validated === '.' || $validated === '..') {
+            throw new GoPaySdkException(
+                "[GoPaySDK] {$paramName} must not be \".\" or \"..\".",
+                ErrorCode::InvalidArgument,
+            );
+        }
+
+        return rawurlencode($validated);
     }
 }

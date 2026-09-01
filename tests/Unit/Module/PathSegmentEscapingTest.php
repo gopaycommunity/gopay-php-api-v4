@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace GoPay\Payments\Tests\Unit\Module;
 
+use GoPay\Payments\Exception\GoPaySdkException;
 use GoPay\Payments\Module\CardsApi;
 use GoPay\Payments\Module\LinksApi;
 use GoPay\Payments\Module\PaymentsApi;
@@ -35,6 +36,55 @@ final class PathSegmentEscapingTest extends ModuleTestCase
         yield 'query injection'  => ['1?format=svg', '1%3Fformat%3Dsvg'];
         yield 'fragment'         => ['1#frag', '1%23frag'];
         yield 'trailing slash'   => ['1/', '1%2F'];
+        // `.` is unreserved in RFC 3986, so encoding leaves a run of dots alone.
+        // Three of them is an ordinary segment and must survive as itself — only
+        // the two dot segments proper are rejected, see dotSegmentsAreRejected().
+        yield 'three dots'       => ['...', '...'];
+    }
+
+    /**
+     * Exactly `.` and `..` are dot segments. `rawurlencode()` returns them
+     * unchanged — they are unreserved — so a bare `..` escapes its endpoint with
+     * no slash of its own: anything normalising `/payments/..` resolves it to
+     * `/`. Encoding cannot fix that, so they are refused outright.
+     *
+     * @return iterable<string, array{string}>
+     */
+    public static function dotSegments(): iterable
+    {
+        yield 'single dot' => ['.'];
+        yield 'double dot' => ['..'];
+    }
+
+    #[Test]
+    #[DataProvider('dotSegments')]
+    public function dotSegmentsAreRejected(string $raw): void
+    {
+        $this->expectException(GoPaySdkException::class);
+        $this->expectExceptionMessage('paymentId must not be "." or ".."');
+
+        (new PaymentsApi($this->http))->getPaymentStatus($raw);
+    }
+
+    #[Test]
+    #[DataProvider('dotSegments')]
+    public function dotSegmentsAreRejectedOnEveryModule(string $raw): void
+    {
+        $this->expectException(GoPaySdkException::class);
+
+        (new LinksApi($this->http))->disableLink('8398119642', $raw);
+    }
+
+    #[Test]
+    public function noRequestIsSentWhenTheSegmentIsRejected(): void
+    {
+        try {
+            (new RefundsApi($this->http))->getRefund('..');
+        } catch (GoPaySdkException) {
+            // expected
+        }
+
+        $this->assertCount(0, $this->mockClient->getRequests());
     }
 
     #[Test]
