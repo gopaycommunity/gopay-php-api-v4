@@ -15,7 +15,6 @@ declare(strict_types=1);
 
 require __DIR__ . '/bootstrap.php';
 
-use GoPay\Payments\AcceptHeader;
 use GoPay\Payments\Exception\GoPayHttpException;
 use GoPay\Payments\Exception\GoPaySdkException;
 
@@ -24,10 +23,11 @@ use GoPay\Payments\Exception\GoPaySdkException;
 echo PHP_EOL . '=== Step 1: createPayment ===' . PHP_EOL;
 
 // `amount` is minor units ("cents"), not major units — 1990 means 19.90 CZK.
-// Every currency this API accepts (CZK, EUR, PLN, USD, GBP, HUF, RON) uses a
-// two-decimal minor unit, so `* 100` is arithmetically right today. Put it in
-// one toMinorUnit(major, currency) helper anyway instead of inline at each
-// call site: rounding a float price is where this actually goes wrong.
+// Convert in one toMinorUnit(major, currency) helper rather than inline at each
+// call site: rounding a float price is where this usually goes wrong, and the
+// exponent is per-currency. The spec says only "amount in cents" and does not
+// state exponents, so confirm HUF with the gateway before assuming `* 100` —
+// ISO 4217 gives it two decimals but payment systems often treat it as zero.
 //
 // GoPay has no idempotency key for createPayment() — a double-submit or a
 // client retry after a timeout calls this endpoint again with nothing
@@ -91,20 +91,22 @@ try {
                 'screen_width'        => 1920,
                 'screen_height'       => 1080,
                 'color_depth'         => 24,
-                'user_agent'          => 'Mozilla/5.0 (example)',
-                // accept_header is REQUIRED: the JSON-encoded Accept headers of the
-                // *customer's* browser, captured server-side from the request the
-                // browser made to you. In a real handler just call
-                //   AcceptHeader::fromServerGlobals()          — reads $_SERVER
-                //   AcceptHeader::fromServerRequest($request)  — PSR-7 alternative
-                // This CLI script has no incoming browser request, so we feed the
-                // helper a $_SERVER-shaped sample instead.
-                'accept_header'       => AcceptHeader::fromServerGlobals([
-                    'HTTP_ACCEPT'          => 'application/json, text/plain, */*',
-                    'HTTP_ACCEPT_LANGUAGE' => 'cs;q=0.5',
-                    'HTTP_ACCEPT_ENCODING' => 'gzip, deflate, br, zstd',
-                ]),
                 'javascript_enabled'  => true,
+                // ip, user_agent and accept_header are the three fields the browser
+                // cannot determine about itself. All three are REQUIRED, and all three
+                // must come from GET /cards/browser-data called *by the customer's
+                // browser* (client_id:shareable_key auth) right before the charge; the
+                // browser POSTs them to you along with the rest of browser_data.
+                //
+                // Do not fill them in from the request your server received. A
+                // server-side call to that endpoint returns the server's own address
+                // and headers, and the card issuer rejects those during 3-D Secure.
+                // That is also why this SDK exposes no method for the endpoint.
+                //
+                // This CLI script has no browser behind it, so these are placeholders.
+                'ip'                  => '192.0.2.42',
+                'user_agent'          => 'Mozilla/5.0 (example)',
+                'accept_header'       => '{"accept":"application/json, text/plain, */*"}',
             ],
         ],
     ]);

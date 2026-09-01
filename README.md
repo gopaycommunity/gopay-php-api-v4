@@ -44,7 +44,6 @@ Any PSR-18-compatible client works (Symfony HttpClient, Buzz, …).
 
 ```php
 use GoPay\Payments\GoPayClient;
-use GoPay\Payments\AcceptHeader;
 use GoPay\Payments\Config;
 use GoPay\Payments\Environment;
 
@@ -79,18 +78,20 @@ $charge = $sdk->chargePayment($payment->getId(), [
             'card_token' => $cardToken, // from the browser SDK iframe
         ],
         'browser_data' => [
-            // EMV 3DS device data — collect in the browser, POST to your server
+            // EMV 3DS device data — collect in the browser, POST to your server.
             'language'           => $browserData['language'],      // e.g. 'cs-CZ'
             'timezone'           => $browserData['timezone'],      // e.g. -60
             'screen_width'       => $browserData['screen_width'],  // e.g. 1920
             'screen_height'      => $browserData['screen_height'], // e.g. 1080
             'color_depth'        => $browserData['color_depth'],   // e.g. 24
-            'user_agent'         => $_SERVER['HTTP_USER_AGENT'],   // customer's browser User-Agent
-            // REQUIRED: JSON-encoded Accept headers of the customer's browser.
-            // Capture them server-side from the incoming customer request:
-            'accept_header'      => AcceptHeader::fromServerGlobals(),
-            // or with a PSR-7 stack: AcceptHeader::fromServerRequest($request)
             'javascript_enabled' => $browserData['javascript_enabled'], // e.g. true
+            // ip, user_agent and accept_header are the three the browser cannot
+            // determine itself. The browser fetches them from
+            // GET /cards/browser-data (shareable_key auth) right before the charge
+            // and POSTs them to you with the rest — see the note below.
+            'ip'                 => $browserData['ip'],            // e.g. '192.0.2.42'
+            'user_agent'         => $browserData['user_agent'],
+            'accept_header'      => $browserData['accept_header'],
         ],
     ],
 ]);
@@ -107,6 +108,14 @@ if ($charge->getAction()?->getRedirectUrl() !== null) {
     exit;
 }
 ```
+
+> **`ip`, `user_agent` and `accept_header` must come from the customer's browser.** The browser
+> calls `GET /cards/browser-data` (authenticated with `client_id:shareable_key`) immediately
+> before the charge; the response carries all three, and your server merges them into
+> `browser_data`. Do **not** fill them in from the request your server received — the spec is
+> explicit that a server-side call returns the server's own values, and the card issuer rejects
+> those during 3-D Secure authentication. This is why the SDK has no server-side method for that
+> endpoint: calling it from PHP would produce exactly the wrong values.
 
 > **`gw_url` — escape hatch for methods not yet on v4.** The `PaymentDetails` object contains a `gw_url` field. Don't redirect to it by default — this SDK's own flow (`createPayment()` → `chargePayment()`) fully covers card payments. Use `gw_url` deliberately when the payment needs a method or feature not yet implemented in the v4 charge flow: redirecting there hands off real-time control to the hosted (v3-backed) flow while the customer is on it, but the payment remains fully v4-observable — `getPaymentStatus()` reports the final state once the customer completes it, exactly as it would for a payment charged directly through v4.
 
@@ -595,18 +604,18 @@ $sdk->chargePayment($paymentId, [
         'payment_instrument' => 'PAYMENT_CARD',
         'input' => ['input_type' => 'CARD_TOKEN', 'card_token' => $card->getToken()],
         'browser_data' => [
-            // EMV 3DS device data — collect in the browser, POST to your server
+            // EMV 3DS device data — collect in the browser, POST to your server.
+            // ip, user_agent and accept_header come from GET /cards/browser-data,
+            // fetched by the browser — never from $_SERVER. See the charge flow above.
             'language'           => $browserData['language'],
             'timezone'           => $browserData['timezone'],
             'screen_width'       => $browserData['screen_width'],
             'screen_height'      => $browserData['screen_height'],
             'color_depth'        => $browserData['color_depth'],
-            'user_agent'         => $_SERVER['HTTP_USER_AGENT'],
-            // REQUIRED: JSON-encoded Accept headers of the customer's browser.
-            // Capture them server-side from the incoming customer request:
-            'accept_header'      => AcceptHeader::fromServerGlobals(),
-            // or with a PSR-7 stack: AcceptHeader::fromServerRequest($request)
             'javascript_enabled' => $browserData['javascript_enabled'],
+            'ip'                 => $browserData['ip'],
+            'user_agent'         => $browserData['user_agent'],
+            'accept_header'      => $browserData['accept_header'],
         ],
     ],
 ]);
