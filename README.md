@@ -112,10 +112,13 @@ if ($charge->getAction()?->getRedirectUrl() !== null) {
 > **`ip`, `user_agent` and `accept_header` must come from the customer's browser.** The browser
 > calls `GET /cards/browser-data` (authenticated with `client_id:shareable_key`) immediately
 > before the charge; the response carries all three, and your server merges them into
-> `browser_data`. Do **not** fill them in from the request your server received — the spec is
-> explicit that a server-side call returns the server's own values, and the card issuer rejects
-> those during 3-D Secure authentication. This is why the SDK has no server-side method for that
-> endpoint: calling it from PHP would produce exactly the wrong values.
+> `browser_data`. The endpoint reports whatever fetched it, so a call from your own server
+> returns the server's address and headers — which the issuer rejects during 3-D Secure. That
+> is why the SDK exposes no method for it: from PHP it would produce exactly the wrong values.
+>
+> Reading them off the incoming request instead is not the way round it. The Accept headers
+> there do belong to the customer, but `ip` does not survive a proxy, and the contract wants
+> all three from one observation rather than a mix of two sources.
 >
 > **`gw_url` — escape hatch for methods not yet on v4.** The `PaymentDetails` object contains a `gw_url` field. Don't redirect to it by default — this SDK's own flow (`createPayment()` → `chargePayment()`) fully covers card payments. Use `gw_url` deliberately when the payment needs a method or feature not yet implemented in the v4 charge flow: redirecting there hands off real-time control to the hosted (v3-backed) flow while the customer is on it, but the payment remains fully v4-observable — `getPaymentStatus()` reports the final state once the customer completes it, exactly as it would for a payment charged directly through v4.
 

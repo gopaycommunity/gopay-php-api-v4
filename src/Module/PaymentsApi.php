@@ -78,9 +78,11 @@ final class PaymentsApi
      * Card charges require `browser_data`, whose `ip`, `user_agent` and `accept_header`
      * must all come from `GET /cards/browser-data` called by the customer's browser
      * immediately before the charge — the browser POSTs the response to you and you
-     * merge it in. Do not derive them from the request your server received: a
-     * server-side call to that endpoint returns the server's own address and headers,
-     * which the card issuer rejects during 3-D Secure authentication.
+     * merge it in. The endpoint reports whatever fetched it, so calling it from your
+     * own server returns the server's address and headers, which the issuer rejects
+     * during 3-D Secure. Reading them off the incoming request is not the way round
+     * it either: `ip` does not survive a proxy, and the contract wants all three
+     * from one observation.
      *
      * @param array<string, mixed> $params Charge parameters including the payment_instrument.
      *

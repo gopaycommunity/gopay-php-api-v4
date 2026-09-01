@@ -10,13 +10,14 @@ use Psr\Http\Message\ServerRequestInterface;
  * Encodes Accept headers into the JSON shape the `accept_header` field of
  * `browser_data` uses.
  *
- * **Not for a card charge.** EMV 3DS wants the headers of the *customer's*
- * browser, and `browser_data.accept_header` must come from
- * `GET /cards/browser-data` fetched by that browser, alongside `ip` and
- * `user_agent`. Building the value from a request your server received produces
- * the server's own headers — a payload that looks valid and then fails
- * authentication at the issuer. `fromServerGlobals()` existed for exactly that
- * and has been removed.
+ * **Not for a card charge.** There, `browser_data.accept_header` must come from
+ * `GET /cards/browser-data` fetched by the customer's browser, together with
+ * `ip` and `user_agent`: that endpoint reports whatever fetched it, so calling
+ * it from the merchant's server yields the server's own address and headers,
+ * which the issuer rejects during 3-D Secure. Reading `$_SERVER` instead is not
+ * the way round it — the Accept headers there do belong to the customer, but
+ * `ip` does not survive a proxy, and the contract wants all three from one
+ * observation. `fromServerGlobals()` invited exactly that mix and is gone.
  *
  * What remains is the encoder, for a caller that already holds the customer's
  * own request — a gateway or edge worker forwarding it, say. The result is a
