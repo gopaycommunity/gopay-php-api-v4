@@ -1,3 +1,18 @@
+## [1.4.0](https://bitbucket.org/gp-gopay/gopay-php-api-v4/compare/1.3.0...1.4.0) (2026-09-01)
+
+### Features
+
+* **links:** restore payment links support GPOMA-2577 ([97724e2](https://bitbucket.org/gp-gopay/gopay-php-api-v4/commit/97724e23c6abf30f90f42a7eaa7cff886345a881))
+
+### Bug Fixes
+
+* **docs:** ip, user_agent and accept_header come from the browser GPOMA-2577 ([d3f1c6d](https://bitbucket.org/gp-gopay/gopay-php-api-v4/commit/d3f1c6df20b63b7971e7fe211ef6c711ebd7083d))
+* **docs:** join the adjacent README callouts into one blockquote GPOMA-2577 ([e281d35](https://bitbucket.org/gp-gopay/gopay-php-api-v4/commit/e281d3510e3038f0bdfbb0be07f29e8a6227eba4))
+* **docs:** separate the two browser-data failure modes GPOMA-2577 ([fa99d80](https://bitbucket.org/gp-gopay/gopay-php-api-v4/commit/fa99d80909ca492a56d52829381fb516696df811))
+* **links:** escape path segments and declare GoPayHttpException GPOMA-2577 ([ebac57f](https://bitbucket.org/gp-gopay/gopay-php-api-v4/commit/ebac57fb709aaed6ad5679550f2290be5d401505))
+* **modules:** encode path ids and declare GoPayHttpException GPOMA-2577 ([644f17d](https://bitbucket.org/gp-gopay/gopay-php-api-v4/commit/644f17de3d076d6479fa716109cfd82a7e12ad72))
+* **modules:** reject "." and ".." as path segments GPOMA-2577 ([598b7b1](https://bitbucket.org/gp-gopay/gopay-php-api-v4/commit/598b7b16348aa549a2fdcad2c3a68ae58e8181a6))
+
 ## [1.3.0](https://bitbucket.org/gp-gopay/gopay-php-api-v4/compare/1.2.0...1.3.0) (2026-08-20)
 
 ### Features
