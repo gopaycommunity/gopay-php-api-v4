@@ -140,6 +140,7 @@ final class ModelHydrationTest extends TestCase
             'user_agent'         => 'Mozilla/5.0 (phpunit)',
             'accept_header'      => '{"accept":"text/html"}',
             'javascript_enabled' => true,
+            'ip'                 => '192.0.2.42',
         ];
 
         /** @var BrowserData $complete */
@@ -150,6 +151,7 @@ final class ModelHydrationTest extends TestCase
             'user_agent'         => "'userAgent' can't be null",
             'accept_header'      => "'acceptHeader' can't be null",
             'javascript_enabled' => "'javascriptEnabled' can't be null",
+            'ip'                 => "'ip' can't be null",
         ];
 
         foreach ($requiredFields as $field => $expectedError) {
