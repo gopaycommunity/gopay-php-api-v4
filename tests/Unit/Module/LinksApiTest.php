@@ -9,6 +9,7 @@ use GoPay\Payments\Exception\GoPaySdkException;
 use GoPay\Payments\Generated\Model\LinkDetails;
 use GoPay\Payments\Generated\Model\LinkStopReason;
 use GoPay\Payments\Module\LinksApi;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 
 final class LinksApiTest extends ModuleTestCase
@@ -88,6 +89,28 @@ final class LinksApiTest extends ModuleTestCase
         $this->assertSame('payer@example.com', $body['payment']['customer']['email']);
     }
 
+    /**
+     * Validation runs before anything is stored and every failure is a 400 — an
+     * unsupported currency for the eshop, an over-long field, a `=` in an
+     * additional_param name. The module surfaces it as GoPayHttpException, which
+     * is what the docblock now promises.
+     */
+    #[Test]
+    public function createPaymentLinkSurfacesValidationFailure(): void
+    {
+        $this->queueJson([
+            'error' => 'BAD_REQUEST',
+            'message' => 'Value of the property payment.customer.email is missing or is not valid.',
+        ], 400);
+
+        try {
+            $this->links->createPaymentLink('8398119642', ['payment' => ['amount' => 15000]]);
+            $this->fail('Expected GoPayHttpException for an invalid link payload.');
+        } catch (GoPayHttpException $e) {
+            $this->assertSame(400, $e->status);
+        }
+    }
+
     // -------------------------------------------------------------------------
     // linkStatus
     // -------------------------------------------------------------------------
@@ -124,18 +147,40 @@ final class LinksApiTest extends ModuleTestCase
     }
 
     #[Test]
-    public function linkStatusExposesStopReasonOnAnInactiveLink(): void
+    public function linkStatusReportsAnInactiveLink(): void
     {
-        $this->queueJson($this->linkDetailsJson([
-            'active' => false,
-            'reusable' => false,
-            'stop_reason' => 'USED',
-        ]));
+        $this->queueJson($this->linkDetailsJson(['active' => false, 'reusable' => false, 'stop_reason' => 'USED']));
 
         $result = $this->links->linkStatus('8398119642', '3405871122');
 
         $this->assertFalse($result->getActive());
-        $this->assertSame(LinkStopReason::USED, $result->getStopReason());
+    }
+
+    /**
+     * All three reasons the API can report, since the module docblock and the
+     * README name them individually as promises to the caller.
+     *
+     * `LinkStopReason` is a generated class of string constants, not a PHP enum,
+     * so both sides of the assertion are plain strings.
+     *
+     * @return iterable<string, array{string, string}>
+     */
+    public static function stopReasons(): iterable
+    {
+        yield 'disabled by the merchant' => ['FROM_API', LinkStopReason::FROM_API];
+        yield 'one-shot link consumed'   => ['USED', LinkStopReason::USED];
+        yield 'past its expiry'          => ['EXPIRED', LinkStopReason::EXPIRED];
+    }
+
+    #[Test]
+    #[DataProvider('stopReasons')]
+    public function linkStatusMapsEveryStopReason(string $wire, string $expected): void
+    {
+        $this->queueJson($this->linkDetailsJson(['active' => false, 'stop_reason' => $wire]));
+
+        $result = $this->links->linkStatus('8398119642', '3405871122');
+
+        $this->assertSame($expected, $result->getStopReason());
     }
 
     #[Test]

@@ -6,6 +6,8 @@ namespace GoPay\Payments\Tests\Unit;
 
 use GoPay\Payments\Config;
 use GoPay\Payments\Environment;
+use GoPay\Payments\Generated\Model\LinkDetails;
+use GoPay\Payments\Generated\Model\LinkStopReason;
 use GoPay\Payments\Generated\Model\PaymentChargeResponse;
 use GoPay\Payments\Generated\Model\PaymentChargeStatusResponse;
 use GoPay\Payments\Generated\Model\PaymentDetails;
@@ -203,6 +205,72 @@ final class GoPayClientTest extends TestCase
         $result = $this->sdk->awaitRefundState('ref-001', timeoutSeconds: 30, pollIntervalMs: 1);
         $this->assertInstanceOf(RefundDetails::class, $result);
         $this->assertSame('SUCCESS', $result->getState());
+    }
+
+    // ── Payment links ─────────────────────────────────────────────────────────
+
+    #[Test]
+    public function createPaymentLinkDelegates(): void
+    {
+        $this->queueJson([
+            'id' => '3405871122',
+            'url' => 'https://gate.gopay.com/gp-gw/l/Xk8mQ2pR7t',
+            'active' => true,
+            'reusable' => true,
+        ], 201);
+
+        $result = $this->sdk->createPaymentLink('8398119642', [
+            'payment' => [
+                'amount' => 15000,
+                'currency' => 'CZK',
+                'order_number' => '2026-00042',
+                'customer' => ['email' => 'payer@example.com'],
+                'callback' => [
+                    'notification_url' => 'https://eshop.example.com/gopay/notify',
+                    'return_url' => 'https://eshop.example.com/gopay/return',
+                ],
+            ],
+        ]);
+
+        $this->assertInstanceOf(LinkDetails::class, $result);
+        $this->assertSame('3405871122', $result->getId());
+
+        $request = $this->mockClient->getRequests()[1];
+        $this->assertSame('POST', $request->getMethod());
+        $this->assertStringEndsWith('/eshops/8398119642/links', (string) $request->getUri());
+    }
+
+    #[Test]
+    public function linkStatusDelegates(): void
+    {
+        $this->queueJson([
+            'id' => '3405871122',
+            'url' => 'https://gate.gopay.com/gp-gw/l/Xk8mQ2pR7t',
+            'active' => false,
+            'reusable' => false,
+            'stop_reason' => 'USED',
+        ]);
+
+        $result = $this->sdk->linkStatus('8398119642', '3405871122');
+
+        $this->assertInstanceOf(LinkDetails::class, $result);
+        $this->assertSame(LinkStopReason::USED, $result->getStopReason());
+
+        $request = $this->mockClient->getRequests()[1];
+        $this->assertSame('GET', $request->getMethod());
+        $this->assertStringEndsWith('/eshops/8398119642/links/3405871122', (string) $request->getUri());
+    }
+
+    #[Test]
+    public function disableLinkDelegates(): void
+    {
+        $this->mockClient->addResponse(new Response(204));
+
+        $this->sdk->disableLink('8398119642', '3405871122');
+
+        $request = $this->mockClient->getRequests()[1];
+        $this->assertSame('DELETE', $request->getMethod());
+        $this->assertStringEndsWith('/eshops/8398119642/links/3405871122', (string) $request->getUri());
     }
 
     // ── Helper ────────────────────────────────────────────────────────────────

@@ -75,6 +75,30 @@ final class PathSegmentEscapingTest extends ModuleTestCase
         (new LinksApi($this->http))->disableLink('8398119642', $raw);
     }
 
+    /**
+     * `requireNonEmpty()` trims only to decide emptiness, so a whitespace-only id
+     * is refused — but a padded one is *not* trimmed, it is encoded. Pinning both
+     * halves, because the asymmetry is easy to "tidy up" into silent trimming.
+     */
+    #[Test]
+    public function whitespaceOnlySegmentIsRejected(): void
+    {
+        $this->expectException(GoPaySdkException::class);
+        $this->expectExceptionMessage('paymentId must not be empty');
+
+        (new PaymentsApi($this->http))->getPaymentStatus("  \t ");
+    }
+
+    #[Test]
+    public function paddedSegmentIsEncodedRatherThanTrimmed(): void
+    {
+        $this->queueJson(['id' => 'pay-1']);
+        (new PaymentsApi($this->http))->getPaymentStatus(' 300000001 ');
+
+        $uri = (string) $this->mockClient->getRequests()[0]->getUri();
+        $this->assertStringEndsWith('/payments/%20300000001%20', $uri);
+    }
+
     #[Test]
     public function noRequestIsSentWhenTheSegmentIsRejected(): void
     {
