@@ -471,4 +471,41 @@ final class RecurrencesApiTest extends ModuleTestCase
         $this->assertSame('', (string) $request->getBody());
         $this->assertSame('application/json', $request->getHeaderLine('Content-Type'));
     }
+
+    /**
+     * Passing an empty override array must not behave differently from passing
+     * none. PHP cannot tell an empty map from an empty list, so a plain
+     * `json_encode([])` sends `[]`, and the gateway rejects a top-level array with
+     * 400 "Cannot deserialize ... from Array value". Reachable for real: overrides
+     * are often built with an `array_filter()` that can remove every field.
+     */
+    #[Test]
+    public function emptyOverridesAreSentAsAnObjectNotAnArray(): void
+    {
+        $this->queueJson($this->paymentDetailsJson(), 201);
+
+        $this->recurrences->startRecurrence('8008013370', []);
+
+        $this->assertSame('{}', (string) $this->mockClient->getRequests()[0]->getBody());
+    }
+
+    /**
+     * The object cast reaches only the top level — a nested list such as
+     * `additional_params` has to stay a JSON array, or the guard above would break
+     * every override that carries one.
+     */
+    #[Test]
+    public function nestedListsSurviveTheObjectCast(): void
+    {
+        $this->queueJson($this->paymentDetailsJson(), 201);
+
+        $this->recurrences->startRecurrence('8008013370', [
+            'additional_params' => [
+                ['name' => 'invoice', 'value' => '2026-00042'],
+            ],
+        ]);
+
+        $body = (string) $this->mockClient->getRequests()[0]->getBody();
+        $this->assertSame('{"additional_params":[{"name":"invoice","value":"2026-00042"}]}', $body);
+    }
 }

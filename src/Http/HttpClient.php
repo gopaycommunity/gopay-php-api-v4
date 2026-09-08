@@ -83,7 +83,7 @@ final class HttpClient
      */
     public function post(string $path, ?array $body, string $type, ?RequestOptions $options = null): ModelInterface
     {
-        $encoded = $body !== null ? json_encode($body, JSON_THROW_ON_ERROR) : null;
+        $encoded = $this->encodeBody($body);
         $request = $this->buildRequest('POST', $path, $encoded, $options, self::APPLICATION_JSON);
         $response = $this->send($request, $options);
         $this->throwIfNotOk($response);
@@ -179,7 +179,7 @@ final class HttpClient
      */
     public function postArray(string $path, ?array $body, ?RequestOptions $options = null): array
     {
-        $encoded = $body !== null ? json_encode($body, JSON_THROW_ON_ERROR) : null;
+        $encoded = $this->encodeBody($body);
         $request = $this->buildRequest('POST', $path, $encoded, $options, self::APPLICATION_JSON);
         $response = $this->send($request, $options);
         $this->throwIfNotOk($response);
@@ -358,6 +358,25 @@ final class HttpClient
     // -------------------------------------------------------------------------
     // Private helpers
     // -------------------------------------------------------------------------
+
+    /**
+     * Encode a request body, or return null when there is none.
+     *
+     * The top level is cast to an object so an empty body encodes as `{}` and not
+     * `[]`: PHP cannot tell an empty map from an empty list, and the gateway rejects
+     * a top-level array with 400 "Cannot deserialize ... from Array value". It bites
+     * whoever builds overrides dynamically — an `array_filter()` that happens to
+     * remove every field would fail where passing null succeeds.
+     *
+     * Every v4 request body is a JSON object, and the cast reaches only the top
+     * level, so nested lists such as `additional_params` stay arrays.
+     *
+     * @param array<string, mixed>|null $body
+     */
+    private function encodeBody(?array $body): ?string
+    {
+        return $body !== null ? json_encode((object) $body, JSON_THROW_ON_ERROR) : null;
+    }
 
     private function buildRequest(
         string $method,

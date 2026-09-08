@@ -439,8 +439,8 @@ recurrence and immediately asks for the next payment gets a conflict, not a paym
 #### Per-payment overrides
 
 `startRecurrence()` and `recurrenceNext()` both take an optional body that overrides the stored
-template for that one payment: `amount`, `order_number`, `order_description`, `customer` and
-`callback`.
+template for that one payment: `amount`, `order_number`, `order_description`,
+`additional_params`, `customer` and `callback`.
 
 ```php
 $payment = $sdk->recurrenceNext($recId, [

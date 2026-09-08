@@ -138,9 +138,10 @@ final class RecurrencesApi
      * payment is still in progress answers 409.
      *
      * The body is optional and overrides fields of the stored payment template for
-     * this one payment: `amount`, `order_number`, `order_description`, `customer`
-     * and `callback`. `customer` is merged field by field rather than replaced, and
-     * may omit `email` or be empty. An unknown field anywhere in the override is a 400.
+     * this one payment: `amount`, `order_number`, `order_description`,
+     * `additional_params`, `customer` and `callback`. `customer` is merged field by
+     * field rather than replaced, and may omit `email` or be empty. An unknown field
+     * anywhere in the override is a 400.
      *
      * @param array<string, mixed>|null $params Optional per-payment overrides.
      *

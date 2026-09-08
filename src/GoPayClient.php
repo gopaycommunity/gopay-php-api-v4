@@ -539,8 +539,8 @@ final class GoPayClient
      *
      * The recurrence moves to `REQUESTED`, not `STARTED` — it becomes `STARTED` only
      * once the customer pays the returned payment at its `gw_url`. The optional body
-     * overrides `amount`, `order_number`, `order_description`, `customer` or
-     * `callback` for this one payment.
+     * overrides `amount`, `order_number`, `order_description`, `additional_params`,
+     * `customer` or `callback` for this one payment.
      *
      * @param array<string, mixed>|null $params
      *
