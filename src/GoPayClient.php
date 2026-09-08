@@ -183,6 +183,11 @@ final class GoPayClient
      *
      * POST /payments/{payment_id}/charge
      *
+     * If the response carries an action with a redirect URL, redirect the customer
+     * there immediately — the bank's authentication session times out quickly, and
+     * a customer who arrives late finds the payment cancelled. Do order bookkeeping
+     * on the return URL or the webhook, never before the redirect.
+     *
      * @param array<string, mixed> $params
      *
      * @throws GoPaySdkException

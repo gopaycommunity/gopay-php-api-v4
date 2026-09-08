@@ -103,7 +103,9 @@ if ($charge->getAction() === null) {
     echo $final->getState(); // 'SUCCEEDED'
 }
 
-// 5b. 3DS required — redirect the customer
+// 5b. 3DS required — redirect the customer immediately. The bank's
+//     authentication session times out quickly; do your order bookkeeping
+//     on the return_url / webhook, never between these two lines.
 if ($charge->getAction()?->getRedirectUrl() !== null) {
     header('Location: ' . $charge->getAction()->getRedirectUrl());
     exit;
@@ -502,7 +504,7 @@ echo $card->getMaskedPan(); // '411111******1111'
 $charge = $sdk->chargePayment($paymentId, $params);
 
 if ($charge->getAction()?->getRedirectUrl() !== null) {
-    // 3DS authentication required — redirect the customer
+    // 3DS authentication required — redirect the customer, right now
     header('Location: ' . $charge->getAction()->getRedirectUrl());
     exit;
 }
@@ -511,6 +513,26 @@ if ($charge->getAction()?->getRedirectUrl() !== null) {
 $final = $sdk->awaitChargeState($paymentId);
 echo $final->getState(); // 'SUCCEEDED'
 ```
+
+> **Redirect to the 3DS URL immediately.** The redirect URL opens an authentication session
+> held open by the customer's bank, and that session has a **short timeout on the bank's side**.
+> If the customer does not arrive in time, the bank cancels the authentication and the payment
+> fails — there is nothing the SDK or GoPay can do about it, and retrying means starting a new
+> payment.
+>
+> So `getRedirectUrl()` must be followed by the redirect and nothing else. Do not put work
+> between the two:
+>
+> - no order bookkeeping, database writes, invoice generation or stock reservations
+> - no confirmation emails or other outbound calls (an unreachable SMTP host alone can burn the
+>   window)
+> - no "please wait, redirecting…" interstitial, and no meta-refresh or JavaScript timer
+> - no handing the URL to a queue, cron or background job to open later
+> - no storing it to reuse on a later request — the URL is good for this one attempt, now
+>
+> All of that belongs **after** the customer comes back, in your `return_url` handler or — better,
+> because it does not depend on the customer's browser returning at all — in the webhook delivered
+> to `notification_url`. See [Polling payment state after a redirect](#polling-payment-state-after-a-redirect).
 
 ### Polling payment state after a redirect
 

@@ -122,6 +122,12 @@ echo 'Charge state   : ' . ($charge->getState() ?? 'n/a') . PHP_EOL;
 // If the card requires 3-D Secure verification the API returns a redirect_url.
 // Redirect the customer to that URL; they complete 3DS on the bank's page and
 // the bank redirects back to your callback.return_url.
+//
+// Send them there IMMEDIATELY. The URL opens an authentication session held
+// open by the bank, and it times out quickly — a customer who arrives late
+// finds the payment already cancelled. Order bookkeeping, emails and anything
+// else slow belong in the return_url handler or the notification_url webhook,
+// never between reading this URL and the redirect.
 if ($charge->getAction()?->getRedirectUrl() !== null) {
     echo '3DS redirect   : ' . $charge->getAction()->getRedirectUrl() . PHP_EOL;
     echo '→ Redirect the customer to the URL above, then poll getPaymentStatus().' . PHP_EOL;
