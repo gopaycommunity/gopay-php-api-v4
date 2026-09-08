@@ -41,10 +41,11 @@ header('Location: ' . $payment->json['gw_url']); // REDIRECT the customer
 
 // v2 (API v4) — charge-based (server-side)
 $payment = $sdk->createPayment($goid, [...]);
-// gw_url is not used by the flow below — only redirect to it deliberately,
-// for a payment method not yet supported by v4's charge API. Doing so hands
-// off control to the hosted (v3-backed) flow, but getPaymentStatus() still
-// reports the final state once the customer completes it.
+// gw_url is not used by the flow below. It is still GoPay's hosted gateway,
+// offering every method the eshop has enabled — redirect there deliberately
+// when you want the hosted integration rather than driving the payment in your
+// own checkout. Either way getPaymentStatus() reports the final state once the
+// customer completes it.
 // Instead, obtain a card token from the browser iframe, then:
 $charge = $sdk->chargePayment($payment->getId(), [
     'payment_instrument' => [
@@ -98,15 +99,41 @@ The `201` response only means the refund was accepted — poll `getRefund()` unt
 leaves `REQUESTED`. `RefundDetails` carries no `payment_id`, so keep your own mapping if you
 need to resolve a refund back to its payment.
 
+### 5. Recurrences are standalone entities
+
+`createRecurrence()` still exists but nothing about it survives: in v3 a recurrence was created
+on top of an existing payment, in v4 it is its own resource with its own ID, created against
+the eshop and holding a payment template of its own.
+
+```php
+// v1 (API v3) — recurrence attached to a payment that already exists
+$gopay->createRecurrence($paymentId, [...]);
+
+// v2 (API v4) — recurrence created against the eshop, no payment yet
+$recurrence = $sdk->createRecurrence($goid, [
+    'type'               => 'ON_DEMAND',    // or 'AUTO' with a 'schedule'
+    'recurrence_date_to' => '2027-09-04',
+    'payment'            => [ /* the template every payment is created from */ ],
+]);
+
+$first = $sdk->startRecurrence($recurrence->getId());  // creates the first payment
+$next  = $sdk->recurrenceNext($recurrence->getId());   // each further payment
+$sdk->stopRecurrence($recurrence->getId());
+```
+
+Creating a recurrence no longer charges anything: it stores a template and nothing else. The
+first payment is created by `startRecurrence()`, and the recurrence only becomes `STARTED` once
+the customer has paid it — `recurrenceNext()` answers `409` until then. See
+[Recurrences](README.md#recurrences) in the README for the full state machine.
+
 ---
 
 ## Methods removed — no v4 equivalent
 
-These 10 methods are gone in v4. They will throw HTTP 404 if called against the v4 API.
+These 9 methods are gone in v4. They will throw HTTP 404 if called against the v4 API.
 
 | v1 method | v3 endpoint | v4 status |
 |---|---|---|
-| `createRecurrence` | (v3 recurrence endpoint) | ✗ recurrences were removed from the v4 API schema (unfinished endpoint), no v4 equivalent |
 | `refundPaymentEET` | `POST /payments/payment/{id}/refund` | ✗ EET abolished Jan 2023, no v4 equivalent |
 | `captureAuthorization` / `captureAuthorizationPartial` | `POST /payments/payment/{id}/capture` | ✗ |
 | `voidAuthorization` | `POST /payments/payment/{id}/void-authorization` | ✗ |
@@ -135,3 +162,7 @@ to remove those calls — there is no v4 equivalent.
 | `listRefunds($id)` | List every refund issued against a payment |
 | `getRefund($refundId)` | Read a single refund by its own v4 refund ID |
 | `awaitRefundState($refundId)` | Synchronous poll loop until a refund settles (SUCCESS/FAILED) |
+| `recurrenceStatus($recId)` | Read a recurrence and the payment it last created |
+| `startRecurrence($recId, ...)` | Create the first payment of a recurrence |
+| `recurrenceNext($recId, ...)` | Create a further payment from a started recurrence |
+| `stopRecurrence($recId)` | Stop a recurrence permanently |

@@ -52,15 +52,17 @@ $payment = $sdk->createPayment($goid, [
     ],
 ]);
 
-// $payment->gw_url also exists here — it's a deliberate, still-supported
-// escape hatch into the previous (v3) hosted-gateway flow, for payment methods
-// the v4 charge endpoint does not yet cover, not a legacy field to avoid.
-// Redirecting to it hands off real-time control of this payment to the hosted
-// flow while the customer is on it, but getPaymentStatus() still reports the
-// final state once they complete it — exactly as it would for a payment
-// charged directly through v4. This example demonstrates the create → charge
-// (card-only) flow, so gw_url is simply unused below; the only rule is not to
-// redirect to it *and* call chargePayment() for the same payment attempt.
+// $payment->gw_url also exists here — it is the address of GoPay's hosted
+// payment gateway, which offers the customer every method the eshop has
+// enabled. It's a supported integration in its own right, not a legacy field
+// to avoid; you just can't embed it in your own checkout, which is why this
+// example doesn't send the customer there. Redirecting to it hands the payment
+// over to the gateway while the customer is on it, but getPaymentStatus()
+// still reports the final state once they complete it — exactly as it would
+// for a payment charged directly through v4. This example demonstrates the
+// create → charge (card-only) flow, so gw_url is simply unused below; the only
+// rule is not to redirect to it *and* call chargePayment() for the same
+// payment attempt.
 
 echo 'Payment ID : ' . $payment->getId() . PHP_EOL;
 echo 'State      : ' . ($payment->getState() ?? 'n/a') . PHP_EOL;

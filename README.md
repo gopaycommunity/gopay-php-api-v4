@@ -19,8 +19,9 @@ See [MIGRATION.md](MIGRATION.md) for a full breakdown. The SDK is v4-only — no
 
 Key changes:
 - **Gateway URL changed** — update your `Config` initialization
-- **Legacy `gw_url` redirect removed** — replace `header('Location: gw_url')` with `chargePayment()`. 3DS challenges still redirect via `getAction()->getRedirectUrl()`
-- **10 v3 methods removed** — recurrences, pre-auth capture/void, EET, account statement, payment instruments. Refunds are back in v4 on new paths, see [Refunds](#refunds)
+- **Redirecting to `gw_url` is no longer the default flow** — replace `header('Location: gw_url')` with `chargePayment()`. `gw_url` itself is not legacy and has not gone anywhere: it still opens GoPay's hosted gateway, which is a supported integration in its own right. 3DS challenges still redirect via `getAction()->getRedirectUrl()`
+- **Recurrences redesigned** — a recurrence is now a standalone entity with its own ID, not something attached to a payment. See [Recurrences](#recurrences)
+- **9 v3 methods removed** — pre-auth capture/void, EET, account statement, payment instruments. Refunds and recurrences are back in v4 on new paths, see [Refunds](#refunds) and [Recurrences](#recurrences)
 
 ---
 
@@ -120,7 +121,7 @@ if ($charge->getAction()?->getRedirectUrl() !== null) {
 > there do belong to the customer, but `ip` does not survive a proxy, and the contract wants
 > all three from one observation rather than a mix of two sources.
 >
-> **`gw_url` — escape hatch for methods not yet on v4.** The `PaymentDetails` object contains a `gw_url` field. Don't redirect to it by default — this SDK's own flow (`createPayment()` → `chargePayment()`) fully covers card payments. Use `gw_url` deliberately when the payment needs a method or feature not yet implemented in the v4 charge flow: redirecting there hands off real-time control to the hosted (v3-backed) flow while the customer is on it, but the payment remains fully v4-observable — `getPaymentStatus()` reports the final state once the customer completes it, exactly as it would for a payment charged directly through v4.
+> **`gw_url` — GoPay's hosted payment gateway.** The `PaymentDetails` object contains a `gw_url` field: the address of GoPay's hosted gateway for this payment, which offers the customer every payment method the eshop has enabled and drives the payment while the customer is on it. It is a destination the customer is sent to — it **cannot be embedded in your own checkout**, and that, not a missing payment method, is the reason not to redirect there by default. Driving the payment inside your own UI is what this SDK's flow (`createPayment()` → `chargePayment()`) is for; that checkout integration today covers card, Google Pay, Apple Pay and QR payments and is being extended to further methods, while the gateway already offers every method the eshop has enabled. Either way the payment stays fully v4-observable: `getPaymentStatus()` reports the final state once the customer completes it, exactly as it would for a payment charged directly through v4. Drive one or the other for a given payment attempt, never both.
 
 ---
 
@@ -349,6 +350,130 @@ Expiry is evaluated on read: once a link is past its `expires_at`, `linkStatus()
 active — `stop_reason` (`FROM_API`, `USED` or `EXPIRED`). While the link is active,
 `getStopReason()` returns `null`. A link that belongs to another eshop answers `404`, not
 `403`, so the response does not reveal whether it exists.
+
+---
+
+### Recurrences
+
+A recurrence holds a payment template and creates payments from it. In v4 it is a standalone
+entity with its own ID — not something attached to an existing payment, the way v3's
+`createRecurrence($paymentId, …)` was. Server-side only: every operation except reading needs
+the `payment:write` scope, which a payment-scoped browser token never carries.
+
+```php
+// Create a recurrence; returned in state NEW, no payment exists yet
+$sdk->createRecurrence(string $goid, array $params): RecurrenceDetails
+
+// Read its current state and the payment it last created
+$sdk->recurrenceStatus(string $recId): RecurrenceDetails
+
+// Stop it permanently
+$sdk->stopRecurrence(string $recId): void
+
+// Create the first payment — the one the customer pays to activate the recurrence
+$sdk->startRecurrence(string $recId, ?array $params = null): PaymentDetails
+
+// Create a further payment, once the recurrence is STARTED
+$sdk->recurrenceNext(string $recId, ?array $params = null): PaymentDetails
+```
+
+#### Two kinds
+
+The create body is a discriminated union on `type`, and the variants differ by more than that
+one field. An **`AUTO`** recurrence carries a `schedule` and GoPay creates the payments itself;
+an **`ON_DEMAND`** one must not carry a schedule, because you ask for each further payment with
+`recurrenceNext()`.
+
+```php
+// AUTO — GoPay creates a payment every month
+$recurrence = $sdk->createRecurrence($goid, [
+    'type'               => 'AUTO',
+    'schedule'           => ['period' => 'MONTH', 'cycle' => 1],
+    'recurrence_date_to' => '2027-09-04',
+    'payment'            => [
+        'amount'       => 1500,
+        'currency'     => 'CZK',
+        'order_number' => '2025010199',
+        'customer'     => ['email' => 'john.doe@example.com'],
+        'callback'     => [
+            'notification_url' => 'https://yourshop.example.com/gopay/notify',
+            'return_url'       => 'https://yourshop.example.com/gopay/return',
+        ],
+    ],
+]);
+
+// ON_DEMAND — no schedule; you call recurrenceNext() when you want the next payment
+$recurrence = $sdk->createRecurrence($goid, [
+    'type'               => 'ON_DEMAND',
+    'recurrence_date_to' => '2027-09-04',
+    'payment'            => [ /* same shape, no schedule anywhere */ ],
+]);
+```
+
+`recurrence_date_to` is required for both and is the last day the recurrence may create a
+payment, as a plain `yyyy-MM-dd` date — a value carrying a time is rejected with `400`. It
+belongs at the top level, never inside `schedule`. Both variants are `additionalProperties:
+false`, so an unknown field at **any** level, including inside `payment.customer`, is a `400`
+rather than something the server quietly drops.
+
+#### The lifecycle, and the state names that do not match it
+
+```php
+$recurrence = $sdk->createRecurrence($goid, [...]);   // state NEW
+
+$first = $sdk->startRecurrence($recurrence->getId()); // state REQUESTED, not STARTED
+header('Location: ' . $first->getGwUrl());            // the customer pays this one
+
+// …once the customer has paid it, the recurrence becomes STARTED
+$next = $sdk->recurrenceNext($recurrence->getId());   // 409 before that point
+```
+
+`startRecurrence()` creates the first payment and moves the recurrence to **`REQUESTED`**, not
+`STARTED`. It becomes `STARTED` only once the customer has actually paid that first payment.
+For the whole window in between, `recurrenceNext()` answers `409` — so code that starts a
+recurrence and immediately asks for the next payment gets a conflict, not a payment. Calling
+`startRecurrence()` again while the first payment is in flight also answers `409`.
+
+#### Per-payment overrides
+
+`startRecurrence()` and `recurrenceNext()` both take an optional body that overrides the stored
+template for that one payment: `amount`, `order_number`, `order_description`, `customer` and
+`callback`.
+
+```php
+$payment = $sdk->recurrenceNext($recId, [
+    'amount'       => 2500,                      // this instalment only
+    'order_number' => '2026-00042',
+    'customer'     => ['first_name' => 'Jane'],  // merged, not replaced
+]);
+```
+
+`customer` is merged field by field rather than replaced, so a partial one is fine — it may
+omit `email` or be empty, even though the shared `Customer` schema requires an email. An
+unknown field anywhere in the override is a `400`.
+
+#### Stopping
+
+`stopRecurrence()` answers `204` and moves the recurrence to `STOPPED` with `stop_reason`
+`CANCELLED_VIA_API`. It cannot be undone: a second stop answers `409`, and so does starting a
+stopped recurrence. Payments the recurrence already created are unaffected — cancel or refund
+those individually.
+
+`RecurrenceDetails` carries `id`, `type`, `state`, `recurrence_date_to`, `payment`, plus
+`schedule` for an `AUTO` recurrence and `stop_reason` once it is `STOPPED` (`RECURRENCE_EXPIRED`,
+`CARD_EXPIRED`, `CANCELLED_VIA_API`, `CANCELLED_VIA_BACKOFFICE`, `CANCELLED_BY_GOPAY` or
+`UNKNOWN`). While it is still running, `getStopReason()` returns `null`.
+
+`getPayment()` returns a `RecurrencePayment`, not a `PaymentDetails`. Before the recurrence is
+started it is the stored template, so `id`, `state`, `gw_url` and `payment_secret` are all
+`null` and only fill in once a payment exists.
+
+A recurrence ID that is well-formed but does not exist answers `404`; one that is not a valid
+ID at all answers `400`.
+
+> **`RecurrenceState::_NEW`, with an underscore.** `new` is a reserved word in PHP, so the
+> generated constant for the `NEW` state is `_NEW`. Only the PHP constant is affected — the
+> value on the wire is the plain string `NEW`.
 
 ---
 

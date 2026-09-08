@@ -23,10 +23,12 @@ use GoPay\Payments\Http\RequestOptions;
  *   calls chargePayment() with that token. See CardsApi::tokenizeEncryptedCard()
  *   for the iframe JWE → permanent-token flow.
  *
- * createPayment() also returns a `gw_url`. That is the escape hatch into the
- * previous (v3) hosted flow, kept for payment methods the v4 charge endpoint
- * does not cover yet — a supported alternative to createPayment() →
- * chargePayment(), not a legacy field. Drive one or the other for a given
+ * createPayment() also returns a `gw_url`. That is GoPay's hosted payment
+ * gateway, offering the customer every method the eshop has enabled — a
+ * supported alternative to createPayment() → chargePayment(), not a legacy
+ * field. It is a destination the customer is sent to and cannot be embedded in
+ * the merchant's own checkout; that, rather than any gap in what v4 covers, is
+ * why the charge path exists alongside it. Drive one or the other for a given
  * payment attempt, never both; getPaymentStatus() reports the outcome either
  * way. This module implements the charge path.
  */

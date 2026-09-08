@@ -71,19 +71,27 @@ src/
         └── ModelInterface.php
 ```
 
-## `gw_url` — escape hatch, not a redirect target for this SDK's own flow
+## `gw_url` — GoPay's hosted gateway, not a redirect target for this SDK's own flow
 
 `createPayment()` returns a `gw_url` field. **Do not redirect to it as part of this SDK's
-own flow** (`createPayment()` → `chargePayment()`), which fully covers card payments.
+own flow** (`createPayment()` → `chargePayment()`).
 
-`gw_url` is a deliberate escape hatch into the previous (v3) hosted-gateway processing —
-reach for it when a payment needs a method or feature not yet implemented in the v4 charge
-flow. Redirecting there hands off real-time control of the payment to the hosted flow for as
-long as the customer is on it, but the payment stays fully v4-observable throughout: once the
-customer completes it, `getPaymentStatus($paymentId)` reports the final state exactly as it
-would for a payment charged directly through v4. Don't present `gw_url` as unsafe or purely
-legacy in generated examples — it's the correct tool for methods v4 doesn't cover yet, not
-dead code to avoid. The same nuance applies to the JavaScript SDK.
+`gw_url` is the address of GoPay's **full hosted payment gateway**, offering the customer
+every payment method the eshop has enabled, with GoPay driving the payment while they are on
+it. It is **not** an escape hatch into v3 and **not** a fallback for methods v4 is missing —
+that framing is wrong and has been corrected in the spec repo; do not reintroduce it here.
+The reason not to send the customer there by default is that the gateway **cannot be embedded
+in the merchant's own checkout**: it is a destination the customer is sent to. Driving the
+payment inside the merchant's own UI is what the checkout integration is for, and that today
+covers card, Google Pay, Apple Pay and QR payments and is being extended, while the gateway
+already has everything.
+
+Either way the payment stays fully v4-observable: once the customer completes it,
+`getPaymentStatus($paymentId)` reports the final state exactly as it would for a payment
+charged directly through v4. Don't present `gw_url` as unsafe or legacy in generated
+examples — it is a supported integration in its own right, not dead code to avoid. The only
+rule is to drive one or the other for a given payment attempt, never both. The same nuance
+applies to the JavaScript SDK.
 
 ## Browser SDK coordination
 
@@ -100,8 +108,9 @@ When the browser SDK's iframe yields a JWE payload (return-payload mode), the PH
 
 See `MIGRATION.md`. The SDK is v4-only — no source-level compat with `gopay/payments-sdk` v1.
 The major changes: gateway URL and a create→charge flow replacing the default redirect flow;
-`gw_url` remains available as an escape hatch for unsupported payment methods.
-10 v3 methods (recurrences, pre-auth, EET, account statement, payment instruments) have no v4
-equivalent. Recurrences and payment links were removed from the v4 API schema as unfinished
-endpoints and their SDK modules dropped entirely; refunds were removed with them but came back
-once the schema declared them again, on new paths with the refund as its own resource.
+`gw_url` remains available as the hosted-gateway integration.
+9 v3 methods (pre-auth, EET, account statement, payment instruments) have no v4 equivalent.
+Refunds, payment links and recurrences were all removed from the v4 API schema as unfinished
+endpoints and their SDK modules dropped, then came back one by one as the schema declared them
+again — each on new paths and as its own resource. A recurrence is now standalone, created
+against the eshop rather than on top of an existing payment.
