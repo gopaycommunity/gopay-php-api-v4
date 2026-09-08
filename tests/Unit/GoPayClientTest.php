@@ -13,6 +13,8 @@ use GoPay\Payments\Generated\Model\PaymentChargeStatusResponse;
 use GoPay\Payments\Generated\Model\PaymentDetails;
 use GoPay\Payments\Generated\Model\PermanentCardTokenDetails;
 use GoPay\Payments\Generated\Model\QRPaymentDetails;
+use GoPay\Payments\Generated\Model\RecurrenceDetails;
+use GoPay\Payments\Generated\Model\RecurrenceState;
 use GoPay\Payments\Generated\Model\RefundDetails;
 use GoPay\Payments\GoPayClient;
 use GuzzleHttp\Psr7\HttpFactory;
@@ -271,6 +273,104 @@ final class GoPayClientTest extends TestCase
         $request = $this->mockClient->getRequests()[1];
         $this->assertSame('DELETE', $request->getMethod());
         $this->assertStringEndsWith('/eshops/8398119642/links/3405871122', (string) $request->getUri());
+    }
+
+    // ── Recurrences ───────────────────────────────────────────────────────────
+
+    /**
+     * @param array<string, mixed> $overrides
+     *
+     * @return array<string, mixed>
+     */
+    private function recurrenceJson(array $overrides = []): array
+    {
+        return array_merge([
+            'id' => '8008013370',
+            'type' => 'ON_DEMAND',
+            'state' => 'NEW',
+            'recurrence_date_to' => '2027-09-04',
+            'payment' => [
+                'amount' => 1500,
+                'currency' => 'CZK',
+                'order_number' => '2025010199',
+                'customer' => ['email' => 'john.doe@example.com'],
+            ],
+        ], $overrides);
+    }
+
+    #[Test]
+    public function createRecurrenceDelegates(): void
+    {
+        $this->queueJson($this->recurrenceJson(), 201);
+
+        $result = $this->sdk->createRecurrence('8761908826', [
+            'type' => 'ON_DEMAND',
+            'recurrence_date_to' => '2027-09-04',
+            'payment' => ['amount' => 1500],
+        ]);
+
+        $this->assertInstanceOf(RecurrenceDetails::class, $result);
+        // `_NEW`: `new` is a PHP reserved word, so the generator prefixes the constant.
+        $this->assertSame(RecurrenceState::_NEW, $result->getState());
+
+        $request = $this->mockClient->getRequests()[1];
+        $this->assertSame('POST', $request->getMethod());
+        $this->assertStringEndsWith('/eshops/8761908826/recurrences', (string) $request->getUri());
+    }
+
+    #[Test]
+    public function recurrenceStatusDelegates(): void
+    {
+        $this->queueJson($this->recurrenceJson(['state' => 'STARTED']));
+
+        $result = $this->sdk->recurrenceStatus('8008013370');
+
+        $this->assertInstanceOf(RecurrenceDetails::class, $result);
+        $this->assertSame(RecurrenceState::STARTED, $result->getState());
+
+        $request = $this->mockClient->getRequests()[1];
+        $this->assertSame('GET', $request->getMethod());
+        $this->assertStringEndsWith('/recurrences/8008013370', (string) $request->getUri());
+    }
+
+    #[Test]
+    public function stopRecurrenceDelegates(): void
+    {
+        $this->mockClient->addResponse(new Response(204));
+
+        $this->sdk->stopRecurrence('8008013370');
+
+        $request = $this->mockClient->getRequests()[1];
+        $this->assertSame('DELETE', $request->getMethod());
+        $this->assertStringEndsWith('/recurrences/8008013370', (string) $request->getUri());
+    }
+
+    #[Test]
+    public function startRecurrenceDelegates(): void
+    {
+        $this->queueJson(['id' => '7310142951', 'state' => 'CREATED'], 201);
+
+        $result = $this->sdk->startRecurrence('8008013370');
+
+        $this->assertInstanceOf(PaymentDetails::class, $result);
+
+        $request = $this->mockClient->getRequests()[1];
+        $this->assertSame('POST', $request->getMethod());
+        $this->assertStringEndsWith('/recurrences/8008013370/start', (string) $request->getUri());
+    }
+
+    #[Test]
+    public function recurrenceNextDelegates(): void
+    {
+        $this->queueJson(['id' => '7310142952', 'state' => 'CREATED'], 201);
+
+        $result = $this->sdk->recurrenceNext('8008013370', ['amount' => 2500]);
+
+        $this->assertInstanceOf(PaymentDetails::class, $result);
+
+        $request = $this->mockClient->getRequests()[1];
+        $this->assertSame('POST', $request->getMethod());
+        $this->assertStringEndsWith('/recurrences/8008013370/next', (string) $request->getUri());
     }
 
     // ── Helper ────────────────────────────────────────────────────────────────

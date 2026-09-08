@@ -12,12 +12,14 @@ use GoPay\Payments\Generated\Model\PaymentChargeStatusResponse;
 use GoPay\Payments\Generated\Model\PaymentDetails;
 use GoPay\Payments\Generated\Model\PermanentCardTokenDetails;
 use GoPay\Payments\Generated\Model\QRPaymentDetails;
+use GoPay\Payments\Generated\Model\RecurrenceDetails;
 use GoPay\Payments\Generated\Model\RefundDetails;
 use GoPay\Payments\Http\HttpClient;
 use GoPay\Payments\Module\AuthApi;
 use GoPay\Payments\Module\CardsApi;
 use GoPay\Payments\Module\LinksApi;
 use GoPay\Payments\Module\PaymentsApi;
+use GoPay\Payments\Module\RecurrencesApi;
 use GoPay\Payments\Module\RefundsApi;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
@@ -57,6 +59,7 @@ final class GoPayClient
     private readonly CardsApi $cards;
     private readonly RefundsApi $refunds;
     private readonly LinksApi $links;
+    private readonly RecurrencesApi $recurrences;
 
     public function __construct(
         Config $config = new Config(),
@@ -70,6 +73,7 @@ final class GoPayClient
         $this->cards = new CardsApi($this->http);
         $this->refunds = new RefundsApi($this->http);
         $this->links = new LinksApi($this->http);
+        $this->recurrences = new RecurrencesApi($this->http);
     }
 
     // =========================================================================
@@ -143,11 +147,13 @@ final class GoPayClient
      *
      * POST /eshops/{goid}/payments
      *
-     * The returned `gw_url` is the escape hatch into the previous (v3) hosted
-     * flow, for payment methods the v4 charge endpoint does not cover yet — a
-     * supported alternative to createPayment() → chargePayment(), not a legacy
-     * field. Drive one or the other for a given payment attempt, never both;
-     * getPaymentStatus() reports the outcome either way.
+     * The returned `gw_url` is GoPay's hosted payment gateway, offering the
+     * customer every method the eshop has enabled — a supported alternative to
+     * createPayment() → chargePayment(), not a legacy field. It cannot be
+     * embedded in the merchant's own checkout, which is the reason to drive the
+     * payment here instead, not any gap in what v4 covers. Drive one or the
+     * other for a given payment attempt, never both; getPaymentStatus() reports
+     * the outcome either way.
      *
      * @param array<string, mixed> $params
      *
@@ -461,5 +467,101 @@ final class GoPayClient
     public function disableLink(string $goid, string $linkId): void
     {
         $this->links->disableLink($goid, $linkId);
+    }
+
+    // =========================================================================
+    // Recurrences
+    // =========================================================================
+
+    /**
+     * Create a recurrence. Returns it in state `NEW`.
+     * Requires `payment:write` scope.
+     *
+     * POST /eshops/{goid}/recurrences
+     *
+     * The body is a discriminated union on `type`. An `AUTO` recurrence carries a
+     * `schedule` and GoPay creates the payments itself; an `ON_DEMAND` one must not
+     * carry one, because the merchant asks for each further payment with
+     * `recurrenceNext()`. `recurrence_date_to` is required in both, as a plain
+     * `yyyy-MM-dd` date. Unknown fields are rejected rather than ignored.
+     *
+     * @param array<string, mixed> $params
+     *
+     * @throws GoPaySdkException
+     * @throws GoPayHttpException
+     */
+    public function createRecurrence(string $goid, array $params): RecurrenceDetails
+    {
+        return $this->recurrences->createRecurrence($goid, $params);
+    }
+
+    /**
+     * Retrieve the current state of a recurrence and the payment it last created.
+     * Requires `payment:read` scope.
+     *
+     * GET /recurrences/{rec_id}
+     *
+     * @throws GoPaySdkException
+     * @throws GoPayHttpException
+     */
+    public function recurrenceStatus(string $recId): RecurrenceDetails
+    {
+        return $this->recurrences->recurrenceStatus($recId);
+    }
+
+    /**
+     * Stop a recurrence permanently.
+     * Requires `payment:write` scope.
+     *
+     * DELETE /recurrences/{rec_id}
+     *
+     * Moves it to `STOPPED` with stop reason `CANCELLED_VIA_API`. Cannot be undone;
+     * stopping or starting an already stopped recurrence answers 409.
+     *
+     * @throws GoPaySdkException
+     * @throws GoPayHttpException
+     */
+    public function stopRecurrence(string $recId): void
+    {
+        $this->recurrences->stopRecurrence($recId);
+    }
+
+    /**
+     * Start a recurrence by creating its first payment.
+     * Requires `payment:write` scope.
+     *
+     * POST /recurrences/{rec_id}/start
+     *
+     * The recurrence moves to `REQUESTED`, not `STARTED` — it becomes `STARTED` only
+     * once the customer pays the returned payment at its `gw_url`. The optional body
+     * overrides `amount`, `order_number`, `order_description`, `customer` or
+     * `callback` for this one payment.
+     *
+     * @param array<string, mixed>|null $params
+     *
+     * @throws GoPaySdkException
+     * @throws GoPayHttpException
+     */
+    public function startRecurrence(string $recId, ?array $params = null): PaymentDetails
+    {
+        return $this->recurrences->startRecurrence($recId, $params);
+    }
+
+    /**
+     * Create a further payment from a recurrence already in state `STARTED`.
+     * Requires `payment:write` scope.
+     *
+     * POST /recurrences/{rec_id}/next
+     *
+     * Answers 409 until the recurrence has been started and its first payment paid.
+     *
+     * @param array<string, mixed>|null $params
+     *
+     * @throws GoPaySdkException
+     * @throws GoPayHttpException
+     */
+    public function recurrenceNext(string $recId, ?array $params = null): PaymentDetails
+    {
+        return $this->recurrences->recurrenceNext($recId, $params);
     }
 }

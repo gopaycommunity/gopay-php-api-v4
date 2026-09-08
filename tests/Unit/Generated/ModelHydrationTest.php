@@ -16,6 +16,9 @@ use GoPay\Payments\Generated\Model\PaymentDetails;
 use GoPay\Payments\Generated\Model\PermanentCardTokenDetails;
 use GoPay\Payments\Generated\Model\QRCodeList;
 use GoPay\Payments\Generated\Model\QRPaymentDetails;
+use GoPay\Payments\Generated\Model\RecurrenceDetails;
+use GoPay\Payments\Generated\Model\RecurrencePayment;
+use GoPay\Payments\Generated\Model\RecurrenceSchedule;
 use GoPay\Payments\Generated\Model\RefundDetails;
 use GoPay\Payments\Generated\ObjectSerializer;
 use PHPUnit\Framework\TestCase;
@@ -130,6 +133,77 @@ final class ModelHydrationTest extends TestCase
         $this->assertFalse($card->getCorporate());
         $this->assertSame('perm-token-abc', $card->getToken());
         $this->assertSame('ACTIVE', $card->getStatus());
+    }
+
+    /**
+     * `Recurrence-Details.payment` is a `Recurrence-Payment`, not a `Payment-Details`:
+     * it carries the stored template, so `id`, `state`, `gw_url` and `payment_secret`
+     * are all optional and stay null until the recurrence has created a payment.
+     * Worth pinning, because the two schemas are similar enough that the nested type
+     * is easy to get wrong.
+     */
+    public function testRecurrenceDetailsHydration(): void
+    {
+        /** @var RecurrenceDetails $recurrence */
+        $recurrence = ObjectSerializer::deserialize([
+            'id'                 => '8008013370',
+            'type'               => 'AUTO',
+            'state'              => 'STARTED',
+            'schedule'           => ['period' => 'MONTH', 'cycle' => 1],
+            'recurrence_date_to' => '2027-09-04',
+            'payment'            => [
+                'id'           => '7310142951',
+                'state'        => 'PAID',
+                'amount'       => 1500,
+                'currency'     => 'CZK',
+                'order_number' => '2025010199',
+                'customer'     => ['email' => 'john.doe@example.com'],
+            ],
+        ], RecurrenceDetails::class);
+
+        $this->assertSame('8008013370', $recurrence->getId());
+        $this->assertSame('AUTO', $recurrence->getType());
+        $this->assertSame('STARTED', $recurrence->getState());
+        $this->assertNull($recurrence->getStopReason());
+
+        $schedule = $recurrence->getSchedule();
+        $this->assertInstanceOf(RecurrenceSchedule::class, $schedule);
+        $this->assertSame('MONTH', $schedule->getPeriod());
+        $this->assertSame(1, $schedule->getCycle());
+
+        $payment = $recurrence->getPayment();
+        $this->assertInstanceOf(RecurrencePayment::class, $payment);
+        $this->assertSame('7310142951', $payment->getId());
+        $this->assertSame('PAID', $payment->getState());
+        $this->assertSame(1500, $payment->getAmount());
+    }
+
+    public function testRecurrenceDetailsHydratesTheStoredTemplateBeforeAPaymentExists(): void
+    {
+        /** @var RecurrenceDetails $recurrence */
+        $recurrence = ObjectSerializer::deserialize([
+            'id'                 => '8008013370',
+            'type'               => 'ON_DEMAND',
+            'state'              => 'NEW',
+            'recurrence_date_to' => '2027-09-04',
+            'payment'            => [
+                'amount'       => 1500,
+                'currency'     => 'CZK',
+                'order_number' => '2025010199',
+                'customer'     => ['email' => 'john.doe@example.com'],
+            ],
+        ], RecurrenceDetails::class);
+
+        // ON_DEMAND carries no schedule at all — the merchant asks for each payment.
+        $this->assertNull($recurrence->getSchedule());
+
+        $payment = $recurrence->getPayment();
+        $this->assertInstanceOf(RecurrencePayment::class, $payment);
+        $this->assertNull($payment->getId());
+        $this->assertNull($payment->getState());
+        $this->assertNull($payment->getGwUrl());
+        $this->assertNull($payment->getPaymentSecret());
+        $this->assertSame(1500, $payment->getAmount());
     }
 
     public function testBrowserDataRequiresEmv3dsFields(): void

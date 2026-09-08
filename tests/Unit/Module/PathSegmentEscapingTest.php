@@ -8,6 +8,7 @@ use GoPay\Payments\Exception\GoPaySdkException;
 use GoPay\Payments\Module\CardsApi;
 use GoPay\Payments\Module\LinksApi;
 use GoPay\Payments\Module\PaymentsApi;
+use GoPay\Payments\Module\RecurrencesApi;
 use GoPay\Payments\Module\RefundsApi;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
@@ -153,5 +154,54 @@ final class PathSegmentEscapingTest extends ModuleTestCase
 
         $uri = (string) $this->mockClient->getRequests()[0]->getUri();
         $this->assertStringEndsWith("/eshops/{$encoded}/links/{$encoded}", $uri);
+    }
+
+    #[Test]
+    #[DataProvider('hostileIds')]
+    public function recurrencesApiEscapesTheRecurrenceId(string $raw, string $encoded): void
+    {
+        $this->queue204();
+        (new RecurrencesApi($this->http))->stopRecurrence($raw);
+
+        $uri = (string) $this->mockClient->getRequests()[0]->getUri();
+        $this->assertStringEndsWith("/recurrences/{$encoded}", $uri);
+    }
+
+    /**
+     * `start` and `next` put the id mid-path rather than at the end, which is the
+     * shape a traversal actually exploits — unescaped, a `../..` there addresses
+     * another endpoint's action, not merely another resource.
+     */
+    #[Test]
+    #[DataProvider('hostileIds')]
+    public function recurrencesApiEscapesTheIdInMidPathActions(string $raw, string $encoded): void
+    {
+        $this->queueJson($this->paymentDetailsJson(), 201);
+        (new RecurrencesApi($this->http))->startRecurrence($raw);
+
+        $uri = (string) $this->mockClient->getRequests()[0]->getUri();
+        $this->assertStringEndsWith("/recurrences/{$encoded}/start", $uri);
+    }
+
+    #[Test]
+    #[DataProvider('hostileIds')]
+    public function recurrencesApiEscapesTheGoid(string $raw, string $encoded): void
+    {
+        $this->queueJson([
+            'id' => '8008013370',
+            'type' => 'ON_DEMAND',
+            'state' => 'NEW',
+            'recurrence_date_to' => '2027-09-04',
+            'payment' => [
+                'amount' => 1500,
+                'currency' => 'CZK',
+                'order_number' => '2025010199',
+                'customer' => ['email' => 'john.doe@example.com'],
+            ],
+        ], 201);
+        (new RecurrencesApi($this->http))->createRecurrence($raw, ['type' => 'ON_DEMAND']);
+
+        $uri = (string) $this->mockClient->getRequests()[0]->getUri();
+        $this->assertStringEndsWith("/eshops/{$encoded}/recurrences", $uri);
     }
 }
