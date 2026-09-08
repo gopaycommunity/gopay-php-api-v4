@@ -548,7 +548,7 @@ class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
     /**
      * Sets gwUrl
      *
-     * @param string $gwUrl Escape hatch into the previous (v3) hosted-gateway flow, for payment methods not yet covered by the v4 charge endpoint. Redirecting the customer here hands off real-time control of the payment to the hosted flow while they are on it, but the payment stays fully v4-observable throughout — GET /payments/{payment_id} still reports the final state once the customer completes it, exactly as it would for a payment charged directly through v4. Not a redirect target for payment methods the v4 charge flow already covers.
+     * @param string $gwUrl Address of GoPay's hosted payment gateway for this payment. It offers the customer every payment method the eshop has enabled, and GoPay drives the payment while the customer is on it. It is a destination the customer is sent to — it cannot be embedded in the merchant's own checkout. A merchant who needs the payment step inside their own UI builds a checkout integration instead, which today covers card, Google Pay, Apple Pay and QR payments and is being extended to further methods; this gateway already offers every method the eshop has enabled. Either way the payment stays fully v4-observable: GET /payments/{payment_id} still reports the final state once the customer completes it, exactly as it would for a payment charged directly through v4.
      *
      * @return self
      */
