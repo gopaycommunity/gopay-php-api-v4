@@ -375,6 +375,15 @@ final class HttpClient
             $request = $request
                 ->withHeader('Content-Type', $contentType)
                 ->withBody($this->streamFactory->createStream($body));
+        } elseif ($method === 'POST') {
+            // A POST whose body is optional still has to declare its content type.
+            // Without the header the gateway rejects the request before it ever
+            // reaches the endpoint — RESTEASY003065 "Cannot consume content type",
+            // surfaced as 415 — so `startRecurrence($id)` and `recurrenceNext($id)`
+            // with no overrides would fail while the same calls carrying a body
+            // succeed. Verified against alpha9: no body with this header is
+            // accepted, no body without it is a 415.
+            $request = $request->withHeader('Content-Type', $contentType);
         }
 
         // Merge per-request extra headers.
