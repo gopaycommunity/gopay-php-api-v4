@@ -140,8 +140,14 @@ final class RecurrencesApi
      * The body is optional and overrides fields of the stored payment template for
      * this one payment: `amount`, `order_number`, `order_description`,
      * `additional_params`, `customer` and `callback`. `customer` is merged field by
-     * field rather than replaced, and may omit `email` or be empty. An unknown field
-     * anywhere in the override is a 400.
+     * field rather than replaced, and may omit `email`. An unknown field anywhere in
+     * the override is a 400.
+     *
+     * To send an *empty* `customer`, pass `(object) []` rather than `[]`. PHP cannot
+     * tell an empty map from an empty list, so `['customer' => []]` goes out as
+     * `{"customer":[]}` and the gateway rejects it with 400 "Cannot deserialize value
+     * of type Customer from Array value". Only the top level of the body is coerced
+     * to an object for you — see {@see HttpClient::encodeBody()}.
      *
      * @param array<string, mixed>|null $params Optional per-payment overrides.
      *

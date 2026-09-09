@@ -508,4 +508,32 @@ final class RecurrencesApiTest extends ModuleTestCase
         $body = (string) $this->mockClient->getRequests()[0]->getBody();
         $this->assertSame('{"additional_params":[{"name":"invoice","value":"2026-00042"}]}', $body);
     }
+
+    /**
+     * The object cast stops at the top level, so a nested empty *object* has to be
+     * spelled `(object) []` — `[]` encodes as a JSON array and the gateway answers
+     * 400 "Cannot deserialize value of type Customer from Array value" (verified on
+     * alpha9). Pinning both spellings: the working one so it keeps working, and the
+     * broken one so the documented trap stays true, since a future "just recurse"
+     * change would silently break an empty `additional_params` instead.
+     */
+    #[Test]
+    public function nestedEmptyObjectIsSentAsAnObjectWhenSpelledAsOne(): void
+    {
+        $this->queueJson($this->paymentDetailsJson(), 201);
+
+        $this->recurrences->startRecurrence('8008013370', ['customer' => (object) []]);
+
+        $this->assertSame('{"customer":{}}', (string) $this->mockClient->getRequests()[0]->getBody());
+    }
+
+    #[Test]
+    public function nestedEmptyArrayStaysAnArray(): void
+    {
+        $this->queueJson($this->paymentDetailsJson(), 201);
+
+        $this->recurrences->startRecurrence('8008013370', ['customer' => []]);
+
+        $this->assertSame('{"customer":[]}', (string) $this->mockClient->getRequests()[0]->getBody());
+    }
 }

@@ -371,6 +371,15 @@ final class HttpClient
      * Every v4 request body is a JSON object, and the cast reaches only the top
      * level, so nested lists such as `additional_params` stay arrays.
      *
+     * Stopping at the top level is deliberate, and it is a trade, not an oversight:
+     * recursing would fix `['customer' => []]` — which goes out as `{"customer":[]}`
+     * and earns a 400 — but would equally turn an intentionally empty
+     * `additional_params` list into `{}`. An empty array is genuinely ambiguous in
+     * PHP and the schema is the only thing that can resolve it, which the transport
+     * layer has no business knowing. Callers who want an empty *object* nested in a
+     * body pass `(object) []`, which encodes as `{}`; the module docblocks say so
+     * where it comes up.
+     *
      * @param array<string, mixed>|null $body
      */
     private function encodeBody(?array $body): ?string

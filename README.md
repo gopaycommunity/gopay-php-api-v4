@@ -451,8 +451,24 @@ $payment = $sdk->recurrenceNext($recId, [
 ```
 
 `customer` is merged field by field rather than replaced, so a partial one is fine — it may
-omit `email` or be empty, even though the shared `Customer` schema requires an email. An
-unknown field anywhere in the override is a `400`.
+omit `email`, even though the shared `Customer` schema requires one. An unknown field
+anywhere in the override is a `400`.
+
+> **An empty nested object needs `(object) []`, not `[]`.** PHP cannot tell an empty map from
+> an empty list, so `['customer' => []]` is encoded as `{"customer":[]}` and the gateway
+> answers `400` — *Cannot deserialize value of type Customer from Array value*. The SDK
+> coerces the **top level** of a request body to an object for you, so `startRecurrence($id, [])`
+> is fine, but it deliberately stops there: coercing recursively would turn a legitimately
+> empty list such as `additional_params` into `{}`. Where you genuinely want an empty object,
+> say so:
+>
+> ```php
+> $sdk->startRecurrence($recId, ['customer' => (object) []]);   // {"customer":{}}  → 201
+> $sdk->startRecurrence($recId, ['customer' => []]);            // {"customer":[]}  → 400
+> ```
+>
+> In practice an empty `customer` overrides nothing, so omitting the key entirely is usually
+> what you want.
 
 #### Stopping
 
