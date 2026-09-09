@@ -185,6 +185,39 @@ final class PathSegmentEscapingTest extends ModuleTestCase
 
     #[Test]
     #[DataProvider('hostileIds')]
+    public function recurrencesApiEscapesTheIdOnStatus(string $raw, string $encoded): void
+    {
+        $this->queueJson([
+            'id' => '8008013370',
+            'type' => 'ON_DEMAND',
+            'state' => 'NEW',
+            'recurrence_date_to' => '2027-09-04',
+            'payment' => [
+                'amount' => 1500,
+                'currency' => 'CZK',
+                'order_number' => '2025010199',
+                'customer' => ['email' => 'john.doe@example.com'],
+            ],
+        ]);
+        (new RecurrencesApi($this->http))->recurrenceStatus($raw);
+
+        $uri = (string) $this->mockClient->getRequests()[0]->getUri();
+        $this->assertStringEndsWith("/recurrences/{$encoded}", $uri);
+    }
+
+    #[Test]
+    #[DataProvider('hostileIds')]
+    public function recurrencesApiEscapesTheIdOnNext(string $raw, string $encoded): void
+    {
+        $this->queueJson($this->paymentDetailsJson(), 201);
+        (new RecurrencesApi($this->http))->recurrenceNext($raw);
+
+        $uri = (string) $this->mockClient->getRequests()[0]->getUri();
+        $this->assertStringEndsWith("/recurrences/{$encoded}/next", $uri);
+    }
+
+    #[Test]
+    #[DataProvider('hostileIds')]
     public function recurrencesApiEscapesTheGoid(string $raw, string $encoded): void
     {
         $this->queueJson([
