@@ -1,3 +1,14 @@
+## [1.5.0](https://bitbucket.org/gp-gopay/gopay-php-api-v4/compare/1.4.0...1.5.0) (2026-09-09)
+
+### Features
+
+* **recurrences:** restore recurrences support GPOMA-2593 ([b53603a](https://bitbucket.org/gp-gopay/gopay-php-api-v4/commit/b53603a2fa5a13d03077bfcb245e5d160b52b2e9))
+
+### Bug Fixes
+
+* **http:** declare a content type on a body-less POST GPOMA-2593 ([f837bc2](https://bitbucket.org/gp-gopay/gopay-php-api-v4/commit/f837bc29f1110e0f6229278e51d65314fb3e5c0a))
+* **http:** encode an empty request body as an object, not an array GPOMA-2593 ([d22b0b4](https://bitbucket.org/gp-gopay/gopay-php-api-v4/commit/d22b0b483470bf6bfaa5822e97c9fd01bfff0b5e))
+
 ## [1.4.0](https://bitbucket.org/gp-gopay/gopay-php-api-v4/compare/1.3.0...1.4.0) (2026-09-01)
 
 ### Features
