@@ -65,7 +65,7 @@ src/
 │   ├── CardsApi.php         ← getCardDetails / deleteCard / tokenizeEncryptedCard
 │   ├── RefundsApi.php       ← refundPayment / listRefunds / getRefund / awaitRefundState
 │   ├── LinksApi.php         ← createPaymentLink / linkStatus / disableLink
-│   └── RecurrencesApi.php   ← createRecurrence / recurrenceStatus / startRecurrence / recurrenceNext / stopRecurrence
+│   └── RecurrencesApi.php   ← createRecurrence / recurrenceStatus / stopRecurrence / startRecurrence / recurrenceNext
 └── Generated/               ← generated from OpenAPI spec (PHPStan-excluded from analysis)
     ├── ObjectSerializer.php
     ├── HeaderSelector.php
