@@ -43,7 +43,7 @@
 ### Bug Fixes
 
 * **codegen:** fail closed if the mock server survives stripping GPOMA-2522 ([9a4d1f4](https://bitbucket.org/gp-gopay/gopay-php-api-v4/commit/9a4d1f4c218ac69ad9a1d793c5ef29d453ef9273))
-* **codegen:** strip the beta-injected mock server from the vendored spec GPOMA-2522 ([3fac61b](https://bitbucket.org/gp-gopay/gopay-php-api-v4/commit/3fac61b0034518b91526b4e6b3f5db451b8c00e8))
+* **codegen:** strip the injected mock server from the vendored spec GPOMA-2522 ([3fac61b](https://bitbucket.org/gp-gopay/gopay-php-api-v4/commit/3fac61b0034518b91526b4e6b3f5db451b8c00e8))
 * **examples:** never report a FAILED refund as success GPOMA-2522 ([6a84960](https://bitbucket.org/gp-gopay/gopay-php-api-v4/commit/6a84960321877aba6bf4c028444e38e26dd3d708))
 * **http:** reject nested arrays in decodeJsonList GPOMA-2522 ([cc89067](https://bitbucket.org/gp-gopay/gopay-php-api-v4/commit/cc8906705b9e5be16719453291fcd93c4b347760))
 * **refunds:** address self-review findings GPOMA-2522 ([841d1e3](https://bitbucket.org/gp-gopay/gopay-php-api-v4/commit/841d1e3d4dc9e2609dbd2adb7556b446d620f637))
@@ -72,9 +72,9 @@
 
 ### Bug Fixes
 
-* fetch OpenAPI spec from beta source instead of stale public docs GPOMA-2418 ([9becb79](https://bitbucket.org/gp-gopay/gopay-php-api-v4/commit/9becb79028532ec1e4f424d0346d8ac3af66455a))
-* refresh spec/payments.yaml from beta source and regenerate models GPOMA-2418 ([f4e0e9f](https://bitbucket.org/gp-gopay/gopay-php-api-v4/commit/f4e0e9fbb32204f072e50128b78908d63220ad3a))
-* stamp generated files with public docs URL, not the beta fetch source GPOMA-2418 ([4a37dd0](https://bitbucket.org/gp-gopay/gopay-php-api-v4/commit/4a37dd06bfedc40748dd1db82d478448e11d1442))
+* update api from next spec instead of the stale published snapshot GPOMA-2418 ([9becb79](https://bitbucket.org/gp-gopay/gopay-php-api-v4/commit/9becb79028532ec1e4f424d0346d8ac3af66455a))
+* update api from next spec and regenerate models GPOMA-2418 ([f4e0e9f](https://bitbucket.org/gp-gopay/gopay-php-api-v4/commit/f4e0e9fbb32204f072e50128b78908d63220ad3a))
+* stamp generated files with the public api-docs.gopay.com spec URL GPOMA-2418 ([4a37dd0](https://bitbucket.org/gp-gopay/gopay-php-api-v4/commit/4a37dd06bfedc40748dd1db82d478448e11d1442))
 * update sandbox/production base URLs to new gp-gw gateway GPOMA-2418 ([4ac21bc](https://bitbucket.org/gp-gopay/gopay-php-api-v4/commit/4ac21bccd4394f96be4401dc553191c0f6be3340))
 
 ## [1.0.2](https://bitbucket.org/gp-gopay/gopay-php-api-v4/compare/1.0.1...1.0.2) (2026-07-09)

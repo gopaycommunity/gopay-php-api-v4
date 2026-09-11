@@ -1,6 +1,18 @@
 #!/usr/bin/env bash
-# Regenerate PHP model classes from the vendored OpenAPI spec.
-# Run: composer codegen
+# Regenerate PHP model classes from the "next spec" — the upcoming version of the GoPay
+# Payments API spec, ahead of what api-docs.gopay.com publishes.
+# Run: SPEC_SOURCE=<url-or-path> composer codegen
+#
+# SPEC_SOURCE is required and may be either a URL or a local file path. The two supported
+# ways to obtain the next spec — GoPay's internal pre-release feed, or a sideload from a
+# commit of the API spec repo — are documented in CLAUDE.md. The source is deliberately not
+# hardcoded here: this repo is mirrored to public gopaycommunity/gopay-php-api-v4 and
+# `composer require` ships the whole working tree, so a URL baked into this script would be
+# on every consumer's disk. See CLAUDE.md.
+#
+# STAMP_SPEC_URL is the public reference written into every generated file's header comment.
+# It is intentionally the published docs URL, not wherever the bytes were actually fetched
+# from, so the link in a generated file is one a consumer can open.
 #
 # Uses @openapitools/openapi-generator-cli v2.39 in Docker mode (no local Java needed).
 # Generator version and Docker settings are in openapitools.json.
@@ -19,22 +31,41 @@ cd "$(dirname "$0")/.."
 TMP_DIR=".codegen-tmp"
 GEN_DIR="src/Generated"
 
-# FETCH_SPEC_URL is the beta pre-release feed — ahead of the public docs, used as the
-# source of truth for generation so models don't lag behind the real API.
-# STAMP_SPEC_URL is what gets written into every generated file's header comment instead.
-# This repo is mirrored to GitHub and published on Packagist, so that comment is public;
-# stamping the beta URL would ship every consumer a link they can't actually open.
-# The two will differ until the public docs catch up with the beta feed.
-FETCH_SPEC_URL="https://payments-api.beta.gopay.com/spec/en/payments.yaml"
 STAMP_SPEC_URL="https://api-docs.gopay.com/spec/en/payments.yaml"
 
-echo "→ Fetching latest spec from payments-api.beta.gopay.com ..."
-curl -fsSL "$FETCH_SPEC_URL" -o spec/payments.yaml
+if [ -z "${SPEC_SOURCE:-}" ]; then
+  cat >&2 <<'USAGE'
+codegen: no spec source given.
 
-# The beta deployment injects a Prism mock server as the FIRST servers entry; the
-# canonical spec (api-docs.gopay.com) lists only Sandbox and Production. Shipping it
-# would leave servers[0] pointing at a mock host in a published SDK, so strip it.
-echo "→ Stripping the beta-injected mock server from servers ..."
+Set SPEC_SOURCE to the next spec. It may be a URL or a local path:
+
+  SPEC_SOURCE=<url> composer codegen                            # internal feed
+  SPEC_SOURCE=../<spec-repo>/spec/payments.yaml composer codegen  # sideload
+
+See CLAUDE.md ("Model classes — generated") for both sources.
+USAGE
+  exit 1
+fi
+
+case "$SPEC_SOURCE" in
+  http://*|https://*)
+    echo "→ Fetching the next spec ..."
+    curl -fsSL "$SPEC_SOURCE" -o spec/payments.yaml
+    ;;
+  *)
+    if [ ! -f "$SPEC_SOURCE" ]; then
+      echo "codegen: spec source not found: $SPEC_SOURCE" >&2
+      exit 1
+    fi
+    echo "→ Copying the next spec from $SPEC_SOURCE ..."
+    cp "$SPEC_SOURCE" spec/payments.yaml
+    ;;
+esac
+
+# The pre-release feed injects a Prism mock server as the FIRST servers entry; the published
+# spec (api-docs.gopay.com) lists only Sandbox and Production. Shipping it would leave
+# servers[0] pointing at an internal mock host in a published SDK, so strip it.
+echo "→ Stripping the injected mock server from servers ..."
 python3 - <<'PY'
 import pathlib
 import re
@@ -59,7 +90,7 @@ print(f"   removed {count} mock server entr{'y' if count == 1 else 'ies'}")
 if "payments-api-mock" in path.read_text(encoding="utf-8"):
     sys.exit(
         "   ERROR: payments-api-mock still present in spec/payments.yaml after stripping.\n"
-        "   The beta feed changed the shape of this entry — update the pattern in scripts/codegen.sh."
+        "   The spec feed changed the shape of this entry — update the pattern in scripts/codegen.sh."
     )
 PY
 

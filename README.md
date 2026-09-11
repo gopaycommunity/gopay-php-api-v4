@@ -818,7 +818,7 @@ The PHP model classes in `src/Generated/` are auto-generated from the GoPay Open
 composer codegen
 ```
 
-This fetches the latest spec from `https://api-docs.gopay.com/spec/en/payments.yaml`, runs the OpenAPI generator in Docker, and copies the output into `src/Generated/`. Review the diff before committing — in particular check that the namespace (`GoPay\Payments\Generated\Model`) and `ModelInterface` compatibility are preserved.
+This reads the spec from `SPEC_SOURCE` (a URL or a local path — see `scripts/codegen.sh`), strips the mock server entry the feed injects, runs the OpenAPI generator in Docker, and copies the output into `src/Generated/`. Review the diff before committing — in particular check that the namespace (`GoPay\Payments\Generated\Model`) and `ModelInterface` compatibility are preserved.
 
 Do **not** edit files in `src/Generated/` by hand. If a model class is wrong, fix the upstream spec.
 

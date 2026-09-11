@@ -22,6 +22,62 @@ committing — in particular check that the namespace (`GoPay\Payments\Generated
 
 Do **not** edit files in `src/Generated/` by hand. If a model class is wrong, fix the upstream spec.
 
+### The "next spec", and the two ways to get it
+
+The URL above (`api-docs.gopay.com`) is the **published** reference and the URL stamped into
+every generated file's header. It is not where `composer codegen` fetches from. Models are
+generated from the **next spec** — the upcoming version of the API spec, ahead of what the
+published docs show — which comes from one of two places:
+
+1. **GoPay's internal pre-release feed.** GoPay serves the next spec from an internal
+   environment: `https://payments-api.beta.gopay.com/spec/en/payments.yaml`. Reachable only
+   from inside GoPay (the host resolves to a private address behind an internal load
+   balancer), and shut down overnight and at weekends, so a 404 or timeout out of hours is
+   expected rather than an outage.
+2. **Sideload from the API spec repo.** Check the spec repo out at the commit you want and
+   point codegen at the local file — use this when the internal environment is unavailable,
+   or when you need models generated against one specific spec commit.
+
+`scripts/codegen.sh` takes the source as `SPEC_SOURCE`, a URL or a local path:
+
+```bash
+SPEC_SOURCE=https://payments-api.beta.gopay.com/spec/en/payments.yaml composer codegen
+SPEC_SOURCE=../gopay-payments-api-v4/spec/payments.yaml composer codegen
+```
+
+Codegen writes `spec/payments.yaml` from `SPEC_SOURCE` and generates from that file, stripping
+the Prism mock server the feed injects as `servers[0]` (it fails rather than generate if a mock
+reference survives). The mock server itself is fine and stays where it runs — it backs "Try It"
+in the Elements docs UI — it just must never reach a vendored spec file.
+
+**Never pass `spec/payments.yaml` itself as `SPEC_SOURCE`.** The vendored copy lags the feed,
+so regenerating from it silently rolls the models back. It is an output, not a source.
+
+### This file is the only place the internal hostname belongs
+
+The word "beta" in that hostname names the environment the spec is authored on. It says
+nothing about the maturity of Payments API v4 or the stability of this SDK, both of which are
+GA — but nobody outside GoPay can tell that apart, and nobody outside GoPay can reach the host
+to find out, so to an integrator it reads as a product-status warning on the thing they are
+about to integrate.
+
+This repo is mirrored to public `gopaycommunity/gopay-php-api-v4` and `composer require` ships
+the entire working tree, so keep the hostname in this file and nowhere else — not in
+`README.md`, `MIGRATION.md`, `src/`, `scripts/` (hence `SPEC_SOURCE`), and above all not in
+**commit subjects**: semantic-release copies every `fix:`/`feat:` subject verbatim into the
+public `CHANGELOG.md`.
+
+### Commit convention for spec updates
+
+When a change comes from a new spec, the subject is:
+
+```
+fix: update api from next spec GPOMA-xxxx
+```
+
+Say that and nothing about where the bytes came from — not the hostname, not which of the two
+sources was used, not "beta".
+
 The entire `src/Generated/` directory is **excluded from PHPStan** analysis (see `phpstan.neon`).
 PHPStan still reads the class definitions for type inference in analysed files, it just doesn't
 check the Generated files themselves for level-10 violations.
