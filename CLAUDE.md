@@ -13,9 +13,11 @@ The model DTOs in `src/Generated/Model/` are **auto-generated** from the GoPay O
 `GoPay\Payments\Generated\Model\ModelInterface`. `HttpClient::deserialize()` calls
 `ObjectSerializer::deserialize($data, $type)` directly.
 
-Run `composer codegen` to regenerate (requires Docker — image
-`openapitools/openapi-generator-cli:v7.9.0`). Config lives in `openapitools.json`. The script
-fetches the latest spec, generates into `.codegen-tmp/`, and copies `lib/Model/*`,
+Run `SPEC_SOURCE=<url-or-path> composer codegen` to regenerate (requires Docker — image
+`openapitools/openapi-generator-cli:v7.9.0`). `SPEC_SOURCE` is required and the script exits
+without it; see *The "next spec", and the two ways to get it* below for what to pass. Config
+lives in `openapitools.json`. The script vendors the spec into `spec/payments.yaml`, generates
+into `.codegen-tmp/`, and copies `lib/Model/*`,
 `ObjectSerializer.php`, and `HeaderSelector.php` into `src/Generated/`. Review the diff before
 committing — in particular check that the namespace (`GoPay\Payments\Generated\Model`) and
 `ModelInterface` compatibility are preserved.
