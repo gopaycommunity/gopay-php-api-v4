@@ -57,6 +57,16 @@ case "$SPEC_SOURCE" in
       echo "codegen: spec source not found: $SPEC_SOURCE" >&2
       exit 1
     fi
+    # spec/payments.yaml is what this script writes, not something it reads. Passing it back
+    # in copies it over itself and regenerates the models from whatever it already held, so
+    # anything added upstream since the last refresh silently disappears. Refuse it rather
+    # than produce a plausible-looking rollback.
+    if [ "$(cd "$(dirname "$SPEC_SOURCE")" && pwd)/$(basename "$SPEC_SOURCE")" = "$(pwd)/spec/payments.yaml" ]; then
+      echo "codegen: spec/payments.yaml is the vendored output of this script, not a spec source." >&2
+      echo "Regenerating from it would roll the models back to whatever it already held." >&2
+      echo "Pass the next spec instead — see CLAUDE.md." >&2
+      exit 1
+    fi
     echo "→ Copying the next spec from $SPEC_SOURCE ..."
     cp "$SPEC_SOURCE" spec/payments.yaml
     ;;
