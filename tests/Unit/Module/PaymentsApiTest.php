@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace GoPay\Payments\Tests\Unit\Module;
 
 use GoPay\Payments\Exception\ErrorCode;
+use GoPay\Payments\Exception\GoPayHttpException;
 use GoPay\Payments\Exception\GoPaySdkException;
 use GoPay\Payments\Generated\Model\PaymentChargeResponse;
 use GoPay\Payments\Generated\Model\PaymentChargeStatusResponse;
@@ -76,6 +77,59 @@ final class PaymentsApiTest extends ModuleTestCase
         $requests = $this->mockClient->getRequests();
         $this->assertSame('GET', $requests[0]->getMethod());
         $this->assertStringEndsWith('/payments/pay-123', (string) $requests[0]->getUri());
+    }
+
+    // -------------------------------------------------------------------------
+    // cancelPayment
+    // -------------------------------------------------------------------------
+
+    #[Test]
+    public function cancelPaymentThrowsWhenPaymentIdIsEmpty(): void
+    {
+        $this->expectException(GoPaySdkException::class);
+        $this->expectExceptionMessage('paymentId must not be empty');
+        $this->payments->cancelPayment('');
+    }
+
+    #[Test]
+    public function cancelPaymentSendsDeleteRequest(): void
+    {
+        $this->queue204();
+
+        $this->payments->cancelPayment('pay-123');
+
+        $requests = $this->mockClient->getRequests();
+        $this->assertCount(1, $requests);
+        $this->assertSame('DELETE', $requests[0]->getMethod());
+        $this->assertStringEndsWith('/payments/pay-123', (string) $requests[0]->getUri());
+    }
+
+    #[Test]
+    public function cancelPaymentCompletesWithoutThrowingOnSuccess(): void
+    {
+        $this->queue204();
+        $this->payments->cancelPayment('pay-abc');
+        $this->addToAssertionCount(1);
+    }
+
+    /**
+     * Only a payment in CREATED can be canceled. Any other state answers 409 and
+     * leaves the payment unchanged, so a second cancel of the same payment fails.
+     */
+    #[Test]
+    public function cancelPaymentSurfacesConflictOutsideCreated(): void
+    {
+        $this->queueJson(
+            ['error' => 'CONFLICT', 'message' => 'Payment can only be canceled in the CREATED state'],
+            409,
+        );
+
+        try {
+            $this->payments->cancelPayment('pay-123');
+            $this->fail('Expected GoPayHttpException for a payment outside CREATED.');
+        } catch (GoPayHttpException $e) {
+            $this->assertSame(409, $e->status);
+        }
     }
 
     // -------------------------------------------------------------------------

@@ -207,6 +207,9 @@ $sdk->createPayment(string $goid, array $params): PaymentDetails
 // Get payment status
 $sdk->getPaymentStatus(string $paymentId): PaymentDetails
 
+// Cancel a payment that has not been charged yet (only in CREATED; 409 otherwise)
+$sdk->cancelPayment(string $paymentId): void
+
 // Charge a payment (card token / Google Pay / Apple Pay)
 $sdk->chargePayment(string $paymentId, array $params): PaymentChargeResponse
 

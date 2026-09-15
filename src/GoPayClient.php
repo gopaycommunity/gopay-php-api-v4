@@ -179,6 +179,20 @@ final class GoPayClient
     }
 
     /**
+     * Cancel a payment that has not been charged yet.
+     * Requires `payment:write` scope.
+     *
+     * DELETE /payments/{payment_id}
+     *
+     * @throws GoPaySdkException
+     * @throws GoPayHttpException
+     */
+    public function cancelPayment(string $paymentId): void
+    {
+        $this->payments->cancelPayment($paymentId);
+    }
+
+    /**
      * Charge a payment using a payment instrument (card token, Apple Pay, Google Pay).
      *
      * POST /payments/{payment_id}/charge

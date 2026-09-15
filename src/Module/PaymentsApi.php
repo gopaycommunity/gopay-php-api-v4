@@ -73,6 +73,25 @@ final class PaymentsApi
     }
 
     /**
+     * Cancel a payment that has not been charged yet.
+     * Requires the `payment:write` OAuth2 scope.
+     *
+     * Only a payment in `CREATED` can be canceled; any other state answers `409`
+     * and leaves the payment unchanged. The payment is not deleted — it moves to
+     * `CANCELED` and stays readable through getPaymentStatus().
+     *
+     * DELETE /payments/{payment_id}
+     *
+     * @throws GoPaySdkException
+     * @throws GoPayHttpException
+     */
+    public function cancelPayment(string $paymentId): void
+    {
+        $pid = $this->requirePathSegment($paymentId, 'paymentId');
+        $this->client->delete("/payments/{$pid}");
+    }
+
+    /**
      * Charge a payment using a payment instrument (card token, Apple Pay, Google Pay).
      *
      * POST /payments/{payment_id}/charge
