@@ -13,12 +13,12 @@ The model DTOs in `src/Generated/Model/` are **auto-generated** from the GoPay O
 `GoPay\Payments\Generated\Model\ModelInterface`. `HttpClient::deserialize()` calls
 `ObjectSerializer::deserialize($data, $type)` directly.
 
-Run `SPEC_SOURCE=<url-or-path> composer codegen` to regenerate (requires Docker — image
+Run `SPEC_SOURCE='<url-or-path>' composer codegen` to regenerate (requires Docker — image
 `openapitools/openapi-generator-cli:v7.9.0`). `SPEC_SOURCE` is required and the script exits
 without it; see *The "next spec", and the two ways to get it* below for what to pass. Config
 lives in `openapitools.json`. The script vendors the spec into `spec/payments.yaml`, generates
-into `.codegen-tmp/`, and copies `lib/Model/*`,
-`ObjectSerializer.php`, and `HeaderSelector.php` into `src/Generated/`. Review the diff before
+into `.codegen-tmp/`, and copies `lib/Model/*`, `ObjectSerializer.php`, `ModelInterface.php`
+and `HeaderSelector.php` into `src/Generated/`. Review the diff before
 committing — in particular check that the namespace (`GoPay\Payments\Generated\Model`) and
 `ModelInterface` compatibility are preserved.
 
@@ -47,10 +47,16 @@ SPEC_SOURCE=https://payments-api.beta.gopay.com/spec/en/payments.yaml composer c
 SPEC_SOURCE=../gopay-payments-api-v4/spec/payments.yaml composer codegen
 ```
 
-Codegen writes `spec/payments.yaml` from `SPEC_SOURCE` and generates from that file, stripping
-the Prism mock server the feed injects as `servers[0]` (it fails rather than generate if a mock
-reference survives). The mock server itself is fine and stays where it runs — it backs "Try It"
-in the Elements docs UI — it just must never reach a vendored spec file.
+Codegen stages the spec to a temporary file, strips the Prism mock server the feed injects as
+`servers[0]`, and only then moves it onto `spec/payments.yaml` — so an interrupted download or a
+failed strip leaves the vendored spec untouched rather than half-written or still carrying the
+mock host. It fails rather than generate if a mock reference survives the strip. The mock server
+itself is fine and stays where it runs — it backs "Try It" in the Elements docs UI — it just must
+never reach a vendored spec file, which `composer require` ships to every consumer.
+
+It also refuses to clear `src/Generated/` unless the generator actually produced `lib/Model`:
+the generator can exit 0 having written nothing, and clearing first in that case empties the
+directory while still reporting success.
 
 **Never pass `spec/payments.yaml` itself as `SPEC_SOURCE`.** The vendored copy lags the feed,
 so regenerating from it silently rolls the models back. It is an output, not a source.
@@ -65,8 +71,8 @@ about to integrate.
 
 This repo is mirrored to public `gopaycommunity/gopay-php-api-v4` and `composer require` ships
 the entire working tree, so keep the hostname in this file and nowhere else — not in
-`README.md`, `MIGRATION.md`, `src/`, `scripts/` (hence `SPEC_SOURCE`), and above all not in
-**commit subjects**: semantic-release copies every `fix:`/`feat:` subject verbatim into the
+`README.md`, `MIGRATION.md`, `CHANGELOG.md`, `src/`, `scripts/` (hence `SPEC_SOURCE`), and above
+all not in **commit subjects**: semantic-release copies every `fix:`/`feat:` subject verbatim into the
 public `CHANGELOG.md`.
 
 ### Commit convention for spec updates

@@ -816,7 +816,7 @@ The PHP model classes in `src/Generated/` are auto-generated from the GoPay Open
 ```bash
 # Requires Docker (no local Java/Node needed).
 # SPEC_SOURCE is required — the OpenAPI spec to generate from, either a URL or a local path.
-SPEC_SOURCE=<url-or-path> composer codegen
+SPEC_SOURCE='<url-or-path>' composer codegen
 ```
 
 This reads the spec from `SPEC_SOURCE` (a URL or a local path — see `scripts/codegen.sh`), strips the mock server entry the feed injects, runs the OpenAPI generator in Docker, and copies the output into `src/Generated/`. Review the diff before committing — in particular check that the namespace (`GoPay\Payments\Generated\Model`) and `ModelInterface` compatibility are preserved.

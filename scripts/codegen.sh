@@ -39,18 +39,26 @@ codegen: no spec source given.
 
 Set SPEC_SOURCE to the next spec. It may be a URL or a local path:
 
-  SPEC_SOURCE=<url> composer codegen                            # internal feed
-  SPEC_SOURCE=../<spec-repo>/spec/payments.yaml composer codegen  # sideload
+  SPEC_SOURCE='https://…/spec/en/payments.yaml' composer codegen   # internal feed
+  SPEC_SOURCE='../gopay-payments-api-v4/spec/payments.yaml' composer codegen   # sideload
 
 See CLAUDE.md ("Model classes — generated") for both sources.
 USAGE
   exit 1
 fi
 
+# The spec is staged here and only moved onto spec/payments.yaml once it has been fetched,
+# stripped and validated. Writing straight to the vendored path would leave it half-written by
+# an interrupted download, or stripped-but-still-carrying-the-mock-host when the fail-closed
+# check below aborts — and composer require ships that file to every consumer. Same approach as
+# gp-gw-js-sdk's codegen.mjs.
+TMP_SPEC="spec/.payments.yaml.tmp"
+trap 'rm -f "$TMP_SPEC"' EXIT
+
 case "$SPEC_SOURCE" in
   http://*|https://*)
     echo "→ Fetching the next spec ..."
-    curl -fsSL "$SPEC_SOURCE" -o spec/payments.yaml
+    curl -fsSL --max-time 60 "$SPEC_SOURCE" -o "$TMP_SPEC"
     ;;
   *)
     if [ ! -f "$SPEC_SOURCE" ]; then
@@ -68,7 +76,7 @@ case "$SPEC_SOURCE" in
       exit 1
     fi
     echo "→ Copying the next spec from $SPEC_SOURCE ..."
-    cp "$SPEC_SOURCE" spec/payments.yaml
+    cp "$SPEC_SOURCE" "$TMP_SPEC"
     ;;
 esac
 
@@ -76,18 +84,19 @@ esac
 # spec (api-docs.gopay.com) lists only Sandbox and Production. Shipping it would leave
 # servers[0] pointing at an internal mock host in a published SDK, so strip it.
 echo "→ Stripping the injected mock server from servers ..."
-python3 - <<'PY'
+python3 - "$TMP_SPEC" <<'PY'
 import pathlib
 import re
 import sys
 
-path = pathlib.Path("spec/payments.yaml")
+path = pathlib.Path(sys.argv[1])
 text = path.read_text(encoding="utf-8")
 
 # One servers list item: the "- url:" line plus its indented continuation lines.
-# The url may be single-quoted, double-quoted or bare, so match all three.
+# The url may be single-quoted, double-quoted or bare, so match all three. Indentation is
+# captured rather than hardcoded, so a re-indented feed does not silently stop matching.
 pattern = re.compile(
-    r"\n  - url:[ \t]*['\"]?[^\n'\"]*payments-api-mock[^\n'\"]*['\"]?[^\n]*\n(?:    [^\n]*\n)*",
+    r"\n([ \t]*)- url:[ \t]*['\"]?[^\n'\"]*payments-api-mock[^\n'\"]*['\"]?[^\n]*\n(?:\1[ \t]+[^\n]*\n)*",
 )
 text, count = pattern.subn("\n", text)
 if count:
@@ -96,13 +105,18 @@ print(f"   removed {count} mock server entr{'y' if count == 1 else 'ies'}")
 
 # Fail closed: if the strip missed a form we did not anticipate, stop rather than
 # generate — shipping a vendored spec pointing at a mock host is the bug we are
-# preventing, and a silent no-op here is how it would come back.
+# preventing, and a silent no-op here is how it would come back. The staged file is
+# discarded by the EXIT trap, so the vendored spec is never touched.
 if "payments-api-mock" in path.read_text(encoding="utf-8"):
     sys.exit(
-        "   ERROR: payments-api-mock still present in spec/payments.yaml after stripping.\n"
+        "   ERROR: payments-api-mock still present after stripping.\n"
         "   The spec feed changed the shape of this entry — update the pattern in scripts/codegen.sh."
     )
 PY
+
+# Only now is the vendored spec replaced: everything above could still abort without leaving
+# spec/payments.yaml in a state we would ship.
+mv "$TMP_SPEC" spec/payments.yaml
 
 echo "→ Generating PHP models from spec/payments.yaml ..."
 
@@ -110,12 +124,20 @@ echo "→ Generating PHP models from spec/payments.yaml ..."
 # useDocker:true causes it to volume-mount spec/ and .codegen-tmp into the container.
 npx @openapitools/openapi-generator-cli@2.39.0 generate
 
+# Verify the generator actually produced models BEFORE clearing src/Generated/. The generator
+# can exit 0 without writing lib/Model (a spec it cannot parse, a Docker mount that silently
+# failed); clearing first in that case empties src/Generated/ and the script still reports
+# success — observed once, losing all 71 model classes.
+if [ ! -d "$TMP_DIR/lib/Model" ]; then
+  echo "codegen: generator produced no $TMP_DIR/lib/Model — leaving $GEN_DIR untouched." >&2
+  echo "Check the generator output above; the spec may be unparseable or the Docker mount empty." >&2
+  exit 1
+fi
+
 rm -rf "$GEN_DIR"
 mkdir -p "$GEN_DIR"
 
-if [ -d "$TMP_DIR/lib/Model" ]; then
-  cp -r "$TMP_DIR/lib/Model" "$GEN_DIR/"
-fi
+cp -r "$TMP_DIR/lib/Model" "$GEN_DIR/"
 for f in ObjectSerializer.php ModelInterface.php HeaderSelector.php; do
   if [ -f "$TMP_DIR/lib/$f" ]; then
     cp "$TMP_DIR/lib/$f" "$GEN_DIR/"
@@ -124,11 +146,19 @@ done
 
 rm -rf "$TMP_DIR"
 
+# `set -e` does not fire inside a `while` body, and the pipeline runs the loop in a subshell,
+# so a failed awk here used to be swallowed: the file was left unstamped, the rest carried on
+# and the script still printed "✓ Codegen complete". Fail explicitly instead.
 echo "→ Stamping generated files with spec URL ..."
-find "$GEN_DIR" -name "*.php" | while read -r file; do
-  awk -v spec="$STAMP_SPEC_URL" \
+find "$GEN_DIR" -name "*.php" -print0 | while IFS= read -r -d '' file; do
+  if ! awk -v spec="$STAMP_SPEC_URL" \
     'NR==1{print; print "// @generated from " spec; print "// Do not edit this file — report issues to the upstream spec, not here."; next}1' \
-    "$file" > "$file.tmp" && mv "$file.tmp" "$file"
-done
+    "$file" > "$file.tmp"; then
+    rm -f "$file.tmp"
+    echo "codegen: failed to stamp $file" >&2
+    exit 1
+  fi
+  mv "$file.tmp" "$file"
+done || exit 1
 
 echo "✓ Codegen complete → $GEN_DIR"
