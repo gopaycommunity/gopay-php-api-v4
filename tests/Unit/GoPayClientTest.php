@@ -87,6 +87,14 @@ final class GoPayClientTest extends TestCase
     }
 
     #[Test]
+    public function cancelPaymentDelegates(): void
+    {
+        $this->mockClient->addResponse(new Response(204));
+        $this->sdk->cancelPayment('pay-001');
+        $this->addToAssertionCount(1);
+    }
+
+    #[Test]
     public function chargePaymentDelegates(): void
     {
         $this->queueJson(['id' => 'chg-001', 'state' => 'REQUESTED']);
