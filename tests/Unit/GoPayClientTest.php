@@ -90,8 +90,16 @@ final class GoPayClientTest extends TestCase
     public function cancelPaymentDelegates(): void
     {
         $this->mockClient->addResponse(new Response(204));
+
         $this->sdk->cancelPayment('pay-001');
-        $this->addToAssertionCount(1);
+
+        // Index 0 is the authenticate() call from setUp(); the cancel is index 1.
+        // Asserting the method and path catches a facade wired to the wrong
+        // operation or forwarding a different payment ID, which a bare
+        // does-not-throw check would pass.
+        $requests = $this->mockClient->getRequests();
+        $this->assertSame('DELETE', $requests[1]->getMethod());
+        $this->assertStringEndsWith('/payments/pay-001', (string) $requests[1]->getUri());
     }
 
     #[Test]
