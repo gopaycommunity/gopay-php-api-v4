@@ -173,8 +173,13 @@ final class GoPayClientTest extends TestCase
     public function deleteCardDelegates(): void
     {
         $this->mockClient->addResponse(new Response(204));
+
         $this->sdk->deleteCard('card-001');
-        $this->addToAssertionCount(1);
+
+        // Index 0 is the authenticate() call from setUp(); the delete is index 1.
+        $requests = $this->mockClient->getRequests();
+        $this->assertSame('DELETE', $requests[1]->getMethod());
+        $this->assertStringEndsWith('/cards/tokens/card-001', (string) $requests[1]->getUri());
     }
 
     #[Test]
