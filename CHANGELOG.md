@@ -1,3 +1,16 @@
+## [1.6.0](https://bitbucket.org/gp-gopay/gopay-php-api-v4/compare/1.5.0...1.6.0) (2026-09-17)
+
+### Features
+
+* **payments:** add cancelPayment for the v4 cancel endpoint GPOMA-2632 ([0e5d356](https://bitbucket.org/gp-gopay/gopay-php-api-v4/commit/0e5d356d8b04f4291467b20bbc6b43932c019c68))
+
+### Bug Fixes
+
+* address CodeRabbit comment on PR 14 GPOMA-2629 ([30d4803](https://bitbucket.org/gp-gopay/gopay-php-api-v4/commit/30d48037066051633d51a678eb59da197d418083))
+* keep the internal spec hostname to CLAUDE.md only GPOMA-2629 ([c3e58e4](https://bitbucket.org/gp-gopay/gopay-php-api-v4/commit/c3e58e4739526b2a1869a9c2d65da52c98ed0447))
+* reject the vendored spec as SPEC_SOURCE GPOMA-2629 ([539fe76](https://bitbucket.org/gp-gopay/gopay-php-api-v4/commit/539fe76d4fb9eafdb7f039695716755c9a379f41))
+* stop codegen from reporting success over a broken repo GPOMA-2629 ([8ea6fa3](https://bitbucket.org/gp-gopay/gopay-php-api-v4/commit/8ea6fa3ba750f5089f021a2e3784e905962da8c9))
+
 ## [1.5.0](https://bitbucket.org/gp-gopay/gopay-php-api-v4/compare/1.4.0...1.5.0) (2026-09-09)
 
 ### Features
