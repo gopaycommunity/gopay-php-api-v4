@@ -105,11 +105,16 @@ final class PaymentsApi
      * it either: `ip` does not survive a proxy, and the contract wants all three
      * from one observation.
      *
-     * When the response carries an action with a redirect URL, send the customer
-     * there immediately: it opens an authentication session held open by the bank,
-     * and that session times out quickly, so a customer who arrives late finds the
-     * payment already cancelled. Order bookkeeping and anything else slow belongs
-     * in the return-URL handler or the webhook, not between the two.
+     * The response is not the outcome: the charge runs asynchronously and is
+     * usually still PROCESSING here. Follow it with awaitChargeState(), which
+     * returns once the charge succeeds or needs 3DS.
+     *
+     * When the charge needs 3DS (ACTION_REQUIRED, with an action carrying a
+     * redirect URL), send the customer there immediately: it opens an
+     * authentication session held open by the bank, and that session times
+     * out quickly, so a customer who arrives late finds the payment already
+     * cancelled. Order bookkeeping and anything else slow belongs in the
+     * return-URL handler or the webhook, not between the two.
      *
      * @param array<string, mixed> $params Charge parameters including the payment_instrument.
      *
@@ -227,11 +232,17 @@ final class PaymentsApi
     }
 
     /**
-     * Poll the charge state synchronously until a terminal outcome.
+     * Poll the charge state synchronously until the charge is decided.
      *
-     * Resolves on SUCCEEDED. Throws GoPaySdkException with CHARGE_FAILED on
-     * FAILED state, or CHARGE_TIMEOUT if the charge does not settle
-     * within $timeoutSeconds.
+     * Returns on SUCCEEDED or ACTION_REQUIRED. Throws GoPaySdkException with
+     * CHARGE_FAILED on FAILED state, or CHARGE_TIMEOUT if the charge does not
+     * leave REQUESTED/PROCESSING within $timeoutSeconds.
+     *
+     * Call it right after chargePayment(): the response to POST /charge rarely
+     * carries the 3DS challenge yet, so the redirect URL usually only shows up
+     * here. Check getState() on the result — ACTION_REQUIRED means redirect the
+     * customer to getAction()->getRedirectUrl() immediately; the charge is not
+     * paid until it reaches SUCCEEDED.
      *
      * @param int $timeoutSeconds Maximum total wait time (default 30 s).
      * @param int $pollIntervalMs Polling interval in milliseconds (default 1 000 ms).
@@ -258,7 +269,7 @@ final class PaymentsApi
 
             $chargeState = $state->getState();
 
-            if ($chargeState === ChargeState::SUCCEEDED) {
+            if ($chargeState === ChargeState::SUCCEEDED || $chargeState === ChargeState::ACTION_REQUIRED) {
                 return $state;
             }
 

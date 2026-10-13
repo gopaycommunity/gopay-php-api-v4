@@ -7,11 +7,13 @@ namespace GoPay\Payments\Tests\Unit\Module;
 use GoPay\Payments\Exception\ErrorCode;
 use GoPay\Payments\Exception\GoPayHttpException;
 use GoPay\Payments\Exception\GoPaySdkException;
+use GoPay\Payments\Generated\Model\ChargeState;
 use GoPay\Payments\Generated\Model\PaymentChargeResponse;
 use GoPay\Payments\Generated\Model\PaymentChargeStatusResponse;
 use GoPay\Payments\Generated\Model\PaymentDetails;
 use GoPay\Payments\Generated\Model\QRPaymentDetails;
 use GoPay\Payments\Module\PaymentsApi;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 
 final class PaymentsApiTest extends ModuleTestCase
@@ -377,6 +379,119 @@ final class PaymentsApiTest extends ModuleTestCase
     }
 
     #[Test]
+    public function awaitChargeStateReturnsOnActionRequiredWithoutWaitingForTimeout(): void
+    {
+        // A charge with a 3DS challenge usually answers POST with PROCESSING and
+        // only turns ACTION_REQUIRED on a later poll. The SUCCEEDED queued after it
+        // stands in for "kept polling": a poller that ignores ACTION_REQUIRED
+        // returns that instead of the redirect.
+        $this->queueJson($this->chargeStatusJson(['state' => 'PROCESSING']));
+        $this->queueJson($this->chargeStatusJson([
+            'state' => 'ACTION_REQUIRED',
+            'action' => $this->challengeActionJson(),
+        ]));
+        $this->queueJson($this->chargeStatusJson(['state' => 'SUCCEEDED']));
+
+        $start = microtime(true);
+        $result = $this->payments->awaitChargeState('pay-001', 30, 1);
+        $elapsed = microtime(true) - $start;
+
+        $this->assertSame('ACTION_REQUIRED', $result->getState());
+        $this->assertSame('https://gate.example/payments/pay-001/redirect', $result->getAction()?->getRedirectUrl());
+        $this->assertCount(2, $this->mockClient->getRequests());
+        $this->assertLessThan(5, $elapsed);
+    }
+
+    /**
+     * Every state the generated ChargeState declares, with what awaitChargeState()
+     * does on it. The ACTION_REQUIRED bug went unnoticed because only SUCCEEDED,
+     * FAILED and PROCESSING were ever exercised — this pins the rest, and
+     * {@see awaitChargeStateHasAnOutcomeForEveryChargeState} fails when the spec
+     * adds a state nobody has decided on.
+     *
+     * Outcome: 'return' (on the first poll), 'throw' (CHARGE_FAILED) or 'poll'
+     * (keeps going; the test queues a SUCCEEDED after it to end the loop).
+     *
+     * @return array<string, 'return'|'throw'|'poll'>
+     */
+    private static function chargeStateOutcomes(): array
+    {
+        return [
+            ChargeState::REQUESTED       => 'poll',
+            ChargeState::PROCESSING      => 'poll',
+            ChargeState::ACTION_REQUIRED => 'return',
+            ChargeState::SUCCEEDED       => 'return',
+            ChargeState::FAILED          => 'throw',
+        ];
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function chargeStates(): iterable
+    {
+        foreach (ChargeState::getAllowableEnumValues() as $state) {
+            yield $state => [$state];
+        }
+    }
+
+    #[Test]
+    #[DataProvider('chargeStates')]
+    public function awaitChargeStateHasAnOutcomeForEveryChargeState(string $state): void
+    {
+        $outcomes = self::chargeStateOutcomes();
+        $this->assertArrayHasKey(
+            $state,
+            $outcomes,
+            "ChargeState {$state} is new: decide whether awaitChargeState() returns, throws or keeps polling on it.",
+        );
+
+        $this->queueJson($this->chargeStatusJson([
+            'state' => $state,
+            'action' => $state === ChargeState::ACTION_REQUIRED ? $this->challengeActionJson() : null,
+        ]));
+        $this->queueJson($this->chargeStatusJson(['state' => 'SUCCEEDED']));
+
+        try {
+            $result = $this->payments->awaitChargeState('pay-001', 30, 1);
+        } catch (GoPaySdkException $e) {
+            $this->assertSame('throw', $outcomes[$state], "{$state} threw {$e->errorCode->value}.");
+            $this->assertSame(ErrorCode::ChargeFailed, $e->errorCode);
+            $this->assertCount(1, $this->mockClient->getRequests());
+
+            return;
+        }
+
+        $this->assertNotSame('throw', $outcomes[$state], "{$state} should have thrown.");
+        if ($outcomes[$state] === 'return') {
+            $this->assertSame($state, $result->getState());
+            $this->assertCount(1, $this->mockClient->getRequests());
+        } else {
+            $this->assertSame('SUCCEEDED', $result->getState());
+            $this->assertCount(2, $this->mockClient->getRequests());
+        }
+    }
+
+    #[Test]
+    public function awaitChargeStatePollsThroughRequestedAndProcessing(): void
+    {
+        $this->queueJson($this->chargeStatusJson(['state' => 'REQUESTED']));
+        $this->queueJson($this->chargeStatusJson(['state' => 'PROCESSING']));
+        $this->queueJson($this->chargeStatusJson(['state' => 'PROCESSING']));
+        $this->queueJson($this->chargeStatusJson(['state' => 'SUCCEEDED']));
+
+        $result = $this->payments->awaitChargeState('pay-001', 30, 1);
+
+        $this->assertSame('SUCCEEDED', $result->getState());
+        $requests = $this->mockClient->getRequests();
+        $this->assertCount(4, $requests);
+        foreach ($requests as $request) {
+            $this->assertSame('GET', $request->getMethod());
+            $this->assertStringEndsWith('/payments/pay-001/charge', $request->getUri()->getPath());
+        }
+    }
+
+    #[Test]
     public function awaitChargeStateThrowsOnFailed(): void
     {
         $this->queueJson($this->chargeStatusJson(['state' => 'FAILED']));
@@ -402,5 +517,17 @@ final class PaymentsApiTest extends ModuleTestCase
         } catch (GoPaySdkException $e) {
             $this->assertSame(ErrorCode::ChargeTimeout, $e->errorCode);
         }
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function challengeActionJson(): array
+    {
+        return [
+            'action_type' => 'EMV3DS',
+            'state' => 'CHALLENGE_REQUIRED',
+            'redirect_url' => 'https://gate.example/payments/pay-001/redirect',
+        ];
     }
 }

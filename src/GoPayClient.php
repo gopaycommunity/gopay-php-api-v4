@@ -197,8 +197,10 @@ final class GoPayClient
      *
      * POST /payments/{payment_id}/charge
      *
-     * If the response carries an action with a redirect URL, redirect the customer
-     * there immediately — the bank's authentication session times out quickly, and
+     * The response is not the outcome — the charge is usually still PROCESSING.
+     * Follow it with awaitChargeState(), which returns once the charge succeeds
+     * or needs 3DS. On ACTION_REQUIRED redirect the customer to the action's URL
+     * immediately — the bank's authentication session times out quickly, and
      * a customer who arrives late finds the payment cancelled. Do order bookkeeping
      * on the return URL or the webhook, never before the redirect.
      *
@@ -291,14 +293,20 @@ final class GoPayClient
     }
 
     /**
-     * Poll the charge state synchronously until a terminal outcome.
-     * Throws CHARGE_FAILED on FAILED state, CHARGE_TIMEOUT if it doesn't settle.
+     * Poll the charge state synchronously until the charge is decided.
+     * Returns on SUCCEEDED or ACTION_REQUIRED; throws CHARGE_FAILED on FAILED
+     * state, CHARGE_TIMEOUT if it doesn't leave REQUESTED/PROCESSING.
+     *
+     * Call it right after chargePayment() — the 3DS redirect URL usually only
+     * appears here, not in the POST response. On ACTION_REQUIRED redirect the
+     * customer to getAction()->getRedirectUrl() immediately; only SUCCEEDED
+     * means paid. A webhook is no substitute: no notification arrives for a
+     * 3DS challenge.
      *
      * WARNING: This method calls usleep() in a loop and blocks the PHP process
-     * for up to $timeoutSeconds. In PHP-FPM or mod_php deployments this holds a
-     * worker unavailable to serve other requests for the full polling window.
-     * Prefer a webhook-driven approach for production web applications: let the
-     * GoPay notification call your server, then use getChargeState() once.
+     * until the charge is decided — usually a few seconds, at most
+     * $timeoutSeconds. In PHP-FPM or mod_php deployments that worker is
+     * unavailable to serve other requests while it polls.
      *
      * @throws GoPaySdkException
      * @throws GoPayHttpException

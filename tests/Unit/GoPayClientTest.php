@@ -159,6 +159,26 @@ final class GoPayClientTest extends TestCase
         $this->assertSame('SUCCEEDED', $result->getState());
     }
 
+    #[Test]
+    public function awaitChargeStateDelegatesOnActionRequired(): void
+    {
+        $this->queueJson([
+            'id' => 'chg-001',
+            'state' => 'ACTION_REQUIRED',
+            'action' => [
+                'action_type' => 'EMV3DS',
+                'state' => 'CHALLENGE_REQUIRED',
+                'redirect_url' => 'https://gate.example/payments/pay-001/redirect',
+            ],
+        ]);
+        $this->queueJson(['id' => 'chg-001', 'state' => 'SUCCEEDED']);
+
+        $result = $this->sdk->awaitChargeState('pay-001', timeoutSeconds: 30, pollIntervalMs: 1);
+
+        $this->assertSame('ACTION_REQUIRED', $result->getState());
+        $this->assertSame('https://gate.example/payments/pay-001/redirect', $result->getAction()?->getRedirectUrl());
+    }
+
     // ── Cards ─────────────────────────────────────────────────────────────────
 
     #[Test]
