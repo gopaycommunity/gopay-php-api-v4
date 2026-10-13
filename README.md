@@ -47,6 +47,7 @@ Any PSR-18-compatible client works (Symfony HttpClient, Buzz, …).
 use GoPay\Payments\GoPayClient;
 use GoPay\Payments\Config;
 use GoPay\Payments\Environment;
+use GoPay\Payments\Generated\Model\ChargeState;
 
 // 1. Initialize the client
 $sdk = new GoPayClient(new Config(
@@ -97,19 +98,22 @@ $charge = $sdk->chargePayment($payment->getId(), [
     ],
 ]);
 
-// 5a. No 3DS needed — poll for final state
-if ($charge->getAction() === null) {
-    $final = $sdk->awaitChargeState($payment->getId());
-    echo $final->getState(); // 'SUCCEEDED'
-}
+// 5. The POST response is not the outcome — the charge usually is still
+//    PROCESSING and a 3DS challenge shows up only on a later poll. Poll until
+//    it is decided: returns on SUCCEEDED or ACTION_REQUIRED, throws on FAILED
+//    (CHARGE_FAILED) or if it stays undecided (CHARGE_TIMEOUT).
+$final = $sdk->awaitChargeState($payment->getId());
 
-// 5b. 3DS required — redirect the customer immediately. The bank's
+// 5a. 3DS required — redirect the customer immediately. The bank's
 //     authentication session times out quickly; do your order bookkeeping
 //     on the return_url / webhook, never between these two lines.
-if ($charge->getAction()?->getRedirectUrl() !== null) {
-    header('Location: ' . $charge->getAction()->getRedirectUrl());
+if ($final->getState() === ChargeState::ACTION_REQUIRED) {
+    header('Location: ' . $final->getAction()->getRedirectUrl());
     exit;
 }
+
+// 5b. No 3DS — the charge went through
+echo $final->getState(); // 'SUCCEEDED'
 ```
 
 > **`ip`, `user_agent` and `accept_header` must come from the customer's browser.** The browser
@@ -216,7 +220,8 @@ $sdk->chargePayment(string $paymentId, array $params): PaymentChargeResponse
 // Get charge state (poll manually)
 $sdk->getChargeState(string $paymentId): PaymentChargeStatusResponse
 
-// Poll charge state until terminal (throws on FAILED / timeout)
+// Poll charge state until SUCCEEDED or ACTION_REQUIRED (3DS redirect);
+// throws on FAILED / timeout. Call it right after chargePayment().
 // WARNING: blocks the PHP process — see "Production deployment" below.
 $sdk->awaitChargeState(
     string $paymentId,
@@ -509,8 +514,11 @@ echo $payment->getState();  // 'CREATED', 'PAID', etc.
 echo $payment->getAmount(); // amount in minor units (int)
 
 $charge = $sdk->chargePayment($payment->getId(), [...]);
-echo $charge->getState();                    // 'SUCCEEDED', 'AUTHENTICATION_PENDING', etc.
-echo $charge->getAction()?->getRedirectUrl(); // 3DS URL (null if no redirect needed)
+echo $charge->getState(); // usually 'PROCESSING' — not the outcome yet, see below
+
+$final = $sdk->awaitChargeState($payment->getId());
+echo $final->getState();                    // 'SUCCEEDED' or 'ACTION_REQUIRED'
+echo $final->getAction()?->getRedirectUrl(); // 3DS URL on ACTION_REQUIRED, otherwise null
 
 $card = $sdk->tokenizeEncryptedCard($jwePayload);
 echo $card->getToken();     // permanent card token for future charges
@@ -519,19 +527,32 @@ echo $card->getMaskedPan(); // '411111******1111'
 
 ### Charge flow for 3DS cards
 
-```php
-$charge = $sdk->chargePayment($paymentId, $params);
+The charge runs asynchronously. The response to `chargePayment()` is usually still
+`PROCESSING`, and a 3DS challenge rarely shows up in it — it usually appears when you poll
+`GET /payments/{id}/charge` a moment later. So poll straight after the POST until the charge
+reaches `SUCCEEDED`, `FAILED` or `ACTION_REQUIRED`, and redirect on `ACTION_REQUIRED` at once:
 
-if ($charge->getAction()?->getRedirectUrl() !== null) {
+```php
+use GoPay\Payments\Generated\Model\ChargeState;
+
+$sdk->chargePayment($paymentId, $params);
+
+// Returns on SUCCEEDED or ACTION_REQUIRED; throws CHARGE_FAILED / CHARGE_TIMEOUT
+$final = $sdk->awaitChargeState($paymentId);
+
+if ($final->getState() === ChargeState::ACTION_REQUIRED) {
     // 3DS authentication required — redirect the customer, right now
-    header('Location: ' . $charge->getAction()->getRedirectUrl());
+    header('Location: ' . $final->getAction()->getRedirectUrl());
     exit;
 }
 
-// No 3DS — charge is complete or in processing; poll for result
-$final = $sdk->awaitChargeState($paymentId);
+// No 3DS — the charge went through
 echo $final->getState(); // 'SUCCEEDED'
 ```
+
+Only `SUCCEEDED` means the charge went through. `ACTION_REQUIRED` is returned, not raised, so
+treat any other state as "not paid". Don't wait for a webhook instead of polling: none is sent
+for a 3DS challenge, so a customer whose card wants one is never redirected.
 
 > **Redirect to the 3DS URL immediately.** The redirect URL opens an authentication session
 > held open by the customer's bank, and that session has a **short timeout on the bank's side**.
@@ -721,15 +742,25 @@ function getGoPayClient(): GoPayClient {
 ### `awaitChargeState` / `awaitRefundState` in web contexts
 
 `awaitChargeState()` and `awaitRefundState()` both `usleep()` in a loop and **block the PHP
-worker process** for up to `$timeoutSeconds` (default 30 s). Under concurrent load this can
-exhaust the worker pool. Prefer the **webhook-driven pattern** for production web servers:
+worker process** until the state is decided — at most `$timeoutSeconds` (default 30 s). Under
+concurrent load this can exhaust the worker pool.
+
+**Charges: poll in the request that charged.** The 3DS redirect URL only becomes known by
+polling, and the customer has to be sent there while the bank's authentication session is
+still open, so `awaitChargeState()` belongs in the same request as `chargePayment()`. It
+returns as soon as the charge succeeds or asks for 3DS — usually within a few seconds. Size the
+worker pool for that, rather than moving the poll to a webhook: no notification is sent for a
+3DS challenge.
+
+**Refunds and the final payment outcome: prefer the webhook-driven pattern** for production
+web servers:
 
 1. GoPay POSTs a notification to your `notification_url`.
-2. Your handler calls `getChargeState()` — or `getRefund()` for a refund — once and records
+2. Your handler calls `getPaymentStatus()` — or `getRefund()` for a refund — once and records
    the result.
 3. Return HTTP 200 immediately.
 
-Use either poller only in CLI scripts or environments with ample worker headroom.
+Use `awaitRefundState()` only in CLI scripts or environments with ample worker headroom.
 
 ---
 

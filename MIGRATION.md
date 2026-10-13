@@ -54,21 +54,29 @@ $charge = $sdk->chargePayment($payment->getId(), [
             'input_type' => 'CARD_TOKEN',
             'card_token' => $cardToken, // from the browser SDK iframe
         ],
-        // v4 requires EMV 3DS browser data on a card charge — see README quick start
+        // v4 requires EMV 3DS browser data on a card charge — see README quick start.
+        // All of it comes from the customer's browser: ip, user_agent and
+        // accept_header from GET /cards/browser-data called by the browser right
+        // before the charge, never from your server or $_SERVER.
         'browser_data' => [
             'language'           => $browserData['language'],
             'timezone'           => $browserData['timezone'],
             'screen_width'       => $browserData['screen_width'],
             'screen_height'      => $browserData['screen_height'],
             'color_depth'        => $browserData['color_depth'],
-            'user_agent'         => $_SERVER['HTTP_USER_AGENT'],
-            'accept_header'      => AcceptHeader::fromServerGlobals(),
             'javascript_enabled' => $browserData['javascript_enabled'],
+            'ip'                 => $browserData['ip'],
+            'user_agent'         => $browserData['user_agent'],
+            'accept_header'      => $browserData['accept_header'],
         ],
     ],
 ]);
-if ($charge->getAction()?->getRedirectUrl()) {
-    header('Location: ' . $charge->getAction()->getRedirectUrl()); // 3DS only
+// The charge is asynchronous: poll until it is decided. A 3DS challenge shows up
+// here (ACTION_REQUIRED), rarely in the POST response — redirect immediately.
+$final = $sdk->awaitChargeState($payment->getId());
+if ($final->getState() === ChargeState::ACTION_REQUIRED) {
+    header('Location: ' . $final->getAction()->getRedirectUrl()); // 3DS only
+    exit;
 }
 ```
 
@@ -152,8 +160,8 @@ to remove those calls — there is no v4 equivalent.
 | Method | Description |
 |---|---|
 | `chargePayment($id, $params)` | Charge a payment with a card token, Google Pay, or Apple Pay |
-| `getChargeState($id)` | Poll the outcome of a charge (REQUESTED → PROCESSING → SUCCEEDED/FAILED) |
-| `awaitChargeState($id)` | Synchronous poll loop until terminal outcome |
+| `getChargeState($id)` | Poll the outcome of a charge (REQUESTED → PROCESSING → SUCCEEDED / FAILED / ACTION_REQUIRED) |
+| `awaitChargeState($id)` | Synchronous poll loop until SUCCEEDED or ACTION_REQUIRED (3DS redirect) |
 | `validateApplePayMerchant($id, ...)` | Server-side Apple Pay merchant validation |
 | `getGooglePayInfo($id)` | Pre-filled Google Pay `paymentDataRequest` |
 | `getApplePayInfo($id)` | Apple Pay session configuration |

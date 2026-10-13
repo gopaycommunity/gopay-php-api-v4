@@ -35,7 +35,7 @@ Full payment lifecycle:
 
 1. `createPayment()` — opens a payment session
 2. `chargePayment()` — submits a card token (replace the placeholder with a real token from the browser SDK)
-3. `awaitChargeState()` — polls until a terminal state (or 3DS redirect URL is printed)
+3. `awaitChargeState()` — polls until the charge succeeds, or prints the 3DS redirect URL on `ACTION_REQUIRED`
 4. `getPaymentStatus()` — reads the final payment record
 
 ### `browser-sdk-integration.php`

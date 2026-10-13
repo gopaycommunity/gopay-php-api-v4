@@ -17,6 +17,7 @@ require __DIR__ . '/bootstrap.php';
 
 use GoPay\Payments\Exception\GoPayHttpException;
 use GoPay\Payments\Exception\GoPaySdkException;
+use GoPay\Payments\Generated\Model\ChargeState;
 
 // ─── Step 1: Create the payment session ──────────────────────────────────────
 
@@ -119,28 +120,33 @@ try {
 
 echo 'Charge state   : ' . ($charge->getState() ?? 'n/a') . PHP_EOL;
 
-// If the card requires 3-D Secure verification the API returns a redirect_url.
-// Redirect the customer to that URL; they complete 3DS on the bank's page and
-// the bank redirects back to your callback.return_url.
+// ─── Step 3: Await the charge decision ───────────────────────────────────────
 //
-// Send them there IMMEDIATELY. The URL opens an authentication session held
-// open by the bank, and it times out quickly — a customer who arrives late
-// finds the payment already cancelled. Order bookkeeping, emails and anything
-// else slow belong in the return_url handler or the notification_url webhook,
-// never between reading this URL and the redirect.
-if ($charge->getAction()?->getRedirectUrl() !== null) {
-    echo '3DS redirect   : ' . $charge->getAction()->getRedirectUrl() . PHP_EOL;
-    echo '→ Redirect the customer to the URL above, then poll getPaymentStatus().' . PHP_EOL;
-    exit(0);
-}
-
-// ─── Step 3: Await settlement (no 3DS) ───────────────────────────────────────
+// The POST response is not the outcome: the charge runs asynchronously and is
+// usually still PROCESSING. A 3-D Secure challenge rarely shows up in it — it
+// appears when polling GET /charge a moment later, as ACTION_REQUIRED with a
+// redirect URL. awaitChargeState() polls until SUCCEEDED or ACTION_REQUIRED and
+// throws on FAILED or timeout.
 
 echo PHP_EOL . '=== Step 3: awaitChargeState ===' . PHP_EOL;
 
 try {
     $final = $sdk->awaitChargeState($payment->getId(), timeoutSeconds: 10);
     echo 'Final state    : ' . ($final->getState() ?? 'n/a') . PHP_EOL;
+
+    // On ACTION_REQUIRED redirect the customer to the URL; they complete 3DS on
+    // the bank's page and the bank redirects back to your callback.return_url.
+    //
+    // Send them there IMMEDIATELY. The URL opens an authentication session held
+    // open by the bank, and it times out quickly — a customer who arrives late
+    // finds the payment already cancelled. Order bookkeeping, emails and anything
+    // else slow belong in the return_url handler or the notification_url webhook,
+    // never between reading this URL and the redirect.
+    if ($final->getState() === ChargeState::ACTION_REQUIRED) {
+        echo '3DS redirect   : ' . ($final->getAction()?->getRedirectUrl() ?? 'n/a') . PHP_EOL;
+        echo '→ Redirect the customer to the URL above, then poll getPaymentStatus().' . PHP_EOL;
+        exit(0);
+    }
 } catch (GoPaySdkException $e) {
     echo 'Charge outcome : ' . $e->getMessage() . PHP_EOL;
 }
