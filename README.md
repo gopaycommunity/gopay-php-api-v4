@@ -108,7 +108,7 @@ $final = $sdk->awaitChargeState($payment->getId());
 //     authentication session times out quickly; do your order bookkeeping
 //     on the return_url / webhook, never between these two lines.
 if ($final->getState() === ChargeState::ACTION_REQUIRED) {
-    header('Location: ' . $final->getAction()->getRedirectUrl());
+    header('Location: ' . $final->getAction()?->getRedirectUrl());
     exit;
 }
 
@@ -542,7 +542,7 @@ $final = $sdk->awaitChargeState($paymentId);
 
 if ($final->getState() === ChargeState::ACTION_REQUIRED) {
     // 3DS authentication required — redirect the customer, right now
-    header('Location: ' . $final->getAction()->getRedirectUrl());
+    header('Location: ' . $final->getAction()?->getRedirectUrl());
     exit;
 }
 
@@ -550,9 +550,11 @@ if ($final->getState() === ChargeState::ACTION_REQUIRED) {
 echo $final->getState(); // 'SUCCEEDED'
 ```
 
-Only `SUCCEEDED` means the charge went through. `ACTION_REQUIRED` is returned, not raised, so
-treat any other state as "not paid". Don't wait for a webhook instead of polling: none is sent
-for a 3DS challenge, so a customer whose card wants one is never redirected.
+Only `SUCCEEDED` means the charge went through: `ACTION_REQUIRED` is returned, not raised, and
+is not paid. It is returned only while the customer still has a 3DS step to do and the action
+carries its redirect URL; once that step is over, `awaitChargeState()` keeps polling until the
+charge succeeds or fails. Don't wait for a webhook instead of polling: none is sent for a 3DS
+challenge, so a customer whose card wants one is never redirected.
 
 > **Redirect to the 3DS URL immediately.** The redirect URL opens an authentication session
 > held open by the customer's bank, and that session has a **short timeout on the bank's side**.

@@ -8,6 +8,7 @@ use GoPay\Payments\Exception\ErrorCode;
 use GoPay\Payments\Exception\GoPayHttpException;
 use GoPay\Payments\Exception\GoPaySdkException;
 use GoPay\Payments\Generated\Model\ChargeState;
+use GoPay\Payments\Generated\Model\Emv3DSState;
 use GoPay\Payments\Generated\Model\PaymentChargeResponse;
 use GoPay\Payments\Generated\Model\PaymentChargeStatusResponse;
 use GoPay\Payments\Generated\Model\PaymentDetails;
@@ -392,14 +393,99 @@ final class PaymentsApiTest extends ModuleTestCase
         ]));
         $this->queueJson($this->chargeStatusJson(['state' => 'SUCCEEDED']));
 
-        $start = microtime(true);
         $result = $this->payments->awaitChargeState('pay-001', 30, 1);
-        $elapsed = microtime(true) - $start;
 
         $this->assertSame('ACTION_REQUIRED', $result->getState());
         $this->assertSame('https://gate.example/payments/pay-001/redirect', $result->getAction()?->getRedirectUrl());
         $this->assertCount(2, $this->mockClient->getRequests());
-        $this->assertLessThan(5, $elapsed);
+    }
+
+    /**
+     * What awaitChargeState() does on ACTION_REQUIRED for every 3DS action state
+     * the spec declares: return while the customer still has the step ahead of
+     * them, keep polling once it is over (the return-URL case). A state the spec
+     * adds later fails {@see awaitChargeStateOnActionRequiredHasAnOutcomeForEvery3dsState}
+     * until someone decides which side it is on.
+     *
+     * @return array<string, 'return'|'poll'>
+     */
+    private static function actionStateOutcomes(): array
+    {
+        return [
+            Emv3DSState::CREATED                    => 'return',
+            Emv3DSState::CHALLENGE_REQUIRED         => 'return',
+            Emv3DSState::AUTHENTICATED_CHALLENGE    => 'poll',
+            Emv3DSState::AUTHENTICATED_FRICTIONLESS => 'poll',
+            Emv3DSState::NOT_AUTHENTICATED          => 'poll',
+            Emv3DSState::FAILED                     => 'poll',
+        ];
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function actionStates(): iterable
+    {
+        foreach (Emv3DSState::getAllowableEnumValues() as $state) {
+            yield $state => [$state];
+        }
+    }
+
+    #[Test]
+    #[DataProvider('actionStates')]
+    public function awaitChargeStateOnActionRequiredHasAnOutcomeForEvery3dsState(string $actionState): void
+    {
+        $outcomes = self::actionStateOutcomes();
+        $this->assertArrayHasKey(
+            $actionState,
+            $outcomes,
+            "Emv3DSState {$actionState} is new: decide whether awaitChargeState() returns or keeps polling on it.",
+        );
+
+        $this->queueJson($this->chargeStatusJson([
+            'state' => 'ACTION_REQUIRED',
+            'action' => ['state' => $actionState] + $this->challengeActionJson(),
+        ]));
+        $this->queueJson($this->chargeStatusJson(['state' => 'SUCCEEDED']));
+
+        $result = $this->payments->awaitChargeState('pay-001', 30, 1);
+
+        if ($outcomes[$actionState] === 'return') {
+            $this->assertSame('ACTION_REQUIRED', $result->getState());
+            $this->assertCount(1, $this->mockClient->getRequests());
+        } else {
+            $this->assertSame('SUCCEEDED', $result->getState());
+            $this->assertCount(2, $this->mockClient->getRequests());
+        }
+    }
+
+    /**
+     * @return iterable<string, array{array<string, mixed>|null}>
+     */
+    public static function actionsWithoutRedirectUrl(): iterable
+    {
+        yield 'no action at all'       => [null];
+        yield 'action without the URL' => [['action_type' => 'EMV3DS', 'state' => 'CREATED']];
+        yield 'action with empty URL'  => [['action_type' => 'EMV3DS', 'state' => 'CHALLENGE_REQUIRED', 'redirect_url' => '']];
+    }
+
+    /**
+     * @param array<string, mixed>|null $action
+     */
+    #[Test]
+    #[DataProvider('actionsWithoutRedirectUrl')]
+    public function awaitChargeStateKeepsPollingOnActionRequiredWithoutRedirectUrl(?array $action): void
+    {
+        $this->queueJson($this->chargeStatusJson(['state' => 'ACTION_REQUIRED', 'action' => $action]));
+        $this->queueJson($this->chargeStatusJson([
+            'state' => 'ACTION_REQUIRED',
+            'action' => $this->challengeActionJson(),
+        ]));
+
+        $result = $this->payments->awaitChargeState('pay-001', 30, 1);
+
+        $this->assertSame('https://gate.example/payments/pay-001/redirect', $result->getAction()?->getRedirectUrl());
+        $this->assertCount(2, $this->mockClient->getRequests());
     }
 
     /**

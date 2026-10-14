@@ -8,6 +8,7 @@ use GoPay\Payments\Exception\ErrorCode;
 use GoPay\Payments\Exception\GoPayHttpException;
 use GoPay\Payments\Exception\GoPaySdkException;
 use GoPay\Payments\Generated\Model\ChargeState;
+use GoPay\Payments\Generated\Model\Emv3DSState;
 use GoPay\Payments\Generated\Model\PaymentChargeResponse;
 use GoPay\Payments\Generated\Model\PaymentChargeStatusResponse;
 use GoPay\Payments\Generated\Model\PaymentDetails;
@@ -234,15 +235,23 @@ final class PaymentsApi
     /**
      * Poll the charge state synchronously until the charge is decided.
      *
-     * Returns on SUCCEEDED or ACTION_REQUIRED. Throws GoPaySdkException with
-     * CHARGE_FAILED on FAILED state, or CHARGE_TIMEOUT if the charge does not
-     * leave REQUESTED/PROCESSING within $timeoutSeconds.
+     * Returns on SUCCEEDED, or on ACTION_REQUIRED once the customer has a 3DS
+     * step to complete — the action still CREATED or CHALLENGE_REQUIRED and
+     * carrying a redirect URL. Throws GoPaySdkException with CHARGE_FAILED on
+     * FAILED state, or CHARGE_TIMEOUT if the charge is not decided within
+     * $timeoutSeconds.
      *
      * Call it right after chargePayment(): the response to POST /charge rarely
      * carries the 3DS challenge yet, so the redirect URL usually only shows up
      * here. Check getState() on the result — ACTION_REQUIRED means redirect the
      * customer to getAction()->getRedirectUrl() immediately; the charge is not
      * paid until it reaches SUCCEEDED.
+     *
+     * An ACTION_REQUIRED whose 3DS step is already over (authenticated, not
+     * authenticated or failed) is not returned: the charge is about to settle,
+     * so polling goes on until SUCCEEDED or FAILED. That makes the method usable
+     * on the return URL too, where it waits for the verdict instead of handing
+     * back the challenge the customer has just completed.
      *
      * @param int $timeoutSeconds Maximum total wait time (default 30 s).
      * @param int $pollIntervalMs Polling interval in milliseconds (default 1 000 ms).
@@ -269,7 +278,7 @@ final class PaymentsApi
 
             $chargeState = $state->getState();
 
-            if ($chargeState === ChargeState::SUCCEEDED || $chargeState === ChargeState::ACTION_REQUIRED) {
+            if ($chargeState === ChargeState::SUCCEEDED || $this->awaitsCustomer($state)) {
                 return $state;
             }
 
@@ -290,5 +299,26 @@ final class PaymentsApi
                 usleep($sleepUs);
             }
         }
+    }
+
+    /**
+     * Whether the charge is waiting on a 3DS step the customer has yet to do.
+     *
+     * Both `action` and its `redirect_url` are optional in the spec, so
+     * ACTION_REQUIRED alone is not enough to redirect on. An allow-list of the
+     * two pending action states, rather than a deny-list of the finished ones,
+     * means a state added to the spec later keeps polling instead of handing
+     * out a stale URL.
+     */
+    private function awaitsCustomer(PaymentChargeStatusResponse $state): bool
+    {
+        if ($state->getState() !== ChargeState::ACTION_REQUIRED) {
+            return false;
+        }
+        $action = $state->getAction();
+
+        return $action !== null
+            && in_array($action->getState(), [Emv3DSState::CREATED, Emv3DSState::CHALLENGE_REQUIRED], true)
+            && (string) $action->getRedirectUrl() !== '';
     }
 }

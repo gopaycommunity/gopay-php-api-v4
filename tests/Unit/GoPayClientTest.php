@@ -177,6 +177,8 @@ final class GoPayClientTest extends TestCase
 
         $this->assertSame('ACTION_REQUIRED', $result->getState());
         $this->assertSame('https://gate.example/payments/pay-001/redirect', $result->getAction()?->getRedirectUrl());
+        // The token request from setUp(), then one poll — the queued SUCCEEDED is never fetched.
+        $this->assertCount(2, $this->mockClient->getRequests());
     }
 
     // ── Cards ─────────────────────────────────────────────────────────────────

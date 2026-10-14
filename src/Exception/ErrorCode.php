@@ -26,8 +26,8 @@ enum ErrorCode: string
 
     // Polling errors
     /**
-     * Polling gave up: a charge did not leave REQUESTED/PROCESSING, or a refund did not
-     * leave REQUESTED, within the timeout. Raised by both awaitChargeState() and
+     * Polling gave up: a charge was neither decided nor waiting on the customer's 3DS step,
+     * or a refund did not leave REQUESTED, within the timeout. Raised by both awaitChargeState() and
      * awaitRefundState() — the refund poller reuses this case rather than adding its own.
      */
     case ChargeTimeout = 'CHARGE_TIMEOUT';

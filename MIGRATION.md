@@ -73,9 +73,10 @@ $charge = $sdk->chargePayment($payment->getId(), [
 ]);
 // The charge is asynchronous: poll until it is decided. A 3DS challenge shows up
 // here (ACTION_REQUIRED), rarely in the POST response — redirect immediately.
+// (use GoPay\Payments\Generated\Model\ChargeState;)
 $final = $sdk->awaitChargeState($payment->getId());
 if ($final->getState() === ChargeState::ACTION_REQUIRED) {
-    header('Location: ' . $final->getAction()->getRedirectUrl()); // 3DS only
+    header('Location: ' . $final->getAction()?->getRedirectUrl()); // 3DS only
     exit;
 }
 ```

@@ -294,8 +294,9 @@ final class GoPayClient
 
     /**
      * Poll the charge state synchronously until the charge is decided.
-     * Returns on SUCCEEDED or ACTION_REQUIRED; throws CHARGE_FAILED on FAILED
-     * state, CHARGE_TIMEOUT if it doesn't leave REQUESTED/PROCESSING.
+     * Returns on SUCCEEDED, or on ACTION_REQUIRED while a 3DS step with a
+     * redirect URL waits for the customer; throws CHARGE_FAILED on FAILED
+     * state, CHARGE_TIMEOUT if the charge isn't decided in time.
      *
      * Call it right after chargePayment() — the 3DS redirect URL usually only
      * appears here, not in the POST response. On ACTION_REQUIRED redirect the
