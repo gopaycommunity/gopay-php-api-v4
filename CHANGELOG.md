@@ -1,3 +1,11 @@
+## [1.6.1](https://bitbucket.org/gp-gopay/gopay-php-api-v4/compare/1.6.0...1.6.1) (2026-10-15)
+
+### Bug Fixes
+
+* **docs:** poll after chargePayment and redirect on ACTION_REQUIRED GPOMA-2733 ([9603557](https://bitbucket.org/gp-gopay/gopay-php-api-v4/commit/960355763e756dfbfe0e0690d42edfcd153fa33f))
+* **payments:** return from awaitChargeState on ACTION_REQUIRED GPOMA-2733 ([62452b4](https://bitbucket.org/gp-gopay/gopay-php-api-v4/commit/62452b4c5703f865acdcff8a8a7a96efa2db8afd))
+* **payments:** return on ACTION_REQUIRED only while the 3DS step awaits the customer GPOMA-2733 ([d88ecbb](https://bitbucket.org/gp-gopay/gopay-php-api-v4/commit/d88ecbb3c62d5b06aac5e7d311706368f3db30d0))
+
 ## [1.6.0](https://bitbucket.org/gp-gopay/gopay-php-api-v4/compare/1.5.0...1.6.0) (2026-09-17)
 
 ### Features
