@@ -32,8 +32,10 @@ definitions:
 
     - step: &test
         name: Unit Tests (PHPUnit)
-        runs-on:
-          - cypress
+        runs-on: &dev-2x
+          - self.hosted
+          - linux
+          - gopay.dev.2x
         script:
           - apt-get update -qq && apt-get install -y -qq $PHPIZE_DEPS && pecl install pcov && docker-php-ext-enable pcov
           - vendor/bin/phpunit --testsuite Unit --colors=always --coverage-clover=coverage.xml
@@ -42,8 +44,7 @@ definitions:
 
     - step: &e2e
         name: E2E Tests (PHPUnit)
-        runs-on:
-          - cypress
+        runs-on: *dev-2x
         script:
           - vendor/bin/phpunit --testsuite E2E --colors=always
 
