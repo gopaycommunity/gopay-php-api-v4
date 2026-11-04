@@ -121,6 +121,7 @@ src/
 ├── Http/
 │   ├── HttpClient.php       ← PSR-18 wrapper, auth, error mapping, DTO deserialization
 │   ├── AuthHandler.php      ← token injection, proactive refresh, 401 retry
+│   ├── Correlation.php      ← User-Agent, X-GoPay-Trace/Transaction/Payment-Session-Id, transaction scope
 │   ├── TokenStore.php       ← in-memory token + credential store
 │   └── RequestOptions.php   ← per-request overrides
 ├── Module/

@@ -12,6 +12,8 @@ namespace GoPay\Payments\Exception;
  */
 final class GoPaySdkException extends \RuntimeException
 {
+    use CarriesCorrelation;
+
     public function __construct(
         string $message,
         public readonly ErrorCode $errorCode,

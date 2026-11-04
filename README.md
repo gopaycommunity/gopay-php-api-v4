@@ -145,6 +145,7 @@ $config = new Config(
     debugLoggingEnabled: false,         // log request/response to error_log (default false)
     onError:             null,          // callable(\Throwable): void — called before throwing
     shareableKey:        null,          // shareable key for browser SDK initialisation
+    userAgentSuffix:     null,          // e.g. 'MyShop/2.1' — appended to the SDK's User-Agent
 );
 ```
 
@@ -155,6 +156,37 @@ $config = new Config(
 | `debugLoggingEnabled` | `bool` | `false` | Log to `error_log` |
 | `onError` | `?callable` | `null` | Invoked before every thrown exception |
 | `shareableKey` | `?string` | `null` | Shareable key for `getBrowserKeys()` |
+| `userAgentSuffix` | `?string` | `null` | Appended to `User-Agent: GoPay PHP v4 <version>` — your platform and its version, say. 1–200 printable ASCII characters |
+
+### Request ids
+
+Every request the SDK sends carries ids that GoPay logs with it, so GoPay support can find the
+request you ask about:
+
+| Header | Value |
+|---|---|
+| `X-GoPay-Trace-Id` | New for each HTTP request; a retry after a refreshed token keeps it |
+| `X-GoPay-Transaction-Id` | One per SDK call, shared by everything it sends — the token refresh, a retry, the polls of `awaitChargeState()` |
+| `X-GoPay-Payment-Session-Id` | The payment ID, on requests about a payment |
+| `User-Agent` | `GoPay PHP v4 <version>`, plus `userAgentSuffix` |
+
+Per-request headers cannot replace them. Both ids come back on every exception as `$e->traceId`
+and `$e->transactionId` — also after a timeout or a network error — so log them, and quote them
+when you contact support. To send your own ID instead of one per SDK call — your request ID,
+say — run the calls inside `withTransactionId()`:
+
+```php
+$payment = $sdk->withTransactionId($requestId, function () use ($sdk, $goid, $params, $charge) {
+    $payment = $sdk->createPayment($goid, $params);
+    $sdk->chargePayment($payment->getId(), $charge);
+
+    return $payment;
+});
+```
+
+The ID must be 1–64 characters of `A–Z`, `a–z`, `0–9`, `.`, `_` or `-` — what GoPay's log
+accepts. Anything else throws `GoPaySdkException` with `InvalidArgument` rather than being
+dropped silently.
 
 ### Environments
 
@@ -735,9 +767,11 @@ try {
 } catch (GoPayHttpException $e) {
     echo $e->status;  // e.g. 422
     var_dump($e->body); // decoded JSON or raw string
+    echo $e->traceId, ' ', $e->transactionId; // quote these to GoPay support
 } catch (GoPaySdkException $e) {
     echo $e->errorCode->value; // e.g. 'AUTH_TOKEN_MISSING'
     echo $e->getMessage();
+    echo $e->traceId ?? 'no request went out';
 }
 ```
 

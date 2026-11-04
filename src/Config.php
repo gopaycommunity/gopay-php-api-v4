@@ -7,6 +7,7 @@ namespace GoPay\Payments;
 use GoPay\Payments\Exception\ErrorCode;
 use GoPay\Payments\Exception\GoPayHttpException;
 use GoPay\Payments\Exception\GoPaySdkException;
+use GoPay\Payments\Http\Correlation;
 
 /**
  * Immutable configuration object for the GoPayClient.
@@ -21,6 +22,8 @@ final class Config
      * @param bool        $debugLoggingEnabled Log outgoing requests and incoming responses.
      * @param (callable(GoPaySdkException|GoPayHttpException): void)|null $onError Called synchronously for every SDK/HTTP error before it propagates.
      * @param string|null $shareableKey    Shareable (public) key for browser-SDK handoff via getBrowserKeys().
+     * @param string|null $userAgentSuffix Appended to the SDK's `User-Agent` (`GoPay PHP v4 <version>`), never
+     *                                     replacing it — e.g. your platform and its version. 1–200 printable ASCII characters.
      */
     public function __construct(
         public readonly Environment $environment = Environment::Sandbox,
@@ -29,6 +32,7 @@ final class Config
         /** @phpstan-var (callable(GoPaySdkException|GoPayHttpException): void)|null */
         public readonly mixed $onError = null,
         public readonly ?string $shareableKey = null,
+        public readonly ?string $userAgentSuffix = null,
     ) {
         if ($this->onError !== null && !is_callable($this->onError)) {
             throw new GoPaySdkException(
@@ -36,6 +40,8 @@ final class Config
                 ErrorCode::InvalidConfig,
             );
         }
+        // Validated here rather than on the first request, so a bad value fails where it is written.
+        Correlation::userAgent($this->userAgentSuffix);
         if ($this->baseUrl !== null && !$this->isAllowedBaseUrl($this->baseUrl)) {
             throw new GoPaySdkException(
                 '[GoPaySDK] baseUrl must use https:// (localhost and 127.0.0.1 are exempt for local development).',

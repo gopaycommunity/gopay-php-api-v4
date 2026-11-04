@@ -11,6 +11,8 @@ namespace GoPay\Payments\Exception;
  */
 final class GoPayHttpException extends \RuntimeException
 {
+    use CarriesCorrelation;
+
     /**
      * @param int   $status HTTP status code (e.g. 401, 422).
      * @param mixed $body   Parsed JSON body, or raw text if JSON parsing failed.

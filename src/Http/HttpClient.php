@@ -15,6 +15,8 @@ use Http\Discovery\Psr18ClientDiscovery;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Client\NetworkExceptionInterface;
 use Psr\Http\Message\RequestFactoryInterface;
+use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamFactoryInterface;
 
 /**
@@ -29,6 +31,17 @@ final class HttpClient
     private readonly StreamFactoryInterface $streamFactory;
     private readonly AuthHandler $authHandler;
     private readonly TokenStore $tokenStore;
+    private readonly Correlation $correlation;
+
+    /**
+     * [traceId, transactionId] of the request in flight, put on every error raised while it is
+     * — before onError sees the error. Null between requests, so a later error never borrows
+     * the ids of a request it did not come from.
+     *
+     * @var array{string, string}|null
+     */
+    private ?array $inFlight = null;
+
     private const APPLICATION_JSON = 'application/json';
 
     public function __construct(
@@ -45,6 +58,13 @@ final class HttpClient
             $this->tokenStore->setShareableKey($config->shareableKey);
         }
         $this->authHandler = new AuthHandler($this->tokenStore);
+        $this->correlation = new Correlation($config->userAgentSuffix);
+    }
+
+    /** @internal Scopes a public SDK call into one transaction. */
+    public function correlation(): Correlation
+    {
+        return $this->correlation;
     }
 
     // -------------------------------------------------------------------------
@@ -64,10 +84,7 @@ final class HttpClient
     public function get(string $path, string $type, ?RequestOptions $options = null): ModelInterface
     {
         $request = $this->buildRequest('GET', $path, null, $options);
-        $response = $this->send($request, $options);
-        $this->throwIfNotOk($response);
-
-        return $this->deserialize((string) $response->getBody(), $type);
+        return $this->exchange($request, $options, fn(ResponseInterface $response) => $this->deserialize((string) $response->getBody(), $type));
     }
 
     /**
@@ -85,10 +102,7 @@ final class HttpClient
     {
         $encoded = $this->encodeBody($body);
         $request = $this->buildRequest('POST', $path, $encoded, $options, self::APPLICATION_JSON);
-        $response = $this->send($request, $options);
-        $this->throwIfNotOk($response);
-
-        return $this->deserialize((string) $response->getBody(), $type);
+        return $this->exchange($request, $options, fn(ResponseInterface $response) => $this->deserialize((string) $response->getBody(), $type));
     }
 
     /**
@@ -98,8 +112,7 @@ final class HttpClient
     public function delete(string $path, ?RequestOptions $options = null): void
     {
         $request = $this->buildRequest('DELETE', $path, null, $options);
-        $response = $this->send($request, $options);
-        $this->throwIfNotOk($response);
+        $this->exchange($request, $options, static fn(): null => null);
     }
 
     /**
@@ -118,15 +131,14 @@ final class HttpClient
     public function getList(string $path, string $type, ?RequestOptions $options = null): array
     {
         $request = $this->buildRequest('GET', $path, null, $options);
-        $response = $this->send($request, $options);
-        $this->throwIfNotOk($response);
+        return $this->exchange($request, $options, function (ResponseInterface $response) use ($type): array {
+            $items = [];
+            foreach ($this->decodeJsonObjectList((string) $response->getBody()) as $item) {
+                $items[] = $this->hydrate($item, $type);
+            }
 
-        $items = [];
-        foreach ($this->decodeJsonObjectList((string) $response->getBody()) as $item) {
-            $items[] = $this->hydrate($item, $type);
-        }
-
-        return $items;
+            return $items;
+        });
     }
 
     /**
@@ -141,10 +153,7 @@ final class HttpClient
     public function getJsonList(string $path, ?RequestOptions $options = null): array
     {
         $request = $this->buildRequest('GET', $path, null, $options);
-        $response = $this->send($request, $options);
-        $this->throwIfNotOk($response);
-
-        return $this->decodeJsonList((string) $response->getBody());
+        return $this->exchange($request, $options, fn(ResponseInterface $response): array => $this->decodeJsonList((string) $response->getBody()));
     }
 
     /**
@@ -159,10 +168,7 @@ final class HttpClient
     public function getArray(string $path, ?RequestOptions $options = null): array
     {
         $request = $this->buildRequest('GET', $path, null, $options);
-        $response = $this->send($request, $options);
-        $this->throwIfNotOk($response);
-
-        return $this->decodeJsonObject((string) $response->getBody());
+        return $this->exchange($request, $options, fn(ResponseInterface $response): array => $this->decodeJsonObject((string) $response->getBody()));
     }
 
     /**
@@ -176,18 +182,17 @@ final class HttpClient
     public function getObject(string $path, ?RequestOptions $options = null): \stdClass
     {
         $request = $this->buildRequest('GET', $path, null, $options);
-        $response = $this->send($request, $options);
-        $this->throwIfNotOk($response);
+        return $this->exchange($request, $options, function (ResponseInterface $response): \stdClass {
+            $data = json_decode((string) $response->getBody());
+            if (!$data instanceof \stdClass) {
+                $this->emitError(new GoPaySdkException(
+                    '[GoPaySDK] Failed to parse API response as JSON object.',
+                    ErrorCode::UnexpectedResponse,
+                ));
+            }
 
-        $data = json_decode((string) $response->getBody());
-        if (!$data instanceof \stdClass) {
-            $this->emitError(new GoPaySdkException(
-                '[GoPaySDK] Failed to parse API response as JSON object.',
-                ErrorCode::UnexpectedResponse,
-            ));
-        }
-
-        return $data;
+            return $data;
+        });
     }
 
     /**
@@ -204,10 +209,7 @@ final class HttpClient
     {
         $encoded = $this->encodeBody($body);
         $request = $this->buildRequest('POST', $path, $encoded, $options, self::APPLICATION_JSON);
-        $response = $this->send($request, $options);
-        $this->throwIfNotOk($response);
-
-        return $this->decodeJsonObject((string) $response->getBody());
+        return $this->exchange($request, $options, fn(ResponseInterface $response): array => $this->decodeJsonObject((string) $response->getBody()));
     }
 
     /**
@@ -224,10 +226,12 @@ final class HttpClient
     public function postForm(string $path, array $form, string $type, ?RequestOptions $options = null): ModelInterface
     {
         $request = $this->buildRequest('POST', $path, http_build_query($form), $options, 'application/x-www-form-urlencoded');
-        $response = $this->send($request, $options, isAuthRequest: true);
-        $this->throwIfNotOk($response);
-
-        return $this->deserialize((string) $response->getBody(), $type);
+        return $this->exchange(
+            $request,
+            $options,
+            fn(ResponseInterface $response) => $this->deserialize((string) $response->getBody(), $type),
+            isAuthRequest: true,
+        );
     }
 
     // -------------------------------------------------------------------------
@@ -304,11 +308,24 @@ final class HttpClient
         $body = http_build_query(['grant_type' => 'client_credentials', 'scope' => $scope]);
         $credentials = base64_encode($clientId . ':' . $clientSecret);
 
-        $request = $this->requestFactory->createRequest('POST', $url)
-            ->withHeader('Content-Type', 'application/x-www-form-urlencoded')
-            ->withHeader('Accept', self::APPLICATION_JSON)
-            ->withHeader('Authorization', 'Basic ' . $credentials)
-            ->withBody($this->streamFactory->createStream($body));
+        $request = $this->correlation->apply(
+            $this->requestFactory->createRequest('POST', $url)
+                ->withHeader('Content-Type', 'application/x-www-form-urlencoded')
+                ->withHeader('Accept', self::APPLICATION_JSON)
+                ->withHeader('Authorization', 'Basic ' . $credentials)
+                ->withBody($this->streamFactory->createStream($body)),
+            'oauth2/token',
+        );
+        // Thrown rather than emitted (the caller emits), so the token request's own ids go on
+        // here: the call that needed the token never went out.
+        $failed = static function (GoPaySdkException $e) use ($request): GoPaySdkException {
+            $ids = Correlation::idsOf($request);
+            if ($ids !== null) {
+                $e->attachCorrelation(...$ids);
+            }
+
+            return $e;
+        };
 
         if ($this->config->debugLoggingEnabled) {
             error_log(sprintf('[GoPaySDK] → POST %s', $url));
@@ -318,11 +335,11 @@ final class HttpClient
             $response = $this->client->sendRequest($request);
         } catch (\Throwable $e) {
             $this->tokenStore->clearToken();
-            throw new GoPaySdkException(
+            throw $failed(new GoPaySdkException(
                 '[GoPaySDK] Token refresh failed: ' . $e->getMessage(),
                 ErrorCode::AuthRefreshFailed,
                 $e,
-            );
+            ));
         }
 
         if ($this->config->debugLoggingEnabled) {
@@ -331,19 +348,19 @@ final class HttpClient
 
         if ($response->getStatusCode() < 200 || $response->getStatusCode() >= 300) {
             $this->tokenStore->clearToken();
-            throw new GoPaySdkException(
+            throw $failed(new GoPaySdkException(
                 sprintf('[GoPaySDK] Token refresh failed: HTTP %d.', $response->getStatusCode()),
                 ErrorCode::AuthRefreshFailed,
-            );
+            ));
         }
 
         $decoded = json_decode((string) $response->getBody(), true);
         if (!is_array($decoded)) {
             $this->tokenStore->clearToken();
-            throw new GoPaySdkException(
+            throw $failed(new GoPaySdkException(
                 '[GoPaySDK] Invalid token response: could not parse JSON.',
                 ErrorCode::AuthInvalidResponse,
-            );
+            ));
         }
 
         $accessToken = $decoded['access_token'] ?? null;
@@ -351,10 +368,10 @@ final class HttpClient
 
         if (!is_string($accessToken) || $accessToken === '' || !is_int($expiresIn)) {
             $this->tokenStore->clearToken();
-            throw new GoPaySdkException(
+            throw $failed(new GoPaySdkException(
                 '[GoPaySDK] Invalid token response: missing required fields.',
                 ErrorCode::AuthInvalidResponse,
-            );
+            ));
         }
 
         $this->tokenStore->setToken($accessToken, $expiresIn);
@@ -371,6 +388,9 @@ final class HttpClient
      */
     public function emitError(\Throwable $e): never
     {
+        if ($this->inFlight !== null && ($e instanceof GoPaySdkException || $e instanceof GoPayHttpException)) {
+            $e->attachCorrelation(...$this->inFlight);
+        }
         $onError = $this->config->onError;
         if ($onError !== null && ($e instanceof GoPaySdkException || $e instanceof GoPayHttpException)) {
             $onError($e);
@@ -442,18 +462,31 @@ final class HttpClient
             $request = $request->withHeader($name, $value);
         }
 
-        return $request;
+        // After the per-request headers, so none of them can replace the SDK's own.
+        return $this->correlation->apply($request, $path);
     }
 
-    private function send(
-        \Psr\Http\Message\RequestInterface $request,
+    /**
+     * Authorizes, sends and reads one request, with its ids on any error raised meanwhile.
+     *
+     * Authorization comes first and outside: a call refused for want of a token never went out,
+     * so it has no request to quote.
+     *
+     * @template R
+     *
+     * @param callable(ResponseInterface): R $read
+     *
+     * @throws GoPaySdkException
+     * @throws GoPayHttpException
+     *
+     * @return R
+     */
+    private function exchange(
+        RequestInterface $request,
         ?RequestOptions $options,
+        callable $read,
         bool $isAuthRequest = false,
-    ): \Psr\Http\Message\ResponseInterface {
-        if ($this->config->debugLoggingEnabled) {
-            error_log(sprintf('[GoPaySDK] → %s %s', $request->getMethod(), $request->getUri()));
-        }
-
+    ): mixed {
         try {
             $request = $this->authHandler->injectAuth(
                 $request,
@@ -461,7 +494,32 @@ final class HttpClient
                 $this->tokenStore->getShareableKey(),
                 $this->tokenStore->getClientId(),
             );
+        } catch (GoPaySdkException $e) {
+            $this->emitError($e);
+        }
 
+        $outer = $this->inFlight;
+        $this->inFlight = Correlation::idsOf($request);
+        try {
+            $response = $this->send($request, $options, $isAuthRequest);
+            $this->throwIfNotOk($response);
+
+            return $read($response);
+        } finally {
+            $this->inFlight = $outer;
+        }
+    }
+
+    private function send(
+        RequestInterface $request,
+        ?RequestOptions $options,
+        bool $isAuthRequest = false,
+    ): ResponseInterface {
+        if ($this->config->debugLoggingEnabled) {
+            error_log(sprintf('[GoPaySDK] → %s %s', $request->getMethod(), $request->getUri()));
+        }
+
+        try {
             $response = $this->authHandler->requestWithRetry(
                 $request,
                 $this->client,

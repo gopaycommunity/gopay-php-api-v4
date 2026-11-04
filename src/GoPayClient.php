@@ -7,6 +7,7 @@ namespace GoPay\Payments;
 use GoPay\Payments\Event\EventFactory;
 use GoPay\Payments\Event\EventPage;
 use GoPay\Payments\Event\UnknownEvent;
+use GoPay\Payments\Exception\ErrorCode;
 use GoPay\Payments\Exception\GoPayHttpException;
 use GoPay\Payments\Exception\GoPaySdkException;
 use GoPay\Payments\Generated\Model\JWKSet;
@@ -18,6 +19,7 @@ use GoPay\Payments\Generated\Model\PermanentCardTokenDetails;
 use GoPay\Payments\Generated\Model\QRPaymentDetails;
 use GoPay\Payments\Generated\Model\RecurrenceDetails;
 use GoPay\Payments\Generated\Model\RefundDetails;
+use GoPay\Payments\Http\Correlation;
 use GoPay\Payments\Http\HttpClient;
 use GoPay\Payments\Module\AuthApi;
 use GoPay\Payments\Module\CardsApi;
@@ -107,7 +109,9 @@ final class GoPayClient
      */
     public function authenticate(string $clientId, string $clientSecret, string $scope): void
     {
-        $this->auth->authenticate($clientId, $clientSecret, $scope);
+        $this->inTransaction(function () use ($clientId, $clientSecret, $scope): void {
+            $this->auth->authenticate($clientId, $clientSecret, $scope);
+        });
     }
 
     /**
@@ -175,7 +179,7 @@ final class GoPayClient
      */
     public function createPayment(string $goid, array $params): PaymentDetails
     {
-        return $this->payments->createPayment($goid, $params);
+        return $this->inTransaction(fn() => $this->payments->createPayment($goid, $params));
     }
 
     /**
@@ -188,7 +192,7 @@ final class GoPayClient
      */
     public function getPaymentStatus(string $paymentId): PaymentDetails
     {
-        return $this->payments->getPaymentStatus($paymentId);
+        return $this->inTransaction(fn() => $this->payments->getPaymentStatus($paymentId));
     }
 
     /**
@@ -202,7 +206,9 @@ final class GoPayClient
      */
     public function cancelPayment(string $paymentId): void
     {
-        $this->payments->cancelPayment($paymentId);
+        $this->inTransaction(function () use ($paymentId): void {
+            $this->payments->cancelPayment($paymentId);
+        });
     }
 
     /**
@@ -224,7 +230,7 @@ final class GoPayClient
      */
     public function chargePayment(string $paymentId, array $params): PaymentChargeResponse
     {
-        return $this->payments->chargePayment($paymentId, $params);
+        return $this->inTransaction(fn() => $this->payments->chargePayment($paymentId, $params));
     }
 
     /**
@@ -237,7 +243,7 @@ final class GoPayClient
      */
     public function getChargeState(string $paymentId): PaymentChargeStatusResponse
     {
-        return $this->payments->getChargeState($paymentId);
+        return $this->inTransaction(fn() => $this->payments->getChargeState($paymentId));
     }
 
     /**
@@ -252,7 +258,7 @@ final class GoPayClient
      */
     public function getGooglePayInfo(string $paymentId): array
     {
-        return $this->payments->getGooglePayInfo($paymentId);
+        return $this->inTransaction(fn() => $this->payments->getGooglePayInfo($paymentId));
     }
 
     /**
@@ -267,7 +273,7 @@ final class GoPayClient
      */
     public function getApplePayInfo(string $paymentId): array
     {
-        return $this->payments->getApplePayInfo($paymentId);
+        return $this->inTransaction(fn() => $this->payments->getApplePayInfo($paymentId));
     }
 
     /**
@@ -289,7 +295,7 @@ final class GoPayClient
         ?array $body = null,
         ?string $origin = null,
     ): array {
-        return $this->payments->validateApplePayMerchant($paymentId, $body, $origin);
+        return $this->inTransaction(fn() => $this->payments->validateApplePayMerchant($paymentId, $body, $origin));
     }
 
     /**
@@ -302,7 +308,7 @@ final class GoPayClient
      */
     public function getQrPaymentInfo(string $paymentId, ?string $format = null): QRPaymentDetails
     {
-        return $this->payments->getQrPaymentInfo($paymentId, $format);
+        return $this->inTransaction(fn() => $this->payments->getQrPaymentInfo($paymentId, $format));
     }
 
     /**
@@ -330,7 +336,7 @@ final class GoPayClient
         int $timeoutSeconds = 30,
         int $pollIntervalMs = 1_000,
     ): PaymentChargeStatusResponse {
-        return $this->payments->awaitChargeState($paymentId, $timeoutSeconds, $pollIntervalMs);
+        return $this->inTransaction(fn() => $this->payments->awaitChargeState($paymentId, $timeoutSeconds, $pollIntervalMs));
     }
 
     // =========================================================================
@@ -348,7 +354,7 @@ final class GoPayClient
      */
     public function getCardDetails(string $cardId): PermanentCardTokenDetails
     {
-        return $this->cards->getCardDetails($cardId);
+        return $this->inTransaction(fn() => $this->cards->getCardDetails($cardId));
     }
 
     /**
@@ -362,7 +368,9 @@ final class GoPayClient
      */
     public function deleteCard(string $cardId): void
     {
-        $this->cards->deleteCard($cardId);
+        $this->inTransaction(function () use ($cardId): void {
+            $this->cards->deleteCard($cardId);
+        });
     }
 
     /**
@@ -376,7 +384,7 @@ final class GoPayClient
      */
     public function tokenizeEncryptedCard(string $payload): PermanentCardTokenDetails
     {
-        return $this->cards->tokenizeEncryptedCard($payload);
+        return $this->inTransaction(fn() => $this->cards->tokenizeEncryptedCard($payload));
     }
 
     // =========================================================================
@@ -396,7 +404,7 @@ final class GoPayClient
      */
     public function refundPayment(string $paymentId, array $params): RefundDetails
     {
-        return $this->refunds->refundPayment($paymentId, $params);
+        return $this->inTransaction(fn() => $this->refunds->refundPayment($paymentId, $params));
     }
 
     /**
@@ -412,7 +420,7 @@ final class GoPayClient
      */
     public function listRefunds(string $paymentId): array
     {
-        return $this->refunds->listRefunds($paymentId);
+        return $this->inTransaction(fn() => $this->refunds->listRefunds($paymentId));
     }
 
     /**
@@ -426,7 +434,7 @@ final class GoPayClient
      */
     public function getRefund(string $refundId): RefundDetails
     {
-        return $this->refunds->getRefund($refundId);
+        return $this->inTransaction(fn() => $this->refunds->getRefund($refundId));
     }
 
     /**
@@ -452,7 +460,7 @@ final class GoPayClient
         int $timeoutSeconds = 30,
         int $pollIntervalMs = 1_000,
     ): RefundDetails {
-        return $this->refunds->awaitRefundState($refundId, $timeoutSeconds, $pollIntervalMs);
+        return $this->inTransaction(fn() => $this->refunds->awaitRefundState($refundId, $timeoutSeconds, $pollIntervalMs));
     }
 
     // =========================================================================
@@ -476,7 +484,7 @@ final class GoPayClient
      */
     public function createPaymentLink(string $goid, array $params): LinkDetails
     {
-        return $this->links->createPaymentLink($goid, $params);
+        return $this->inTransaction(fn() => $this->links->createPaymentLink($goid, $params));
     }
 
     /**
@@ -490,7 +498,7 @@ final class GoPayClient
      */
     public function linkStatus(string $goid, string $linkId): LinkDetails
     {
-        return $this->links->linkStatus($goid, $linkId);
+        return $this->inTransaction(fn() => $this->links->linkStatus($goid, $linkId));
     }
 
     /**
@@ -507,7 +515,9 @@ final class GoPayClient
      */
     public function disableLink(string $goid, string $linkId): void
     {
-        $this->links->disableLink($goid, $linkId);
+        $this->inTransaction(function () use ($goid, $linkId): void {
+            $this->links->disableLink($goid, $linkId);
+        });
     }
 
     // =========================================================================
@@ -533,7 +543,7 @@ final class GoPayClient
      */
     public function createRecurrence(string $goid, array $params): RecurrenceDetails
     {
-        return $this->recurrences->createRecurrence($goid, $params);
+        return $this->inTransaction(fn() => $this->recurrences->createRecurrence($goid, $params));
     }
 
     /**
@@ -547,7 +557,7 @@ final class GoPayClient
      */
     public function recurrenceStatus(string $recId): RecurrenceDetails
     {
-        return $this->recurrences->recurrenceStatus($recId);
+        return $this->inTransaction(fn() => $this->recurrences->recurrenceStatus($recId));
     }
 
     /**
@@ -564,7 +574,9 @@ final class GoPayClient
      */
     public function stopRecurrence(string $recId): void
     {
-        $this->recurrences->stopRecurrence($recId);
+        $this->inTransaction(function () use ($recId): void {
+            $this->recurrences->stopRecurrence($recId);
+        });
     }
 
     /**
@@ -585,7 +597,7 @@ final class GoPayClient
      */
     public function startRecurrence(string $recId, ?array $params = null): PaymentDetails
     {
-        return $this->recurrences->startRecurrence($recId, $params);
+        return $this->inTransaction(fn() => $this->recurrences->startRecurrence($recId, $params));
     }
 
     /**
@@ -603,7 +615,56 @@ final class GoPayClient
      */
     public function recurrenceNext(string $recId, ?array $params = null): PaymentDetails
     {
-        return $this->recurrences->recurrenceNext($recId, $params);
+        return $this->inTransaction(fn() => $this->recurrences->recurrenceNext($recId, $params));
+    }
+
+    // =========================================================================
+    // Request correlation
+    // =========================================================================
+
+    /**
+     * Run `$call` with every SDK call inside it sent under `$transactionId` — your own request
+     * id, say — instead of an id per SDK call. GoPay logs it as the `X-GoPay-Transaction-Id` of
+     * each request, and it comes back on errors as `$e->transactionId`.
+     *
+     * ```php
+     * $payment = $sdk->withTransactionId($requestId, fn() => $sdk->createPayment($goid, $params));
+     * ```
+     *
+     * @template T
+     *
+     * @param callable(): T $call
+     *
+     * @throws GoPaySdkException InvalidArgument when the id is not 1–64 characters of A–Z, a–z,
+     *                           0–9, ".", "_" or "-" — what GoPay's log accepts
+     *
+     * @return T
+     */
+    public function withTransactionId(string $transactionId, callable $call): mixed
+    {
+        if (!Correlation::isValidTransactionId($transactionId)) {
+            $this->http->emitError(new GoPaySdkException(
+                '[GoPaySDK] transactionId must be 1–64 characters of A–Z, a–z, 0–9, ".", "_" or "-".',
+                ErrorCode::InvalidArgument,
+            ));
+        }
+
+        return $this->http->correlation()->inTransaction($call, $transactionId);
+    }
+
+    /**
+     * One transaction id for everything a public call sends — its token refresh, retries and
+     * polls — unless it runs inside another call or withTransactionId().
+     *
+     * @template T
+     *
+     * @param callable(): T $call
+     *
+     * @return T
+     */
+    private function inTransaction(callable $call): mixed
+    {
+        return $this->http->correlation()->inTransaction($call);
     }
 
     // =========================================================================
@@ -632,7 +693,7 @@ final class GoPayClient
      */
     public function verifyWebhook(string $rawBody, string|array|null $signatureHeader): object
     {
-        return $this->webhooks->verifyWebhook($rawBody, $signatureHeader);
+        return $this->inTransaction(fn() => $this->webhooks->verifyWebhook($rawBody, $signatureHeader));
     }
 
     /**
@@ -647,7 +708,7 @@ final class GoPayClient
      */
     public function getWebhookPublicKeys(): JWKSet
     {
-        return $this->webhooks->getWebhookPublicKeys();
+        return $this->inTransaction(fn() => $this->webhooks->getWebhookPublicKeys());
     }
 
     /**
@@ -666,7 +727,7 @@ final class GoPayClient
      */
     public function listEvents(string $goid, array $params = []): EventPage
     {
-        return $this->events->listEvents($goid, $params);
+        return $this->inTransaction(fn() => $this->events->listEvents($goid, $params));
     }
 
     /**
@@ -681,7 +742,7 @@ final class GoPayClient
      */
     public function getEvent(string $goid, string $eventId): object
     {
-        return $this->events->getEvent($goid, $eventId);
+        return $this->inTransaction(fn() => $this->events->getEvent($goid, $eventId));
     }
 
     /**
@@ -701,6 +762,31 @@ final class GoPayClient
      */
     public function iterateEvents(string $goid, array $params = []): \Generator
     {
-        return $this->events->iterateEvents($goid, $params);
+        // Taken now, not in the generator: its body first runs on iteration, outside this call.
+        return $this->inTransactionOnEachStep(
+            $this->events->iterateEvents($goid, $params),
+            $this->http->correlation()->transactionId(),
+        );
+    }
+
+    /**
+     * A generator's body runs on each step, after the call that made it has returned: each step
+     * is put back into the transaction the call was made in, so all its requests share one id.
+     *
+     * @template V
+     *
+     * @param \Generator<int, V, mixed, void> $inner
+     *
+     * @return \Generator<int, V, mixed, void>
+     */
+    private function inTransactionOnEachStep(\Generator $inner, string $transactionId): \Generator
+    {
+        $step = fn(callable $advance): mixed => $this->http->correlation()->inTransaction($advance, $transactionId);
+
+        $step(static fn() => $inner->rewind());
+        while ($step(static fn(): bool => $inner->valid())) {
+            yield $inner->current();
+            $step(static fn() => $inner->next());
+        }
     }
 }
