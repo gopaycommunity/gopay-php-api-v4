@@ -36,7 +36,7 @@ use \GoPay\Payments\Generated\ObjectSerializer;
  * ChargeState Class Doc Comment
  *
  * @category Class
- * @description The lifecycle state of a payment charge. - &#x60;REQUESTED&#x60; - The charge has been initiated - &#x60;PROCESSING&#x60; - The charge is being processed by the payment provider - &#x60;ACTION_REQUIRED&#x60; - Additional action is required from the customer (e.g. 3DS authentication or bank redirect) - &#x60;SUCCEEDED&#x60; - The charge completed successfully - &#x60;FAILED&#x60; - The charge failed
+ * @description The lifecycle state of a payment charge. - &#x60;REQUESTED&#x60; - The charge has been initiated - &#x60;PROCESSING&#x60; - The charge is being processed by the payment provider - &#x60;ACTION_REQUIRED&#x60; - The customer must complete a step, such as 3-D Secure authentication, before the charge can continue - &#x60;SUCCEEDED&#x60; - The charge completed successfully - &#x60;FAILED&#x60; - The charge failed
  * @package  GoPay\Payments\Generated
  * @author   OpenAPI Generator team
  * @link     https://openapi-generator.tech

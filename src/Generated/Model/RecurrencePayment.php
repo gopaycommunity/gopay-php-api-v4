@@ -546,7 +546,7 @@ class RecurrencePayment implements ModelInterface, ArrayAccess, \JsonSerializabl
     /**
      * Sets gwUrl
      *
-     * @param string|null $gwUrl Address of GoPay's hosted payment gateway, where the customer pays the created payment. It cannot be embedded in the merchant's own checkout — see `Payment-Details.gw_url`. Absent until the recurrence has created one
+     * @param string|null $gwUrl Address of GoPay's hosted payment gateway, where the customer pays the created payment. It cannot be embedded in the merchant's own checkout — see `Payment Details.gw_url`. Absent until the recurrence has created one
      *
      * @return self
      */
@@ -573,7 +573,7 @@ class RecurrencePayment implements ModelInterface, ArrayAccess, \JsonSerializabl
     /**
      * Sets paymentSecret
      *
-     * @param string|null $paymentSecret Secret the client SDK exchanges for a payment-scoped token. Absent until the recurrence has created a payment. **Do not embed in URLs, log or store!**
+     * @param string|null $paymentSecret Secret the merchant's server passes to the GoPay client SDK, so that the SDK can act on the payment. Absent until the recurrence has created a payment. **Do not embed in URLs, log or store!**
      *
      * @return self
      */

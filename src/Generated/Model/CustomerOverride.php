@@ -398,7 +398,7 @@ class CustomerOverride implements ModelInterface, ArrayAccess, \JsonSerializable
     /**
      * Sets email
      *
-     * @param string|null $email Customer email.
+     * @param string|null $email Customer email
      *
      * @return self
      */
@@ -615,7 +615,7 @@ class CustomerOverride implements ModelInterface, ArrayAccess, \JsonSerializable
     /**
      * Sets countryCode
      *
-     * @param string|null $countryCode Customer country code in respect to [ISO 3166-1 alpha-3](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-3)
+     * @param string|null $countryCode Customer country code according to [ISO 3166-1 alpha-3](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-3)
      *
      * @return self
      */

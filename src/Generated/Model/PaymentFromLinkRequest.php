@@ -379,7 +379,7 @@ class PaymentFromLinkRequest implements ModelInterface, ArrayAccess, \JsonSerial
     /**
      * Sets amount
      *
-     * @param int $amount Total amount in cents
+     * @param int $amount Total amount in cents. In HUF, the amount must be a multiple of 100
      *
      * @return self
      */
@@ -558,7 +558,7 @@ class PaymentFromLinkRequest implements ModelInterface, ArrayAccess, \JsonSerial
     /**
      * Sets callback
      *
-     * @param \GoPay\Payments\Generated\Model\PaymentCallback $callback Callback urls. Both must be http or https and at most 512 characters long
+     * @param \GoPay\Payments\Generated\Model\PaymentCallback $callback URLs for the return redirect and the notifications. `return_url` is required, `notification_url` is optional. Each must be http or https and at most 512 characters long
      *
      * @return self
      */

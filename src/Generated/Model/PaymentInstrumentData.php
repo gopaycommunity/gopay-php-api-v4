@@ -38,7 +38,7 @@ use \GoPay\Payments\Generated\ObjectSerializer;
  * PaymentInstrumentData Class Doc Comment
  *
  * @category Class
- * @description Discriminated union of the possible payment instrument output data. The discriminator is the &#x60;payment_instrument&#x60; field gaining values from the [Payment Instrument](#/schemas/Payment-Instrument) enum.
+ * @description The payment instrument a charge used. The &#x60;payment_instrument&#x60; field selects the case, taking values from the [Payment Instrument](#/schemas/Payment-Instrument) enum.
  * @package  GoPay\Payments\Generated
  * @author   OpenAPI Generator team
  * @link     https://openapi-generator.tech

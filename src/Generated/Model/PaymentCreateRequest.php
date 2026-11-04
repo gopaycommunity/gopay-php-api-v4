@@ -375,7 +375,7 @@ class PaymentCreateRequest implements ModelInterface, ArrayAccess, \JsonSerializ
     /**
      * Sets amount
      *
-     * @param int $amount Total amount in cents
+     * @param int $amount Total amount in cents. In HUF, the amount must be a multiple of 100
      *
      * @return self
      */
@@ -550,7 +550,7 @@ class PaymentCreateRequest implements ModelInterface, ArrayAccess, \JsonSerializ
     /**
      * Sets callback
      *
-     * @param \GoPay\Payments\Generated\Model\PaymentCallback $callback Callback urls
+     * @param \GoPay\Payments\Generated\Model\PaymentCallback $callback URLs for the return redirect and the notifications
      *
      * @return self
      */

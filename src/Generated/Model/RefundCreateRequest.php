@@ -38,6 +38,7 @@ use \GoPay\Payments\Generated\ObjectSerializer;
  * RefundCreateRequest Class Doc Comment
  *
  * @category Class
+ * @description The amount to refund from a paid payment
  * @package  GoPay\Payments\Generated
  * @author   OpenAPI Generator team
  * @link     https://openapi-generator.tech
@@ -312,7 +313,7 @@ class RefundCreateRequest implements ModelInterface, ArrayAccess, \JsonSerializa
     /**
      * Sets amount
      *
-     * @param int $amount Amount to be refunded in cents. For a full amount, set it equal to the payment amount
+     * @param int $amount Amount to be refunded in cents. For a full amount, set it equal to the payment amount. In HUF, the amount must be a multiple of 100
      *
      * @return self
      */

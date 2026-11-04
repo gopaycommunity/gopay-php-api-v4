@@ -444,7 +444,7 @@ class RecurrenceDetails implements ModelInterface, ArrayAccess, \JsonSerializabl
     /**
      * Sets schedule
      *
-     * @param \GoPay\Payments\Generated\Model\RecurrenceSchedule|null $schedule Present only for an AUTO recurrence
+     * @param \GoPay\Payments\Generated\Model\RecurrenceSchedule|null $schedule Present only for an `AUTO` recurrence
      *
      * @return self
      */
@@ -498,7 +498,7 @@ class RecurrenceDetails implements ModelInterface, ArrayAccess, \JsonSerializabl
     /**
      * Sets stopReason
      *
-     * @param \GoPay\Payments\Generated\Model\RecurrenceStopReason|null $stopReason Why the recurrence stopped — present only in state STOPPED
+     * @param \GoPay\Payments\Generated\Model\RecurrenceStopReason|null $stopReason Why the recurrence stopped — present only in state `STOPPED`
      *
      * @return self
      */

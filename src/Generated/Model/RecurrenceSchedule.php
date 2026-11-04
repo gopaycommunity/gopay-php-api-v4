@@ -38,7 +38,7 @@ use \GoPay\Payments\Generated\ObjectSerializer;
  * RecurrenceSchedule Class Doc Comment
  *
  * @category Class
- * @description How often an AUTO recurrence creates a payment
+ * @description How often an &#x60;AUTO&#x60; recurrence creates a payment
  * @package  GoPay\Payments\Generated
  * @author   OpenAPI Generator team
  * @link     https://openapi-generator.tech

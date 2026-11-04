@@ -36,7 +36,7 @@ use \GoPay\Payments\Generated\ObjectSerializer;
  * PaymentInstrument Class Doc Comment
  *
  * @category Class
- * @description Discriminator for the cases of the [Payment Charge Data](#/schemas/Payment-Charge-Data) union
+ * @description The values of the field that selects the case of [Payment Charge Data](#/schemas/Payment-Charge-Data)
  * @package  GoPay\Payments\Generated
  * @author   OpenAPI Generator team
  * @link     https://openapi-generator.tech

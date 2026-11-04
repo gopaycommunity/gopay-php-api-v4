@@ -353,7 +353,7 @@ class Emv3DSAction implements ModelInterface, ArrayAccess, \JsonSerializable
     /**
      * Sets state
      *
-     * @param \GoPay\Payments\Generated\Model\Emv3DSState $state Current state of the 3DS authentication flow
+     * @param \GoPay\Payments\Generated\Model\Emv3DSState $state Current state of the 3-D Secure authentication
      *
      * @return self
      */
@@ -380,7 +380,7 @@ class Emv3DSAction implements ModelInterface, ArrayAccess, \JsonSerializable
     /**
      * Sets redirectUrl
      *
-     * @param string|null $redirectUrl URL to redirect the customer to for completing the 3DS authentication
+     * @param string|null $redirectUrl URL the customer's browser is sent to for the 3-D Secure step. Present while the charge is in `ACTION_REQUIRED`
      *
      * @return self
      */

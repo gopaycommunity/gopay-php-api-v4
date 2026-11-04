@@ -36,7 +36,7 @@ use \GoPay\Payments\Generated\ObjectSerializer;
  * PaymentChargeActionType Class Doc Comment
  *
  * @category Class
- * @description Discriminator for the cases of the Payment Charge Action union. - &#x60;EMV3DS&#x60; - EMV 3-D Secure authentication for card payments
+ * @description The values of the field that selects the case of Payment Charge Action. - &#x60;EMV3DS&#x60; - EMV 3-D Secure authentication for card payments
  * @package  GoPay\Payments\Generated
  * @author   OpenAPI Generator team
  * @link     https://openapi-generator.tech

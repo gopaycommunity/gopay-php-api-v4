@@ -353,7 +353,7 @@ class PaymentInstanceOverride implements ModelInterface, ArrayAccess, \JsonSeria
     /**
      * Sets amount
      *
-     * @param int|null $amount Total amount in cents
+     * @param int|null $amount Total amount in cents. In HUF, the amount must be a multiple of 100
      *
      * @return self
      */
@@ -501,7 +501,7 @@ class PaymentInstanceOverride implements ModelInterface, ArrayAccess, \JsonSeria
     /**
      * Sets callback
      *
-     * @param \GoPay\Payments\Generated\Model\PaymentCallback|null $callback Callback urls
+     * @param \GoPay\Payments\Generated\Model\PaymentCallback|null $callback URLs for the return redirect and the notifications
      *
      * @return self
      */

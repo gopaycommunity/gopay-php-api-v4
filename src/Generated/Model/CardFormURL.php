@@ -38,7 +38,7 @@ use \GoPay\Payments\Generated\ObjectSerializer;
  * CardFormURL Class Doc Comment
  *
  * @category Class
- * @description Response containing the URL of the hosted card input form. Use this form to securely collect card details without handling raw card data on your own servers.
+ * @description The URL of the hosted card input form, which the GoPay browser SDK embeds in the merchant&#39;s page.
  * @package  GoPay\Payments\Generated
  * @author   OpenAPI Generator team
  * @link     https://openapi-generator.tech

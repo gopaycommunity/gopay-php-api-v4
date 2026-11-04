@@ -38,7 +38,7 @@ use \GoPay\Payments\Generated\ObjectSerializer;
  * CardTokenInput Class Doc Comment
  *
  * @category Class
- * @description The &#x60;CARD_TOKEN&#x60; variant of the [Payment Card Input](#/schemas/Payment-Card-Input) union. Holds the discriminator as well as the token input and 3DS challenge preference
+ * @description The &#x60;CARD_TOKEN&#x60; variant of the [Payment Card Input](#/schemas/Payment-Card-Input) union. Carries a saved card token
  * @package  GoPay\Payments\Generated
  * @author   OpenAPI Generator team
  * @link     https://openapi-generator.tech

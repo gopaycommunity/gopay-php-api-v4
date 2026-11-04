@@ -327,7 +327,7 @@ class QRCodeList implements ModelInterface, ArrayAccess, \JsonSerializable
     /**
      * Sets spayd
      *
-     * @param string|null $spayd QR code in the SPAYD (Short Payment Descriptor) format, commonly used in the Czech Republic. Encoded as a base64 PNG image.
+     * @param string|null $spayd QR code in the SPAYD (Short Payment Descriptor) format, commonly used in the Czech Republic. Encoded as a base64 image in the requested format.
      *
      * @return self
      */
@@ -354,7 +354,7 @@ class QRCodeList implements ModelInterface, ArrayAccess, \JsonSerializable
     /**
      * Sets paybysquare
      *
-     * @param string|null $paybysquare QR code in the Pay by Square format, commonly used in Slovakia. Encoded as a base64 image.
+     * @param string|null $paybysquare QR code in the Pay by Square format, commonly used in Slovakia. Encoded as a base64 image in the requested format.
      *
      * @return self
      */
@@ -381,7 +381,7 @@ class QRCodeList implements ModelInterface, ArrayAccess, \JsonSerializable
     /**
      * Sets sepa
      *
-     * @param string|null $sepa QR code in the SEPA (Single Euro Payments Area) format for EUR payments. Encoded as a base64 image.
+     * @param string|null $sepa QR code in the SEPA (Single Euro Payments Area) format for EUR payments. Encoded as a base64 image in the requested format.
      *
      * @return self
      */
@@ -408,7 +408,7 @@ class QRCodeList implements ModelInterface, ArrayAccess, \JsonSerializable
     /**
      * Sets mnbQr
      *
-     * @param string|null $mnbQr QR code in the MNB (Magyar Nemzeti Bank) format, commonly used in Hungary. Encoded as a base64 image.
+     * @param string|null $mnbQr QR code in the MNB (Magyar Nemzeti Bank) format, commonly used in Hungary. Encoded as a base64 image in the requested format.
      *
      * @return self
      */

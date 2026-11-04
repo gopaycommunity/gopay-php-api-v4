@@ -38,7 +38,7 @@ use \GoPay\Payments\Generated\ObjectSerializer;
  * RecurrenceCreateRequest Class Doc Comment
  *
  * @category Class
- * @description Discriminated union of the two recurrence kinds. The discriminator is the &#x60;type&#x60; field gaining values from the [Recurrence Type](#/schemas/Recurrence-Type) enum. An &#x60;AUTO&#x60; recurrence carries a &#x60;schedule&#x60;; an &#x60;ON_DEMAND&#x60; one must not, because the merchant asks for each further payment itself.
+ * @description One of the two recurrence kinds. The &#x60;type&#x60; field selects the case, taking values from the [Recurrence Type](#/schemas/Recurrence-Type) enum. An &#x60;AUTO&#x60; recurrence carries a &#x60;schedule&#x60;; an &#x60;ON_DEMAND&#x60; one must not, because the merchant asks for each further payment itself.
  * @package  GoPay\Payments\Generated
  * @author   OpenAPI Generator team
  * @link     https://openapi-generator.tech

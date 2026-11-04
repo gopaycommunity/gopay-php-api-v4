@@ -38,7 +38,7 @@ use \GoPay\Payments\Generated\ObjectSerializer;
  * PaymentCardChargeData Class Doc Comment
  *
  * @category Class
- * @description The &#x60;PAYMENT_CARD&#x60; variant of the [Payment Charge Data](#/schemas/Payment-Charge-Data) union. Holds the discriminator as well as the input for a card payment.
+ * @description The &#x60;PAYMENT_CARD&#x60; variant of the [Payment Charge Data](#/schemas/Payment-Charge-Data) union. Holds the card input, the browser data and the 3-D Secure preference.
  * @package  GoPay\Payments\Generated
  * @author   OpenAPI Generator team
  * @link     https://openapi-generator.tech

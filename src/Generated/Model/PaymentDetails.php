@@ -386,7 +386,7 @@ class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
     /**
      * Sets id
      *
-     * @param string $id Payment session ID
+     * @param string $id Identifier of the payment
      *
      * @return self
      */
@@ -413,7 +413,7 @@ class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
     /**
      * Sets orderNumber
      *
-     * @param string $orderNumber Order ID forwarded from the payment request
+     * @param string $orderNumber Order number given when the payment was created
      *
      * @return self
      */
@@ -548,7 +548,7 @@ class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
     /**
      * Sets gwUrl
      *
-     * @param string $gwUrl Address of GoPay's hosted payment gateway for this payment. It offers the customer every payment method the eshop has enabled, and GoPay drives the payment while the customer is on it. It is a destination the customer is sent to — it cannot be embedded in the merchant's own checkout. A merchant who needs the payment step inside their own UI builds a checkout integration instead, which today covers card, Google Pay, Apple Pay and QR payments and is being extended to further methods; this gateway already offers every method the eshop has enabled. Either way the payment stays fully v4-observable: GET /payments/{payment_id} still reports the final state once the customer completes it, exactly as it would for a payment charged directly through v4.
+     * @param string $gwUrl Address of GoPay's hosted payment gateway for this payment, used by the Redirect integration. It offers the customer every payment method the eshop has enabled, and GoPay drives the payment while the customer is on it. It is a destination the customer is sent to and cannot be embedded in the merchant's own checkout. `GET /payments/{payment_id}` reports the outcome of a payment paid there in the same way as for any other payment.
      *
      * @return self
      */
@@ -575,7 +575,7 @@ class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
     /**
      * Sets charge
      *
-     * @param \GoPay\Payments\Generated\Model\PaymentChargeStatusResponse|null $charge charge
+     * @param \GoPay\Payments\Generated\Model\PaymentChargeStatusResponse|null $charge The payment's charge, once a charge has been attempted
      *
      * @return self
      */
@@ -602,7 +602,7 @@ class PaymentDetails implements ModelInterface, ArrayAccess, \JsonSerializable
     /**
      * Sets paymentSecret
      *
-     * @param string $paymentSecret Payment secret that can be shared to the client side. Used to generate payment-specific JWTs. **Do not embed in URLs, log or store!**
+     * @param string $paymentSecret Payment secret that the merchant's server passes to the GoPay client SDK, so that the SDK can act on this payment. **Do not embed in URLs, log or store!**
      *
      * @return self
      */

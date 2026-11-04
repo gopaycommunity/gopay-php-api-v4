@@ -38,6 +38,7 @@ use \GoPay\Payments\Generated\ObjectSerializer;
  * ValidateMerchantRequest Class Doc Comment
  *
  * @category Class
+ * @description The Apple Pay merchant validation request
  * @package  GoPay\Payments\Generated
  * @author   OpenAPI Generator team
  * @link     https://openapi-generator.tech
@@ -308,7 +309,7 @@ class ValidateMerchantRequest implements ModelInterface, ArrayAccess, \JsonSeria
     /**
      * Sets validationUrl
      *
-     * @param string $validationUrl validationUrl
+     * @param string $validationUrl The validation URL Apple Pay issued for the session
      *
      * @return self
      */

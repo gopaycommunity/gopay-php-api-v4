@@ -38,7 +38,7 @@ use \GoPay\Payments\Generated\ObjectSerializer;
  * JWK Class Doc Comment
  *
  * @category Class
- * @description The structure of the public encryption key. It is formatted according to RFC 7515: JSON Web Key (JWK)
+ * @description The structure of the public encryption key. It is formatted according to RFC 7517: JSON Web Key (JWK)
  * @package  GoPay\Payments\Generated
  * @author   OpenAPI Generator team
  * @link     https://openapi-generator.tech

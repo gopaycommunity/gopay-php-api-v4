@@ -36,7 +36,7 @@ use \GoPay\Payments\Generated\ObjectSerializer;
  * Emv3DSState Class Doc Comment
  *
  * @category Class
- * @description The lifecycle state of an EMV 3-D Secure authentication. - &#x60;CREATED&#x60; - The 3DS authentication has been initiated - &#x60;CHALLENGE_REQUIRED&#x60; - The customer must complete a 3DS challenge (e.g. OTP, biometric) - &#x60;AUTHENTICATED_CHALLENGE&#x60; - The customer was successfully authenticated via a 3DS challenge - &#x60;AUTHENTICATED_FRICTIONLESS&#x60; - The customer was authenticated without a challenge (frictionless flow) - &#x60;NOT_AUTHENTICATED&#x60; - The 3DS authentication was not completed - &#x60;FAILED&#x60; - The 3DS authentication failed
+ * @description The lifecycle state of an EMV 3-D Secure authentication. - &#x60;CREATED&#x60; - The 3-D Secure authentication has been initiated - &#x60;CHALLENGE_REQUIRED&#x60; - The customer must complete a 3-D Secure challenge, such as a one-time code or a confirmation in the banking app - &#x60;AUTHENTICATED_CHALLENGE&#x60; - The customer was authenticated through a challenge - &#x60;AUTHENTICATED_FRICTIONLESS&#x60; - The customer was authenticated without a challenge (frictionless flow) - &#x60;NOT_AUTHENTICATED&#x60; - The 3-D Secure authentication was not completed - &#x60;FAILED&#x60; - The 3-D Secure authentication failed
  * @package  GoPay\Payments\Generated
  * @author   OpenAPI Generator team
  * @link     https://openapi-generator.tech

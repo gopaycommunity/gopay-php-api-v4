@@ -36,7 +36,7 @@ use \GoPay\Payments\Generated\ObjectSerializer;
  * PaymentCardChallengePreference Class Doc Comment
  *
  * @category Class
- * @description An indication from the merchant about the 3DS authentication of card payments. - &#x60;AUTO&#x60; - let GoPay decide - &#x60;CHALLENGE_PREFERRED&#x60; - try to enforce a 3DS challenge on the user for stronger authentication - &#x60;NO_CHALLENGE_PREFERRED&#x60; - try to skip 3DS authentication for a simpler checkout experience
+ * @description The merchant&#39;s preference for the 3-D Secure authentication of a card payment. - &#x60;AUTO&#x60; - let GoPay decide - &#x60;CHALLENGE_PREFERRED&#x60; - ask for a 3-D Secure challenge for stronger authentication; it may still be skipped, for example for Apple Pay - &#x60;NO_CHALLENGE_PREFERRED&#x60; - ask to skip the challenge; the card issuer can still require one
  * @package  GoPay\Payments\Generated
  * @author   OpenAPI Generator team
  * @link     https://openapi-generator.tech

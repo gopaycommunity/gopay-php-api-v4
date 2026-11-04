@@ -285,9 +285,6 @@ class PaymentCallback implements ModelInterface, ArrayAccess, \JsonSerializable
     {
         $invalidProperties = [];
 
-        if ($this->container['notificationUrl'] === null) {
-            $invalidProperties[] = "'notificationUrl' can't be null";
-        }
         if ($this->container['returnUrl'] === null) {
             $invalidProperties[] = "'returnUrl' can't be null";
         }
@@ -309,7 +306,7 @@ class PaymentCallback implements ModelInterface, ArrayAccess, \JsonSerializable
     /**
      * Gets notificationUrl
      *
-     * @return string
+     * @return string|null
      */
     public function getNotificationUrl()
     {
@@ -319,7 +316,7 @@ class PaymentCallback implements ModelInterface, ArrayAccess, \JsonSerializable
     /**
      * Sets notificationUrl
      *
-     * @param string $notificationUrl URL used to deliver the HTTP notifications
+     * @param string|null $notificationUrl URL that receives notifications about the payment. Optional: when it is omitted, notifications go to the notification URL configured for the eshop, and an eshop with none configured receives no notification. When present, it must not be empty
      *
      * @return self
      */
@@ -346,7 +343,7 @@ class PaymentCallback implements ModelInterface, ArrayAccess, \JsonSerializable
     /**
      * Sets returnUrl
      *
-     * @param string $returnUrl URL used to redirect the customer from the gateway back to the shop
+     * @param string $returnUrl URL the customer's browser is sent to at the end of the hosted gateway flow, and after the 3-D Secure step in a checkout integration. It must not carry a fragment (`#…`)
      *
      * @return self
      */

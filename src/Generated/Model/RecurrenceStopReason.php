@@ -36,7 +36,7 @@ use \GoPay\Payments\Generated\ObjectSerializer;
  * RecurrenceStopReason Class Doc Comment
  *
  * @category Class
- * @description Why a recurrence in state STOPPED ended
+ * @description Why a recurrence in state &#x60;STOPPED&#x60; ended. - &#x60;RECURRENCE_EXPIRED&#x60; - &#x60;recurrence_date_to&#x60; passed - &#x60;CARD_EXPIRED&#x60; - The authorised card expired - &#x60;CANCELLED_VIA_API&#x60; - Stopped with &#x60;DELETE /recurrences/{rec_id}&#x60; - &#x60;CANCELLED_VIA_BACKOFFICE&#x60; - Stopped by a GoPay operator on the merchant&#39;s behalf - &#x60;CANCELLED_BY_GOPAY&#x60; - Stopped by GoPay - &#x60;UNKNOWN&#x60; - The reason is not available
  * @package  GoPay\Payments\Generated
  * @author   OpenAPI Generator team
  * @link     https://openapi-generator.tech

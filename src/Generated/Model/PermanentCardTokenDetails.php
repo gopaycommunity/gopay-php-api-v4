@@ -38,7 +38,7 @@ use \GoPay\Payments\Generated\ObjectSerializer;
  * PermanentCardTokenDetails Class Doc Comment
  *
  * @category Class
- * @description Details of a permanently stored card token. This token can be reused across multiple payments until the card expires or the token is explicitly deleted.
+ * @description Details of a saved card token. The token is reused on later charges until it is deleted; issuer updates such as a new expiration date are applied to it in place.
  * @package  GoPay\Payments\Generated
  * @author   OpenAPI Generator team
  * @link     https://openapi-generator.tech
@@ -627,7 +627,7 @@ class PermanentCardTokenDetails implements ModelInterface, ArrayAccess, \JsonSer
     /**
      * Sets fingerprint
      *
-     * @param string $fingerprint A unique hash identifying the physical card, stable across multiple tokenizations of the same card
+     * @param string $fingerprint A unique hash identifying the physical card, stable across repeated tokenisations of the same card
      *
      * @return self
      */

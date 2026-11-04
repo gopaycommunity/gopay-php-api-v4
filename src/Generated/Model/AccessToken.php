@@ -390,7 +390,7 @@ class AccessToken implements ModelInterface, ArrayAccess, \JsonSerializable
     /**
      * Sets accessToken
      *
-     * @param string|null $accessToken The JWT string as described by [RFC 7519: JSON Web Token (JWT)](https://datatracker.ietf.org/doc/html/rfc7519)  The JWT claims contain: - `sub` -> the Client ID for which the token was issued - `scope` -> the scopes of the token - `iat` -> timestamp of token issuing - `exp` -> timestamp of token expiration - `domain` -> `merchant` for server tokens issued for client credentials. `payment` for payment tokens issued for `payment_secret` using the `payment_credentials` grant - used on calling the API from the browser.
+     * @param string|null $accessToken The JWT string as described by [RFC 7519: JSON Web Token (JWT)](https://datatracker.ietf.org/doc/html/rfc7519)  The JWT claims contain: - `sub` -> the Client ID for which the token was issued - `scope` -> the scopes of the token - `iat` -> timestamp of token issuing - `exp` -> timestamp of token expiration - `domain` -> `merchant` for tokens issued to the merchant's server with the `client_credentials` grant, `payment` for payment-scoped tokens issued with the `payment_credentials` grant to the GoPay client SDK
      *
      * @return self
      */

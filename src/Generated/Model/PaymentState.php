@@ -36,7 +36,7 @@ use \GoPay\Payments\Generated\ObjectSerializer;
  * PaymentState Class Doc Comment
  *
  * @category Class
- * @description The lifecycle state of a payment. - &#x60;CREATED&#x60; - The payment has been created and is awaiting further action - &#x60;PAID&#x60; - The payment has been successfully completed - &#x60;CANCELED&#x60; - The payment was canceled - &#x60;PAYMENT_METHOD_CHOSEN&#x60; - A payment method has been selected by the customer - &#x60;TIMEOUTED&#x60; - The payment was not completed within the allowed time - &#x60;AUTHORIZED&#x60; - The payment has been authorized but not yet captured - &#x60;REFUNDED&#x60; - The payment has been fully refunded - &#x60;PARTIALLY_REFUNDED&#x60; - The payment has been partially refunded
+ * @description The lifecycle state of a payment. - &#x60;CREATED&#x60; - The payment exists and is awaiting a charge attempt - &#x60;PAID&#x60; - The payment was charged successfully - &#x60;CANCELED&#x60; - The customer abandoned the payment, the charge was rejected at authorisation, or the merchant canceled the payment before it was charged - &#x60;PAYMENT_METHOD_CHOSEN&#x60; - A charge attempt is in flight and its outcome is not known yet - &#x60;TIMEOUTED&#x60; - The payment did not reach a terminal outcome within its timeout - &#x60;AUTHORIZED&#x60; - The payment has been authorised but not yet captured; only relevant for the pre-authorisation flow - &#x60;REFUNDED&#x60; - The payment has been fully refunded - &#x60;PARTIALLY_REFUNDED&#x60; - The payment has been partially refunded
  * @package  GoPay\Payments\Generated
  * @author   OpenAPI Generator team
  * @link     https://openapi-generator.tech

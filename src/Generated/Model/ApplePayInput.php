@@ -38,7 +38,7 @@ use \GoPay\Payments\Generated\ObjectSerializer;
  * ApplePayInput Class Doc Comment
  *
  * @category Class
- * @description The &#x60;APPLE_PAY&#x60; variant of the [Payment Card Input](#/schemas/Payment-Card-Input) union. Holds the discriminator as well as the data acquired from Apple Pay. See [Payment Data Cryptography](https://developer.apple.com/documentation/passkit/payment-token-format-reference) in Apple Pay documentation for details
+ * @description The &#x60;APPLE_PAY&#x60; variant of the [Payment Card Input](#/schemas/Payment-Card-Input) union. Carries the payment token returned by Apple Pay. See [Payment token format reference](https://developer.apple.com/documentation/passkit/payment-token-format-reference) in the Apple Pay documentation for details.
  * @package  GoPay\Payments\Generated
  * @author   OpenAPI Generator team
  * @link     https://openapi-generator.tech

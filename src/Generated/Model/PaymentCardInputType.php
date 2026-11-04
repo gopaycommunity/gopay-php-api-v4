@@ -36,7 +36,7 @@ use \GoPay\Payments\Generated\ObjectSerializer;
  * PaymentCardInputType Class Doc Comment
  *
  * @category Class
- * @description Discriminator for the cases of the [Payment Card Input](#/schemas/Payment-Card-Input) union
+ * @description The values of the field that selects the case of [Payment Card Input](#/schemas/Payment-Card-Input)
  * @package  GoPay\Payments\Generated
  * @author   OpenAPI Generator team
  * @link     https://openapi-generator.tech

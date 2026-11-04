@@ -38,7 +38,7 @@ use \GoPay\Payments\Generated\ObjectSerializer;
  * PaymentChargeResponse Class Doc Comment
  *
  * @category Class
- * @description Response data returned after initiating or querying a payment charge. Contains the current charge state, instrument details, and any required follow-up action.
+ * @description The charge started by &#x60;POST /payments/{payment_id}/charge&#x60;: its state, the instrument used, and any step the customer must complete.
  * @package  GoPay\Payments\Generated
  * @author   OpenAPI Generator team
  * @link     https://openapi-generator.tech
@@ -64,7 +64,6 @@ class PaymentChargeResponse implements ModelInterface, ArrayAccess, \JsonSeriali
         'id' => 'string',
         'state' => '\GoPay\Payments\Generated\Model\ChargeState',
         'paymentInstrument' => '\GoPay\Payments\Generated\Model\PaymentInstrumentData',
-        'returnUrl' => 'string',
         'action' => '\GoPay\Payments\Generated\Model\PaymentChargeAction'
     ];
 
@@ -79,7 +78,6 @@ class PaymentChargeResponse implements ModelInterface, ArrayAccess, \JsonSeriali
         'id' => null,
         'state' => null,
         'paymentInstrument' => null,
-        'returnUrl' => 'uri',
         'action' => null
     ];
 
@@ -92,7 +90,6 @@ class PaymentChargeResponse implements ModelInterface, ArrayAccess, \JsonSeriali
         'id' => false,
         'state' => false,
         'paymentInstrument' => false,
-        'returnUrl' => false,
         'action' => false
     ];
 
@@ -185,7 +182,6 @@ class PaymentChargeResponse implements ModelInterface, ArrayAccess, \JsonSeriali
         'id' => 'id',
         'state' => 'state',
         'paymentInstrument' => 'payment_instrument',
-        'returnUrl' => 'return_url',
         'action' => 'action'
     ];
 
@@ -198,7 +194,6 @@ class PaymentChargeResponse implements ModelInterface, ArrayAccess, \JsonSeriali
         'id' => 'setId',
         'state' => 'setState',
         'paymentInstrument' => 'setPaymentInstrument',
-        'returnUrl' => 'setReturnUrl',
         'action' => 'setAction'
     ];
 
@@ -211,7 +206,6 @@ class PaymentChargeResponse implements ModelInterface, ArrayAccess, \JsonSeriali
         'id' => 'getId',
         'state' => 'getState',
         'paymentInstrument' => 'getPaymentInstrument',
-        'returnUrl' => 'getReturnUrl',
         'action' => 'getAction'
     ];
 
@@ -275,7 +269,6 @@ class PaymentChargeResponse implements ModelInterface, ArrayAccess, \JsonSeriali
         $this->setIfExists('id', $data ?? [], null);
         $this->setIfExists('state', $data ?? [], null);
         $this->setIfExists('paymentInstrument', $data ?? [], null);
-        $this->setIfExists('returnUrl', $data ?? [], null);
         $this->setIfExists('action', $data ?? [], null);
     }
 
@@ -314,9 +307,6 @@ class PaymentChargeResponse implements ModelInterface, ArrayAccess, \JsonSeriali
         }
         if ($this->container['paymentInstrument'] === null) {
             $invalidProperties[] = "'paymentInstrument' can't be null";
-        }
-        if ($this->container['returnUrl'] === null) {
-            $invalidProperties[] = "'returnUrl' can't be null";
         }
         return $invalidProperties;
     }
@@ -415,33 +405,6 @@ class PaymentChargeResponse implements ModelInterface, ArrayAccess, \JsonSeriali
     }
 
     /**
-     * Gets returnUrl
-     *
-     * @return string
-     */
-    public function getReturnUrl()
-    {
-        return $this->container['returnUrl'];
-    }
-
-    /**
-     * Sets returnUrl
-     *
-     * @param string $returnUrl URL where the customer will be redirected after completing the payment action
-     *
-     * @return self
-     */
-    public function setReturnUrl($returnUrl)
-    {
-        if (is_null($returnUrl)) {
-            throw new \InvalidArgumentException('non-nullable returnUrl cannot be null');
-        }
-        $this->container['returnUrl'] = $returnUrl;
-
-        return $this;
-    }
-
-    /**
      * Gets action
      *
      * @return \GoPay\Payments\Generated\Model\PaymentChargeAction|null
@@ -454,7 +417,7 @@ class PaymentChargeResponse implements ModelInterface, ArrayAccess, \JsonSeriali
     /**
      * Sets action
      *
-     * @param \GoPay\Payments\Generated\Model\PaymentChargeAction|null $action The follow-up action required to complete the charge (e.g. 3DS authentication or bank redirect)
+     * @param \GoPay\Payments\Generated\Model\PaymentChargeAction|null $action The step the customer must complete, such as 3-D Secure authentication. Present when `state` is `ACTION_REQUIRED`
      *
      * @return self
      */

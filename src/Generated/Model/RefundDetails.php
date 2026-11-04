@@ -38,6 +38,7 @@ use \GoPay\Payments\Generated\ObjectSerializer;
  * RefundDetails Class Doc Comment
  *
  * @category Class
+ * @description A refund issued against a payment
  * @package  GoPay\Payments\Generated
  * @author   OpenAPI Generator team
  * @link     https://openapi-generator.tech

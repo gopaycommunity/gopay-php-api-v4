@@ -609,7 +609,7 @@ class BrowserData implements ModelInterface, ArrayAccess, \JsonSerializable
     /**
      * Sets ip
      *
-     * @param string $ip IP address of the customer's browser, as returned by the browser data endpoint. A merchant server charging on the customer's behalf must forward the value collected in the browser, never its own address
+     * @param string $ip IP address of the customer's browser, as returned by the browser data endpoint. A merchant's server charging on the customer's behalf must forward the value collected in the browser, never its own address
      *
      * @return self
      */

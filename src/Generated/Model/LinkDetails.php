@@ -38,6 +38,7 @@ use \GoPay\Payments\Generated\ObjectSerializer;
  * LinkDetails Class Doc Comment
  *
  * @category Class
+ * @description A payment link, its state, and the payment data it carries
  * @package  GoPay\Payments\Generated
  * @author   OpenAPI Generator team
  * @link     https://openapi-generator.tech
