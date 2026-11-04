@@ -687,29 +687,45 @@ use GoPay\Payments\PaymentPoller;
 // On your return_url handler:
 $paymentId = $_GET['payment_id'];
 
+// Wait a bounded while for a payment in progress to settle.
+$deadline = time() + 20;
 do {
-    sleep(2);
     $payment = $sdk->getPaymentStatus($paymentId);
-} while (PaymentPoller::isPending($payment->getState()));
+    $state = $payment->getState();
+} while (PaymentPoller::isPending($state) && time() < $deadline && sleep(2) === 0);
 
-if (PaymentPoller::isSuccessful($payment->getState())) {
+if (PaymentPoller::isSuccessful($state)) {
     // PAID or AUTHORIZED
-    echo 'Payment succeeded: ' . $payment->getState();
-} else {
+    echo 'Payment succeeded: ' . $state;
+} elseif (PaymentPoller::isFailed($state)) {
     // CANCELED or TIMEOUTED
-    echo 'Payment did not complete: ' . $payment->getState();
+    echo 'Payment did not complete: ' . $state;
+} elseif (PaymentPoller::isCreated($state)) {
+    // Nothing is running: the customer came back without paying. Offer the payment again.
+    echo 'Payment not started';
+} else {
+    // Still in progress after the wait (or a state this SDK version does not know):
+    // show "processing" and let the webhook tell you the outcome.
+    echo 'Payment is being processed';
 }
 ```
 
-`PaymentPoller` groups payment states into three buckets:
+`PaymentPoller` groups payment states:
 
 | Group | States | Meaning |
 |---|---|---|
-| Pending | `CREATED`, `PAYMENT_METHOD_CHOSEN` | Still in progress — keep polling |
-| Successful | `PAID`, `AUTHORIZED` | Completed successfully |
-| Failed | `CANCELED`, `TIMEOUTED` | Did not complete |
+| Created — `isCreated()` | `CREATED` | Nothing is running: no payment method chosen yet. Neither pending nor terminal — polling will not see it move unless the customer acts |
+| Pending — `isPending()` | `PAYMENT_METHOD_CHOSEN` | In progress — keep polling |
+| Successful — `isSuccessful()` | `PAID`, `AUTHORIZED` | Completed successfully |
+| Failed — `isFailed()` | `CANCELED`, `TIMEOUTED` | Did not complete |
 
-Post-success states (`REFUNDED`, `PARTIALLY_REFUNDED`) are terminal — `isTerminal()` returns `true` for them.
+`isTerminal()` is true for the successful and failed states and for the post-success ones
+(`REFUNDED`, `PARTIALLY_REFUNDED`). A state the API adds later is in no group: `isPending()` and
+`isTerminal()` are both false for it.
+
+> `CREATED` is not pending. A loop `while (PaymentPoller::isPending($state))` stops on it at
+> once — which is right after a redirect, where it means the customer did not pay. To wait for
+> an outcome, wait for `isTerminal()`, or better, for the webhook.
 
 ---
 
@@ -736,14 +752,18 @@ $imageBase64 = $qr->getQrCode();      // base64-encoded image
 echo '<img src="data:image/png;base64,' . $imageBase64 . '" alt="QR payment">';
 echo 'Amount: ' . $qr->getAmount() . ' ' . $qr->getCurrency();
 
-// 4. Poll until the customer pays (webhook-preferred; polling shown for completeness)
+// 4. Learn that the customer paid from the payments.paid webhook — see "Webhooks and events".
+//    A transfer can take a while to be credited, and the payment does not say it is in
+//    progress meanwhile: today it stays CREATED until the money arrives. Polling, if you must,
+//    waits for a terminal state, not for isPending() to turn false.
 use GoPay\Payments\PaymentPoller;
+$deadline = time() + 600;
 do {
-    sleep(3);
-    $status = $sdk->getPaymentStatus($payment->getId());
-} while (PaymentPoller::isPending($status->getState()));
+    sleep(10);
+    $state = $sdk->getPaymentStatus($payment->getId())->getState();
+} while (!PaymentPoller::isTerminal($state) && time() < $deadline);
 
-echo PaymentPoller::isSuccessful($status->getState()) ? 'Paid' : 'Not paid';
+echo PaymentPoller::isSuccessful($state) ? 'Paid' : 'Not paid yet';
 ```
 
 ---
