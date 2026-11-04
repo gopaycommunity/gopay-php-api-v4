@@ -129,13 +129,29 @@ src/
 │   ├── CardsApi.php         ← getCardDetails / deleteCard / tokenizeEncryptedCard
 │   ├── RefundsApi.php       ← refundPayment / listRefunds / getRefund / awaitRefundState
 │   ├── LinksApi.php         ← createPaymentLink / linkStatus / disableLink
-│   └── RecurrencesApi.php   ← createRecurrence / recurrenceStatus / stopRecurrence / startRecurrence / recurrenceNext
+│   ├── RecurrencesApi.php   ← createRecurrence / recurrenceStatus / stopRecurrence / startRecurrence / recurrenceNext
+│   ├── EventsApi.php        ← listEvents / getEvent / iterateEvents
+│   └── WebhooksApi.php      ← verifyWebhook / getWebhookPublicKeys, signing-key cache by kid
+├── Event/
+│   ├── EventFactory.php     ← hand-written dispatch of an event onto the model of its `type`
+│   ├── EventPage.php        ← one page of listEvents
+│   └── UnknownEvent.php     ← a type added after this SDK version (not an error)
+├── Webhook/                 ← detached JWS (X-GoPay-Signature), JWK → OpenSSL key via hand-built DER
 └── Generated/               ← generated from OpenAPI spec (PHPStan-excluded from analysis)
     ├── ObjectSerializer.php
     ├── HeaderSelector.php
     └── Model/               ← PaymentDetails, PaymentChargeResponse, ChargeAction, …
         └── ModelInterface.php
 ```
+
+## Events: never deserialize `Event` or `EventList` directly
+
+openapi-generator 7.9.0 flattens the `Event` oneOf into one class whose `data` is the last
+variant's type (`CardEventData`), and the spec has no discriminator (each variant's `type` is the
+whole `Event-Type` enum). `ObjectSerializer` would also throw on a `type` added after the
+release, sinking a whole page. Decode to `stdClass` and go through `Event\EventFactory`, which
+maps `type` onto the variant class and returns `UnknownEvent` for an unknown one. A new event
+type in the spec means a new line in `EventFactory::MODELS`.
 
 ## `gw_url` — GoPay's hosted gateway, not a redirect target for this SDK's own flow
 

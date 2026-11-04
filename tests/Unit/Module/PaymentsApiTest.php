@@ -28,6 +28,34 @@ final class PaymentsApiTest extends ModuleTestCase
     }
 
     // -------------------------------------------------------------------------
+    // Response hydration
+    // -------------------------------------------------------------------------
+
+    #[Test]
+    public function aStateTheModelDoesNotListIsAnUnexpectedResponseNotAnInvalidArgumentException(): void
+    {
+        $this->queueJson($this->paymentDetailsJson(['state' => 'ADDED_LATER']));
+
+        try {
+            $this->payments->getPaymentStatus('pay-001');
+            $this->fail('expected a GoPaySdkException');
+        } catch (GoPaySdkException $e) {
+            $this->assertSame(ErrorCode::UnexpectedResponse, $e->errorCode);
+            $this->assertInstanceOf(\InvalidArgumentException::class, $e->getPrevious());
+        }
+    }
+
+    #[Test]
+    public function aListItemTheModelCannotReadIsAnUnexpectedResponse(): void
+    {
+        $this->queueJson([['id' => 'r1', 'state' => 'ADDED_LATER', 'amount' => 100, 'currency' => 'CZK']]);
+
+        $this->expectException(GoPaySdkException::class);
+        $this->expectExceptionMessage('a field does not match');
+        (new \GoPay\Payments\Module\RefundsApi($this->http))->listRefunds('pay-001');
+    }
+
+    // -------------------------------------------------------------------------
     // createPayment
     // -------------------------------------------------------------------------
 

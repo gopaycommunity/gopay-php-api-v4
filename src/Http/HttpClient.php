@@ -123,9 +123,7 @@ final class HttpClient
 
         $items = [];
         foreach ($this->decodeJsonObjectList((string) $response->getBody()) as $item) {
-            /** @var T $model */
-            $model   = ObjectSerializer::deserialize($item, $type);
-            $items[] = $model;
+            $items[] = $this->hydrate($item, $type);
         }
 
         return $items;
@@ -165,6 +163,31 @@ final class HttpClient
         $this->throwIfNotOk($response);
 
         return $this->decodeJsonObject((string) $response->getBody());
+    }
+
+    /**
+     * GET, returning the decoded JSON object as a `\stdClass` (no DTO hydration).
+     * For responses the caller maps itself, such as events, whose variants the generated
+     * models cannot tell apart.
+     *
+     * @throws GoPaySdkException
+     * @throws GoPayHttpException
+     */
+    public function getObject(string $path, ?RequestOptions $options = null): \stdClass
+    {
+        $request = $this->buildRequest('GET', $path, null, $options);
+        $response = $this->send($request, $options);
+        $this->throwIfNotOk($response);
+
+        $data = json_decode((string) $response->getBody());
+        if (!$data instanceof \stdClass) {
+            $this->emitError(new GoPaySdkException(
+                '[GoPaySDK] Failed to parse API response as JSON object.',
+                ErrorCode::UnexpectedResponse,
+            ));
+        }
+
+        return $data;
     }
 
     /**
@@ -568,7 +591,32 @@ final class HttpClient
             ));
         }
 
-        /** @var T */
-        return ObjectSerializer::deserialize($data, $type);
+        return $this->hydrate($data, $type);
+    }
+
+    /**
+     * ObjectSerializer raises a bare InvalidArgumentException for an enum value the model does
+     * not list — a state added to the API after this SDK was generated — and DateTime an
+     * Exception for a malformed instant. Both would escape past every `catch` written for this
+     * SDK's own exceptions, and past onError, so they are reported as an unexpected response.
+     *
+     * @template T of ModelInterface
+     *
+     * @param class-string<T> $type
+     *
+     * @return T
+     */
+    private function hydrate(\stdClass $data, string $type): ModelInterface
+    {
+        try {
+            /** @var T */
+            return ObjectSerializer::deserialize($data, $type);
+        } catch (\Exception $e) {
+            $this->emitError(new GoPaySdkException(
+                '[GoPaySDK] Failed to read the API response: a field does not match the SDK\'s model.',
+                ErrorCode::UnexpectedResponse,
+                $e,
+            ));
+        }
     }
 }

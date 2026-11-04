@@ -11,6 +11,7 @@ use GuzzleHttp\Psr7\HttpFactory;
 use GuzzleHttp\Psr7\Response;
 use Http\Mock\Client as MockClient;
 use PHPUnit\Framework\TestCase;
+use Psr\Http\Message\RequestInterface;
 
 abstract class ModuleTestCase extends TestCase
 {
@@ -30,6 +31,14 @@ abstract class ModuleTestCase extends TestCase
         );
         // Pre-authenticate so requests have a bearer token.
         $this->http->getTokenStore()->setToken('test-token', 3600);
+    }
+
+    protected function lastRequest(): RequestInterface
+    {
+        $request = $this->mockClient->getLastRequest();
+        self::assertInstanceOf(RequestInterface::class, $request);
+
+        return $request;
     }
 
     /**

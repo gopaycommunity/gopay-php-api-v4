@@ -34,6 +34,19 @@ enum ErrorCode: string
     /** Charge reached terminal FAILED state. */
     case ChargeFailed = 'CHARGE_FAILED';
 
+    // Webhook errors
+    /**
+     * The request is not a webhook GoPay signed: a missing or malformed `X-GoPay-Signature`, a key
+     * GoPay does not publish, a signature that does not match the body, or a body that is not an
+     * event. Answer 4xx; a retry carries the same bytes.
+     */
+    case WebhookInvalid = 'WEBHOOK_INVALID';
+    /**
+     * The signing keys could not be loaded (`GET /webhooks/public-keys` failed), so the webhook was
+     * not checked. Answer 5xx so GoPay delivers it again.
+     */
+    case WebhookKeysUnavailable = 'WEBHOOK_KEYS_UNAVAILABLE';
+
     // Usage errors
     /** SDK configuration is invalid (e.g. malformed baseUrl). */
     case InvalidConfig = 'INVALID_CONFIG';

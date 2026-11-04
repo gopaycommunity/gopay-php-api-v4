@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace GoPay\Payments;
 
+use GoPay\Payments\Event\EventFactory;
+use GoPay\Payments\Event\EventPage;
+use GoPay\Payments\Event\UnknownEvent;
 use GoPay\Payments\Exception\GoPayHttpException;
 use GoPay\Payments\Exception\GoPaySdkException;
+use GoPay\Payments\Generated\Model\JWKSet;
 use GoPay\Payments\Generated\Model\LinkDetails;
 use GoPay\Payments\Generated\Model\PaymentChargeResponse;
 use GoPay\Payments\Generated\Model\PaymentChargeStatusResponse;
@@ -17,10 +21,12 @@ use GoPay\Payments\Generated\Model\RefundDetails;
 use GoPay\Payments\Http\HttpClient;
 use GoPay\Payments\Module\AuthApi;
 use GoPay\Payments\Module\CardsApi;
+use GoPay\Payments\Module\EventsApi;
 use GoPay\Payments\Module\LinksApi;
 use GoPay\Payments\Module\PaymentsApi;
 use GoPay\Payments\Module\RecurrencesApi;
 use GoPay\Payments\Module\RefundsApi;
+use GoPay\Payments\Module\WebhooksApi;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\StreamFactoryInterface;
@@ -49,6 +55,9 @@ use Psr\Http\Message\StreamFactoryInterface;
  * ]);
  * ```
  *
+ * @phpstan-import-type GoPayEvent from EventFactory
+ * @phpstan-import-type ListEventsParams from EventsApi
+ *
  * @SuppressWarnings("php:S1448")
  */
 final class GoPayClient
@@ -60,6 +69,8 @@ final class GoPayClient
     private readonly RefundsApi $refunds;
     private readonly LinksApi $links;
     private readonly RecurrencesApi $recurrences;
+    private readonly EventsApi $events;
+    private readonly WebhooksApi $webhooks;
 
     public function __construct(
         Config $config = new Config(),
@@ -74,6 +85,8 @@ final class GoPayClient
         $this->refunds = new RefundsApi($this->http);
         $this->links = new LinksApi($this->http);
         $this->recurrences = new RecurrencesApi($this->http);
+        $this->events = new EventsApi($this->http);
+        $this->webhooks = new WebhooksApi($this->http);
     }
 
     // =========================================================================
@@ -591,5 +604,103 @@ final class GoPayClient
     public function recurrenceNext(string $recId, ?array $params = null): PaymentDetails
     {
         return $this->recurrences->recurrenceNext($recId, $params);
+    }
+
+    // =========================================================================
+    // Webhooks and events
+    // =========================================================================
+
+    /**
+     * Check that a webhook comes from GoPay and return its event.
+     * Requires the `shared:read` OAuth2 scope, for the signing keys (fetched once, kept by `kid`).
+     *
+     * Pass the body exactly as received — `file_get_contents('php://input')`, never a
+     * re-encoded `json_decode()` — and the `X-GoPay-Signature` header
+     * (`$_SERVER['HTTP_X_GOPAY_SIGNATURE'] ?? null`, or a PSR-7 `$request->getHeader(...)`).
+     *
+     * The event is the typed model of its `type` (e.g. `PaymentPaidEvent`), or an
+     * {@see UnknownEvent} for a type added to the API after this SDK version: ignore it, as the
+     * API asks, rather than failing.
+     *
+     * @param string|list<string>|null $signatureHeader
+     *
+     * @throws GoPaySdkException `WebhookInvalid` (answer 4xx: not from GoPay, a retry carries the
+     *                           same bytes) or `WebhookKeysUnavailable` (answer 5xx: not checked,
+     *                           GoPay delivers it again)
+     *
+     * @return GoPayEvent
+     */
+    public function verifyWebhook(string $rawBody, string|array|null $signatureHeader): object
+    {
+        return $this->webhooks->verifyWebhook($rawBody, $signatureHeader);
+    }
+
+    /**
+     * The public keys GoPay signs webhooks with, as a JWK Set. {@see verifyWebhook()} fetches
+     * them itself; this is for verifying elsewhere.
+     * Requires the `shared:read` OAuth2 scope.
+     *
+     * GET /webhooks/public-keys
+     *
+     * @throws GoPaySdkException
+     * @throws GoPayHttpException
+     */
+    public function getWebhookPublicKeys(): JWKSet
+    {
+        return $this->webhooks->getWebhookPublicKeys();
+    }
+
+    /**
+     * One page of the eshop's events, newest first; `getNextPageUrl()` is set while older ones
+     * remain. Requires the `event:read` OAuth2 scope.
+     *
+     * GET /eshops/{goid}/events
+     *
+     * @param ListEventsParams $params Filters — `type` (`'payments.paid,refunds.*'`),
+     *                                 `related_type` with `related_id`, `occurred_after`,
+     *                                 `occurred_before` (a `DateTimeInterface` or an RFC 3339
+     *                                 string) — and `max_items` (1–100)
+     *
+     * @throws GoPaySdkException
+     * @throws GoPayHttpException
+     */
+    public function listEvents(string $goid, array $params = []): EventPage
+    {
+        return $this->events->listEvents($goid, $params);
+    }
+
+    /**
+     * One event by its id, e.g. the `id` of a webhook. Requires the `event:read` OAuth2 scope.
+     *
+     * GET /eshops/{goid}/events/{event_id}
+     *
+     * @throws GoPaySdkException
+     * @throws GoPayHttpException
+     *
+     * @return GoPayEvent
+     */
+    public function getEvent(string $goid, string $eventId): object
+    {
+        return $this->events->getEvent($goid, $eventId);
+    }
+
+    /**
+     * Every event matching `$params`, page after page, fetching the next page only when the
+     * previous one is used up. Requires the `event:read` OAuth2 scope.
+     *
+     * ```php
+     * foreach ($sdk->iterateEvents($goid, ['related_type' => 'payments', 'related_id' => $paymentId]) as $event) { … }
+     * ```
+     *
+     * @param ListEventsParams $params The filters of {@see listEvents()}
+     *
+     * @throws GoPaySdkException
+     * @throws GoPayHttpException
+     *
+     * @return \Generator<int, GoPayEvent, mixed, void>
+     */
+    public function iterateEvents(string $goid, array $params = []): \Generator
+    {
+        return $this->events->iterateEvents($goid, $params);
     }
 }

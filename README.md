@@ -39,6 +39,8 @@ composer require guzzlehttp/guzzle
 
 Any PSR-18-compatible client works (Symfony HttpClient, Buzz, …).
 
+Requires PHP 8.1+ with the `openssl` extension, which verifies webhook signatures.
+
 ---
 
 ## Quick start
@@ -501,6 +503,72 @@ ID at all answers `400`.
 > generated constant for the `NEW` state is `_NEW`. Only the PHP constant is affected — the
 > value on the wire is the plain string `NEW`.
 
+### Webhooks and events
+
+GoPay sends a webhook — a signed `POST` to the URL configured for the eshop — when something
+happens to a payment, refund, link, recurrence or saved card. The same events can be read back
+for 30 days.
+
+| Operation | Scope |
+|---|---|
+| `verifyWebhook()`, `getWebhookPublicKeys()` | `shared:read` — for the signing keys |
+| `listEvents()`, `getEvent()`, `iterateEvents()` | `event:read` |
+
+```php
+use GoPay\Payments\Exception\ErrorCode;
+use GoPay\Payments\Exception\GoPaySdkException;
+use GoPay\Payments\Generated\Model\PaymentPaidEvent;
+
+$sdk->authenticate($clientId, $clientSecret, 'shared:read payment:read');
+
+try {
+    $event = $sdk->verifyWebhook(
+        file_get_contents('php://input'),          // the body exactly as received
+        $_SERVER['HTTP_X_GOPAY_SIGNATURE'] ?? null, // or $request->getHeader('X-GoPay-Signature')
+    );
+} catch (GoPaySdkException $e) {
+    // Not from GoPay (4xx): a retry would carry the same bytes.
+    // Keys unavailable (5xx): the webhook was not checked, and GoPay delivers it again.
+    http_response_code($e->errorCode === ErrorCode::WebhookKeysUnavailable ? 503 : 400);
+    exit;
+}
+
+if ($event instanceof PaymentPaidEvent) {
+    $paymentId = $event->getData()->getPaymentId();
+    // Webhooks can arrive twice and out of order: key your processing on $event->getId(),
+    // and read the payment's current state rather than trusting the event's order.
+}
+http_response_code(204);
+```
+
+- **Pass the raw body.** The signature covers the bytes GoPay sent. A body decoded and encoded
+  again — by a framework's JSON middleware, say — no longer verifies.
+- **Each event is the model of its `type`** — `PaymentPaidEvent`, `RefundSucceededEvent`,
+  `CardDeletedEvent`, … — with the IDs in `getData()`. A type GoPay adds after your SDK version
+  arrives as an `UnknownEvent` (its `getData()` is the decoded JSON), not as an error: ignore it.
+- **The keys are fetched once and kept by `kid`** for the life of the `GoPayClient`, refetched
+  after an hour or when a webhook names a key not seen yet (at most once every 10 seconds). With
+  PHP-FPM, a client built per request fetches them per webhook.
+
+```php
+// One page, newest first; filters: type, related_type + related_id, occurred_after,
+// occurred_before (DateTimeInterface or RFC 3339), max_items (1–100)
+$page = $sdk->listEvents($goid, ['type' => 'payments.*', 'max_items' => 50]);
+$page->getItems();       // list of events
+$page->getNextPageUrl(); // null on the last page
+
+// Every matching event, page by page
+foreach ($sdk->iterateEvents($goid, ['related_type' => 'payments', 'related_id' => $paymentId]) as $event) {
+    echo $event->getType(), ' ', $event->getOccurredAt()->format(DATE_ATOM), PHP_EOL;
+}
+
+$event = $sdk->getEvent($goid, $eventId);
+$keys  = $sdk->getWebhookPublicKeys(); // JWK Set, for verifying somewhere else
+```
+
+`iterateEvents()` follows `next_page_url` through the base URL the client was configured with,
+taking only its query: the access token never goes to a host the response names.
+
 ---
 
 ## Response objects
@@ -685,7 +753,9 @@ try {
 | `NetworkError` | Transport-level failure, including timeouts |
 | `ChargeTimeout` | `awaitChargeState()` or `awaitRefundState()` timed out |
 | `ChargeFailed` | Charge reached FAILED state |
-| `UnexpectedResponse` | API responded with an unexpected body shape |
+| `UnexpectedResponse` | API responded with an unexpected body shape, or a value the SDK's model does not know |
+| `WebhookInvalid` | `verifyWebhook()`: not a webhook GoPay signed — answer 4xx |
+| `WebhookKeysUnavailable` | `verifyWebhook()`: the signing keys could not be loaded — answer 5xx so GoPay retries |
 | `InvalidConfig` | Bad configuration |
 | `InvalidArgument` | Empty required argument |
 
