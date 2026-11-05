@@ -14,7 +14,9 @@ final class Base64Url
     /** The bytes, or null for anything that is not strict unpadded base64url. */
     public static function decode(string $value): ?string
     {
-        if ($value === '' || preg_match('/^[A-Za-z0-9_-]+$/', $value) !== 1 || strlen($value) % 4 === 1) {
+        // `/D`: without it `$` also matches before a trailing newline, and strict base64_decode()
+        // skips whitespace, so "…\n" would decode. A length of 4n + 1 the strict decode refuses.
+        if (preg_match('/^[A-Za-z0-9_-]+$/D', $value) !== 1) {
             return null;
         }
         $decoded = base64_decode(strtr($value, '-_', '+/'), true);

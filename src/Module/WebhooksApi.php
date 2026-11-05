@@ -141,22 +141,15 @@ final class WebhooksApi
         return null;
     }
 
-    /** Replaces the keys as a whole on success; a failed fetch keeps the last set. */
+    /**
+     * Replaces the keys as a whole on success; a failed fetch keeps the last set. A response with
+     * no usable key counts as failed: an empty set would make every webhook look forged (a 4xx
+     * GoPay does not retry), when it is the fetch that went wrong.
+     */
     private function load(): void
     {
         try {
-            $set = $this->client->getObject(self::PUBLIC_KEYS_PATH);
-            $next = [];
-            foreach (is_array($set->keys ?? null) ? $set->keys : [] as $jwk) {
-                if (!$jwk instanceof \stdClass || !is_string($jwk->kid ?? null)) {
-                    continue;
-                }
-                $key = RsaJwk::toPublicKey($jwk);
-                if ($key !== null) {
-                    $next[$jwk->kid] = $key;
-                }
-            }
-            $this->keys = $next;
+            $this->keys = $this->client->getObjectAs(self::PUBLIC_KEYS_PATH, fn(\stdClass $set): array => $this->readKeys($set));
             $this->lastFailure = null;
             $this->fetchedAt = ($this->clock)();
         } catch (GoPaySdkException|GoPayHttpException $e) {
@@ -166,6 +159,34 @@ final class WebhooksApi
         } finally {
             $this->attemptedAt = ($this->clock)();
         }
+    }
+
+    /**
+     * Runs while the key request is in flight, so the error for a set with no usable key
+     * carries its ids — and goes to onError once, as any other failed fetch does.
+     *
+     * @return non-empty-array<string, \OpenSSLAsymmetricKey>
+     */
+    private function readKeys(\stdClass $set): array
+    {
+        $keys = [];
+        foreach (is_array($set->keys ?? null) ? $set->keys : [] as $jwk) {
+            if (!$jwk instanceof \stdClass || !is_string($jwk->kid ?? null)) {
+                continue;
+            }
+            $key = RsaJwk::toPublicKey($jwk);
+            if ($key !== null) {
+                $keys[$jwk->kid] = $key;
+            }
+        }
+        if ($keys === []) {
+            $this->client->emitError(new GoPaySdkException(
+                '[GoPaySDK] GET /webhooks/public-keys returned no usable RS256 signing key.',
+                ErrorCode::UnexpectedResponse,
+            ));
+        }
+
+        return $keys;
     }
 
     // Messages carry only text this SDK wrote: everything in the request came from whoever sent it.

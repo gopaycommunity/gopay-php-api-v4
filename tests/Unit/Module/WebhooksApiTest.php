@@ -113,6 +113,8 @@ final class WebhooksApiTest extends ModuleTestCase
         yield 'padded base64' => ["{$header}..{$signature}=", 'X-GoPay-Signature is not base64url'];
         yield 'standard base64' => ["{$header}..ab+/", 'X-GoPay-Signature is not base64url'];
         yield 'empty signature' => ["{$header}..", 'X-GoPay-Signature is not base64url'];
+        // Base64url of length 4n with the newline, which strict base64_decode() would skip.
+        yield 'trailing newline' => ["{$header}..YWI\n", 'X-GoPay-Signature is not base64url'];
         yield 'header not json' => [Base64Url::encode('nope') . "..{$signature}", 'the JWS header is not a JSON object'];
         yield 'header a list' => [Base64Url::encode('["RS256"]') . "..{$signature}", 'the JWS header is not a JSON object'];
         yield 'HS256' => [Base64Url::encode('{"alg":"HS256","kid":"k1"}') . "..{$signature}", 'the JWS header is not RS256'];
@@ -342,15 +344,64 @@ final class WebhooksApiTest extends ModuleTestCase
         );
     }
 
-    #[Test]
-    public function a_key_set_without_keys_verifies_nothing(): void
+    /**
+     * @return iterable<string, array{array<string, mixed>}>
+     */
+    public static function keySetsWithoutAUsableKey(): iterable
     {
-        $this->queueJson(['something' => 'else']);
+        yield 'no keys member' => [['something' => 'else']];
+        yield 'empty keys' => [['keys' => []]];
+        yield 'no usable key' => [['keys' => [['kid' => 'enc', 'kty' => 'RSA', 'use' => 'enc', 'alg' => 'RS256', 'n' => 'AQAB', 'e' => 'AQAB']]]];
+    }
 
-        $this->assertInvalid(
-            fn() => $this->api->verifyWebhook(self::EVENT, self::sign(self::EVENT, 'k1')),
-            'it is signed with a key GoPay does not publish',
-        );
+    /**
+     * @param array<string, mixed> $set
+     */
+    #[Test]
+    #[DataProvider('keySetsWithoutAUsableKey')]
+    public function a_key_set_without_a_usable_key_is_a_failed_fetch_not_a_forged_webhook(array $set): void
+    {
+        $this->queueJson($set);
+
+        $e = $this->catch(fn() => $this->api->verifyWebhook(self::EVENT, self::sign(self::EVENT, 'k1')));
+
+        $this->assertSame(ErrorCode::WebhookKeysUnavailable, $e->errorCode);
+        $previous = $e->getPrevious();
+        $this->assertInstanceOf(GoPaySdkException::class, $previous);
+        $this->assertSame(ErrorCode::UnexpectedResponse, $previous->errorCode);
+        $this->assertSame($this->lastRequest()->getHeaderLine('X-GoPay-Trace-Id'), $previous->traceId);
+    }
+
+    /**
+     * @param array<string, mixed> $set
+     */
+    #[Test]
+    #[DataProvider('keySetsWithoutAUsableKey')]
+    public function a_refresh_without_a_usable_key_keeps_the_last_set_and_is_retried_after_ten_seconds(array $set): void
+    {
+        $this->queueJson(self::jwks('k1'));
+        $this->api->verifyWebhook(self::EVENT, self::sign(self::EVENT, 'k1'));
+        $this->queueJson($set);
+
+        $this->now += 3600;
+        $this->assertInstanceOf(PaymentPaidEvent::class, $this->api->verifyWebhook(self::EVENT, self::sign(self::EVENT, 'k1')));
+        $this->now += 9;
+        $this->api->verifyWebhook(self::EVENT, self::sign(self::EVENT, 'k1'));
+        $this->assertCount(2, $this->mockClient->getRequests());
+
+        $this->queueJson(self::jwks('k1'));
+        $this->now += 1;
+        $this->api->verifyWebhook(self::EVENT, self::sign(self::EVENT, 'k1'));
+        $this->assertCount(3, $this->mockClient->getRequests());
+    }
+
+    #[Test]
+    public function a_signed_event_with_an_object_where_an_id_belongs_is_invalid_not_an_error(): void
+    {
+        $this->queueJson(self::jwks('k1'));
+        $body = '{"id":"e","type":"payments.canceled","occurred_at":"2026-10-27T14:37:27Z","data":{"payment_id":{"x":1}}}';
+
+        $this->assertInvalid(fn() => $this->api->verifyWebhook($body, self::sign($body, 'k1')), 'the body is not an event');
     }
 
     #[Test]
