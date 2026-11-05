@@ -143,7 +143,7 @@ $config = new Config(
     environment:         Environment::Production, // Environment::Sandbox (default)
     baseUrl:             null,          // override base URL (e.g. staging); null = use environment
     debugLoggingEnabled: false,         // log request/response to error_log (default false)
-    onError:             null,          // callable(\Throwable): void — called before throwing
+    onError:             null,          // callable(\Throwable): void — called before throwing (not for webhook-request errors)
     shareableKey:        null,          // shareable key for browser SDK initialisation
     userAgentSuffix:     null,          // e.g. 'MyShop/2.1' — appended to the SDK's User-Agent
 );
@@ -154,7 +154,7 @@ $config = new Config(
 | `environment` | `Environment` | `Sandbox` | API environment |
 | `baseUrl` | `?string` | `null` | Override the resolved URL (e.g. for staging) |
 | `debugLoggingEnabled` | `bool` | `false` | Log to `error_log` |
-| `onError` | `?callable` | `null` | Invoked before every thrown exception |
+| `onError` | `?callable` | `null` | Invoked before every exception the SDK throws — except what a webhook request alone can cause (`WebhookInvalid`, `WebhookKeysUnavailable`), see [Webhooks and events](#webhooks-and-events) |
 | `shareableKey` | `?string` | `null` | Shareable key for `getBrowserKeys()` |
 | `userAgentSuffix` | `?string` | `null` | Appended to `User-Agent: GoPay PHP v4 <version>` — your platform and its version, say. 1–200 printable ASCII characters |
 
@@ -170,9 +170,11 @@ request you ask about:
 | `X-GoPay-Payment-Session-Id` | The payment ID, on requests about a payment |
 | `User-Agent` | `GoPay PHP v4 <version>`, plus `userAgentSuffix` |
 
-Per-request headers cannot replace them. Both ids come back on every exception as `$e->traceId`
-and `$e->transactionId` — also after a timeout or a network error — so log them, and quote them
-when you contact support. To send your own ID instead of one per SDK call — your request ID,
+Per-request headers cannot replace them. The ids of the request an error came from are on the
+exception as `$e->traceId` and `$e->transactionId` — also after a timeout or a network error —
+so log them, and quote them when you contact support. Both are null when no request went out
+(an invalid argument, no token). A `WebhookKeysUnavailable` raised because the key fetch failed
+carries none itself: that request's ids are on the exception it wraps, `$e->getPrevious()`. To send your own ID instead of one per SDK call — your request ID,
 say — run the calls inside `withTransactionId()`:
 
 ```php
@@ -795,6 +797,8 @@ try {
     echo $e->errorCode->value; // e.g. 'AUTH_TOKEN_MISSING'
     echo $e->getMessage();
     echo $e->traceId ?? 'no request went out';
+    // A WebhookKeysUnavailable after a failed key fetch carries no ids itself:
+    // they are on the failure it wraps, $e->getPrevious().
 }
 ```
 
@@ -811,8 +815,8 @@ try {
 | `ChargeTimeout` | `awaitChargeState()` or `awaitRefundState()` timed out |
 | `ChargeFailed` | Charge reached FAILED state |
 | `UnexpectedResponse` | API responded with an unexpected body shape, or a value the SDK's model does not know |
-| `WebhookInvalid` | `verifyWebhook()`: not a webhook GoPay signed — answer 4xx |
-| `WebhookKeysUnavailable` | `verifyWebhook()`: the signing keys could not be loaded — answer 5xx so GoPay retries |
+| `WebhookInvalid` | `verifyWebhook()`: not a webhook GoPay signed — answer 4xx. Not passed to `onError` |
+| `WebhookKeysUnavailable` | `verifyWebhook()`: the webhook was not checked — answer 5xx so GoPay retries. Either the signing keys could not be loaded (the failure is `getPrevious()`, with its request's ids), or the webhook names a `kid` the SDK does not have and the keys were fetched less than 10 seconds ago (no previous exception) |
 | `InvalidConfig` | Bad configuration |
 | `InvalidArgument` | Empty required argument |
 
@@ -821,7 +825,8 @@ try {
 ```php
 $sdk = new GoPayClient(new Config(
     onError: function (\Throwable $e): void {
-        // Fires before every throw — use for logging/monitoring
+        // Fires before every throw — use for logging/monitoring. Not for WebhookInvalid or
+        // WebhookKeysUnavailable: anyone who can reach your webhook endpoint can cause those.
         $logger->error('GoPay error', ['exception' => $e]);
     },
 ));

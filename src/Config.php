@@ -20,7 +20,7 @@ final class Config
      * @param Environment $environment     Target environment. Defaults to Sandbox.
      * @param string|null $baseUrl         Override the API base URL (e.g. for staging or custom environments). Takes precedence over $environment. Must use https:// unless targeting localhost or 127.0.0.1.
      * @param bool        $debugLoggingEnabled Log outgoing requests and incoming responses.
-     * @param (callable(GoPaySdkException|GoPayHttpException): void)|null $onError Called synchronously for every SDK/HTTP error before it propagates.
+     * @param (callable(GoPaySdkException|GoPayHttpException): void)|null $onError Called synchronously for every SDK/HTTP error before it propagates — except what a webhook request alone can cause: verifyWebhook()'s WebhookInvalid and WebhookKeysUnavailable.
      * @param string|null $shareableKey    Shareable (public) key for browser-SDK handoff via getBrowserKeys().
      * @param string|null $userAgentSuffix Appended to the SDK's `User-Agent` (`GoPay PHP v4 <version>`), never
      *                                     replacing it — e.g. your platform and its version. 1–200 printable ASCII characters.

@@ -21,7 +21,11 @@ enum ErrorCode: string
     // Network errors
     /** Network-level failure (no response received), including timeouts. */
     case NetworkError = 'NETWORK_ERROR';
-    /** API responded successfully but the body shape was unexpected (not a JSON object/array). */
+    /**
+     * API responded successfully but the body could not be read: not the JSON object or list
+     * expected, a field holding a value the SDK's model does not know (an enum state added to the
+     * API later, an object where a string belongs), or an events page that would page forever.
+     */
     case UnexpectedResponse = 'UNEXPECTED_RESPONSE';
 
     // Polling errors
@@ -38,12 +42,15 @@ enum ErrorCode: string
     /**
      * The request is not a webhook GoPay signed: a missing or malformed `X-GoPay-Signature`, a key
      * GoPay does not publish, a signature that does not match the body, or a body that is not an
-     * event. Answer 4xx; a retry carries the same bytes.
+     * event. Answer 4xx; a retry carries the same bytes. Not passed to onError: anyone can send one.
      */
     case WebhookInvalid = 'WEBHOOK_INVALID';
     /**
-     * The signing keys could not be loaded (`GET /webhooks/public-keys` failed), so the webhook was
-     * not checked. Answer 5xx so GoPay delivers it again.
+     * The webhook was not checked; answer 5xx so GoPay delivers it again. Either the signing keys
+     * could not be loaded (`GET /webhooks/public-keys` failed, or had no usable key) — the failure
+     * is the previous exception, carrying that request's ids — or the webhook names a `kid` the
+     * SDK does not have and the keys were fetched less than 10 seconds ago, with no previous
+     * exception. Not passed to onError: a made-up `kid` is enough to cause it.
      */
     case WebhookKeysUnavailable = 'WEBHOOK_KEYS_UNAVAILABLE';
 
