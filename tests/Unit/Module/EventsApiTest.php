@@ -151,6 +151,17 @@ final class EventsApiTest extends ModuleTestCase
         $e = $this->catch(fn() => iterator_to_array($this->api->iterateEvents('8123456789')));
 
         $this->assertSame(ErrorCode::UnexpectedResponse, $e->errorCode);
+        $this->assertCount(1, $this->mockClient->getRequests());
+    }
+
+    #[Test]
+    public function iterate_events_refuses_a_next_page_url_of_nothing_but_ampersands(): void
+    {
+        $this->queueJson(['items' => [], 'next_page_url' => '/x/events?&&=']);
+
+        $e = $this->catch(fn() => iterator_to_array($this->api->iterateEvents('8123456789')));
+
+        $this->assertSame(ErrorCode::UnexpectedResponse, $e->errorCode);
     }
 
     /**
@@ -174,6 +185,59 @@ final class EventsApiTest extends ModuleTestCase
         $e = $this->catch(fn() => $this->api->listEvents('8123456789'));
 
         $this->assertSame(ErrorCode::UnexpectedResponse, $e->errorCode);
+    }
+
+    #[Test]
+    public function a_page_that_does_not_read_carries_the_ids_of_its_request(): void
+    {
+        $this->queueJson(['items' => [], 'next_page_url' => 5]);
+
+        $e = $this->catch(fn() => $this->api->listEvents('8123456789'));
+
+        $this->assertSame(ErrorCode::UnexpectedResponse, $e->errorCode);
+        $this->assertSame($this->lastRequest()->getHeaderLine('X-GoPay-Trace-Id'), $e->traceId);
+        $this->assertSame($this->lastRequest()->getHeaderLine('X-GoPay-Transaction-Id'), $e->transactionId);
+    }
+
+    #[Test]
+    public function an_event_that_does_not_read_carries_the_ids_of_its_request(): void
+    {
+        $this->queueJson(['id' => 'e1']);
+
+        $e = $this->catch(fn() => $this->api->getEvent('8123456789', 'e1'));
+
+        $this->assertSame(ErrorCode::UnexpectedResponse, $e->errorCode);
+        $this->assertSame($this->lastRequest()->getHeaderLine('X-GoPay-Trace-Id'), $e->traceId);
+    }
+
+    #[Test]
+    public function the_next_page_keeps_repeated_parameters_and_drops_empty_pairs(): void
+    {
+        $this->queueJson([
+            'items' => [self::event('e3', 'refunds.failed', ['payment_id' => 'p', 'refund_id' => 'r'])],
+            'next_page_url' => '/gp-gw/api/4.0/eshops/1/events?type=payments.paid&&type=refunds.failed&=x&max_items=1&prev_item=e3&',
+        ]);
+        $this->queueJson(['items' => []]);
+
+        iterator_to_array($this->api->iterateEvents('8123456789'));
+
+        $this->assertSame('type=payments.paid&type=refunds.failed&max_items=1&prev_item=e3', $this->lastRequest()->getUri()->getQuery());
+    }
+
+    #[Test]
+    public function iterator_to_array_keeps_every_event_across_pages(): void
+    {
+        $this->queueJson([
+            'items' => [self::event('e3', 'cards.deleted', ['card_id' => 'k']), self::event('e2', 'cards.deleted', ['card_id' => 'k'])],
+            'next_page_url' => '/x?prev_item=e2',
+        ]);
+        $this->queueJson(['items' => [self::event('e1', 'cards.deleted', ['card_id' => 'k'])], 'next_page_url' => '']);
+
+        $events = iterator_to_array($this->api->iterateEvents('8123456789'));
+
+        $this->assertSame([0, 1, 2], array_keys($events));
+        $this->assertSame(['e3', 'e2', 'e1'], array_map(static fn($e) => (string) $e->getId(), $events));
+        $this->assertCount(2, $this->mockClient->getRequests(), 'an empty next_page_url ends the paging');
     }
 
     #[Test]

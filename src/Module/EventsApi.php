@@ -34,21 +34,7 @@ final class EventsApi
      */
     public function listEvents(string $goid, array $params = []): EventPage
     {
-        $gid = $this->requirePathSegment($goid, 'goid');
-        $query = self::query($params);
-        $page = $this->client->getObject("/eshops/{$gid}/events" . ($query !== '' ? "?{$query}" : ''));
-
-        $items = $page->items ?? null;
-        $next = $page->next_page_url ?? null;
-        if (!is_array($items) || !array_is_list($items) || ($next !== null && !is_string($next))) {
-            $this->client->emitError(self::unexpected());
-        }
-        $events = [];
-        foreach ($items as $item) {
-            $events[] = $this->event($item);
-        }
-
-        return new EventPage($events, $next);
+        return $this->page($this->requirePathSegment($goid, 'goid'), self::query($params));
     }
 
     /**
@@ -62,12 +48,12 @@ final class EventsApi
         $gid = $this->requirePathSegment($goid, 'goid');
         $eid = $this->requirePathSegment($eventId, 'eventId');
 
-        return $this->event($this->client->getObject("/eshops/{$gid}/events/{$eid}"));
+        return $this->client->getObjectAs("/eshops/{$gid}/events/{$eid}", fn(\stdClass $event): object => $this->event($event));
     }
 
     /**
      * Every matching event, page after page, fetching the next page only when the previous one
-     * is used up.
+     * is used up. Keys run on across pages, so `iterator_to_array()` keeps every event.
      *
      * Only the query of `next_page_url` is used, sent to the base URL this client was
      * configured with. Following the URL itself would hand the access token to whatever host
@@ -83,15 +69,53 @@ final class EventsApi
      */
     public function iterateEvents(string $goid, array $params = []): \Generator
     {
-        $page = $this->listEvents($goid, $params);
+        $gid = $this->requirePathSegment($goid, 'goid');
+        $page = $this->page($gid, self::query($params));
         for (;;) {
-            yield from $page->getItems();
+            // One by one: `yield from` would restart the keys at 0 on every page.
+            foreach ($page->getItems() as $event) {
+                yield $event;
+            }
             $next = $page->getNextPageUrl();
-            if ($next === null || $next === '') {
+            if ($next === null) {
                 return;
             }
-            $page = $this->listEvents($goid, $this->nextPageParams($next));
+            // Checked when the page was read, so it has a query.
+            $page = $this->page($gid, (string) self::nextPageQuery($next));
         }
+    }
+
+    private function page(string $gid, string $query): EventPage
+    {
+        return $this->client->getObjectAs(
+            "/eshops/{$gid}/events" . ($query !== '' ? "?{$query}" : ''),
+            fn(\stdClass $page): EventPage => $this->readPage($page),
+        );
+    }
+
+    /**
+     * Runs while its request is the one in flight, so an error raised here carries its ids.
+     */
+    private function readPage(\stdClass $page): EventPage
+    {
+        $items = $page->items ?? null;
+        $next = $page->next_page_url ?? null;
+        if ($next === '') {
+            $next = null;
+        }
+        if (
+            !is_array($items)
+            || !array_is_list($items)
+            || ($next !== null && (!is_string($next) || self::nextPageQuery($next) === null))
+        ) {
+            $this->client->emitError(self::unexpected());
+        }
+        $events = [];
+        foreach ($items as $item) {
+            $events[] = $this->event($item);
+        }
+
+        return new EventPage($events, $next);
     }
 
     /** @return GoPayEvent */
@@ -124,21 +148,22 @@ final class EventsApi
         return http_build_query($values, '', '&', PHP_QUERY_RFC3986);
     }
 
-    /** @return array<string, string> */
-    private function nextPageParams(string $nextPageUrl): array
+    /**
+     * The query of `next_page_url` as the gateway wrote it — encoding untouched, a repeated
+     * parameter sent repeated — less the empty pairs a stray `&` leaves. Null when nothing is left.
+     */
+    private static function nextPageQuery(string $nextPageUrl): ?string
     {
         $query = parse_url($nextPageUrl, PHP_URL_QUERY);
-        if (!is_string($query) || $query === '') {
-            $this->client->emitError(self::unexpected());
+        if (!is_string($query)) {
+            return null;
         }
-        $params = [];
-        foreach (explode('&', $query) as $pair) {
-            [$name, $value] = explode('=', $pair, 2) + [1 => ''];
-            // Read by hand: parse_str() would turn a `.` in a name into `_` and nest `a[b]`.
-            $params[rawurldecode(str_replace('+', ' ', $name))] = rawurldecode(str_replace('+', ' ', $value));
-        }
+        $pairs = array_filter(
+            explode('&', $query),
+            static fn(string $pair): bool => $pair !== '' && !str_starts_with($pair, '='),
+        );
 
-        return $params;
+        return $pairs === [] ? null : implode('&', $pairs);
     }
 
     private static function unexpected(?\Throwable $previous = null): GoPaySdkException

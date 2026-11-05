@@ -181,8 +181,27 @@ final class HttpClient
      */
     public function getObject(string $path, ?RequestOptions $options = null): \stdClass
     {
+        return $this->getObjectAs($path, static fn(\stdClass $data): \stdClass => $data, $options);
+    }
+
+    /**
+     * GET, handing the decoded JSON object to `$read` while the request is still the one in
+     * flight — so an error `$read` raises through {@see emitError()} carries its ids.
+     *
+     * @template T
+     *
+     * @param callable(\stdClass): T $read
+     *
+     * @throws GoPaySdkException
+     * @throws GoPayHttpException
+     *
+     * @return T
+     */
+    public function getObjectAs(string $path, callable $read, ?RequestOptions $options = null): mixed
+    {
         $request = $this->buildRequest('GET', $path, null, $options);
-        return $this->exchange($request, $options, function (ResponseInterface $response): \stdClass {
+
+        return $this->exchange($request, $options, function (ResponseInterface $response) use ($read): mixed {
             $data = json_decode((string) $response->getBody());
             if (!$data instanceof \stdClass) {
                 $this->emitError(new GoPaySdkException(
@@ -191,7 +210,7 @@ final class HttpClient
                 ));
             }
 
-            return $data;
+            return $read($data);
         });
     }
 
