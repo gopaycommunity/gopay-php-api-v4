@@ -230,6 +230,23 @@ final class CorrelationTest extends TestCase
         $this->assertSame('outer', $this->requests()[1]->getHeaderLine('X-GoPay-Transaction-Id'));
     }
 
+    #[Test]
+    public function an_inner_with_transaction_id_wins_over_the_outer_one(): void
+    {
+        $sdk = $this->authenticated();
+        $this->mockClient->addResponse(self::payment());
+        $this->mockClient->addResponse(self::payment());
+
+        $sdk->withTransactionId('outer', static function () use ($sdk): void {
+            $sdk->withTransactionId('inner', static fn() => $sdk->getPaymentStatus('pay-1'));
+            $sdk->getPaymentStatus('pay-2');
+        });
+
+        [, $inner, $outer] = $this->requests();
+        $this->assertSame('inner', $inner->getHeaderLine('X-GoPay-Transaction-Id'));
+        $this->assertSame('outer', $outer->getHeaderLine('X-GoPay-Transaction-Id'));
+    }
+
     /**
      * @return iterable<string, array{string}>
      */
@@ -405,6 +422,22 @@ final class CorrelationTest extends TestCase
 
         $this->assertSame(ErrorCode::UnexpectedResponse, $e->errorCode);
         $this->assertSame($this->requests()[1]->getHeaderLine('X-GoPay-Trace-Id'), $e->traceId);
+    }
+
+    #[Test]
+    public function an_error_after_logout_does_not_borrow_the_ids_of_the_previous_request(): void
+    {
+        $sdk = $this->authenticated();
+        $this->mockClient->addResponse(self::payment());
+        $sdk->getPaymentStatus('pay-1');
+        $sdk->logout();
+
+        $e = $this->catchSdk(fn() => $sdk->getPaymentStatus('pay-1'));
+
+        $this->assertSame(ErrorCode::AuthTokenMissing, $e->errorCode);
+        $this->assertNull($e->traceId);
+        $this->assertNull($e->transactionId);
+        $this->assertCount(2, $this->requests());
     }
 
     #[Test]

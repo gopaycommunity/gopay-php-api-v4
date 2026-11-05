@@ -9,11 +9,12 @@ use GoPay\Payments\Exception\GoPayHttpException;
 use GoPay\Payments\Generated\Model\PaymentCanceledEvent;
 
 /**
- * Events and webhooks against a live gateway (alpha9 in CI). Delivery, retries, policies and
- * every event type are OLAF's to cover; this checks that the SDK reads what the gateway writes.
+ * Events and webhooks against a live GoPay test gateway (the one GOPAY_PAYMENTS_V4_BASE_URL
+ * names). Delivery, retries, policies and every event type are OLAF's to cover; this checks that
+ * the SDK reads what the gateway writes.
  *
- * Webhook delivery is checked only where GOPAY_E2E_WEBHOOK_INSPECTION_URL names demo-site's
- * receiver (GPOMA-2797), e.g. https://demo.alpha9.dev.gopay.com/api/v1/test/webhooks.
+ * Webhook delivery is checked only where GOPAY_E2E_WEBHOOK_INSPECTION_URL names the inspection
+ * endpoint of the webhook receiver the eshop delivers to (GPOMA-2797).
  *
  * Run: phpunit --testsuite E2E
  */
