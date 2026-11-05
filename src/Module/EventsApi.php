@@ -71,7 +71,7 @@ final class EventsApi
     {
         $gid = $this->requirePathSegment($goid, 'goid');
         $page = $this->page($gid, self::query($params));
-        for (;;) {
+        while (true) {
             // One by one: `yield from` would restart the keys at 0 on every page.
             foreach ($page->getItems() as $event) {
                 yield $event;

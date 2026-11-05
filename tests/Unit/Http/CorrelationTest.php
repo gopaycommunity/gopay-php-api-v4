@@ -339,7 +339,7 @@ final class CorrelationTest extends TestCase
         $request = $this->requests()[1];
         $this->assertSame($request->getHeaderLine('X-GoPay-Trace-Id'), $e->traceId);
         $this->assertSame($request->getHeaderLine('X-GoPay-Transaction-Id'), $e->transactionId);
-        $this->assertSame($e->traceId, $traceSeenByOnError);
+        $this->assertSame($traceSeenByOnError, $e->traceId);
     }
 
     #[Test]

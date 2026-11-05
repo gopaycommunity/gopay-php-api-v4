@@ -24,21 +24,29 @@ final class RsaJwk
      */
     public static function toPublicKey(\stdClass $jwk): ?\OpenSSLAsymmetricKey
     {
+        $n = $jwk->n ?? null;
+        $e = $jwk->e ?? null;
         if (
             ($jwk->kty ?? null) !== 'RSA'
             || ($jwk->alg ?? null) !== 'RS256'
             || ($jwk->use ?? null) !== 'sig'
-            || !is_string($jwk->n ?? null)
-            || !is_string($jwk->e ?? null)
+            || !is_string($n)
+            || !is_string($e)
         ) {
             return null;
         }
-        $modulus = Base64Url::decode($jwk->n);
-        $exponent = Base64Url::decode($jwk->e);
+        $modulus = Base64Url::decode($n);
+        $exponent = Base64Url::decode($e);
         if ($modulus === null || $exponent === null) {
             return null;
         }
 
+        return self::load($modulus, $exponent);
+    }
+
+    /** The RSA public key with this modulus and exponent, or null when OpenSSL does not load it. */
+    private static function load(string $modulus, string $exponent): ?\OpenSSLAsymmetricKey
+    {
         $rsaPublicKey = self::sequence(self::integer($modulus) . self::integer($exponent));
         // BIT STRING: a leading byte saying no bits of the last octet are unused.
         $spki = self::sequence(self::RSA_ALGORITHM . "\x03" . self::length(strlen($rsaPublicKey) + 1) . "\x00" . $rsaPublicKey);

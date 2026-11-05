@@ -28,7 +28,11 @@ final class DetachedJws
      */
     public static function parse(string|array|null $header): self
     {
-        $value = is_array($header) ? (count($header) === 1 ? reset($header) : null) : $header;
+        $value = $header;
+        if (is_array($header)) {
+            // Node-style arrays: exactly one value, or none to verify.
+            $value = count($header) === 1 ? reset($header) : null;
+        }
         if (!is_string($value) || $value === '') {
             throw new \UnexpectedValueException('exactly one X-GoPay-Signature header is required');
         }
