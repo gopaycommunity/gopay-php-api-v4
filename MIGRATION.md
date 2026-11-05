@@ -5,6 +5,49 @@ This SDK (v2) targets the GoPay Payments API **v4**. It has no source-level comp
 
 ---
 
+## Upgrading within 1.x
+
+Changes inside `gopaycommunity/gopay-php-api-v4` 1.x that can need a change in your code. The
+rest of this guide is about moving from the API v3 SDK.
+
+### 1.7.0
+
+#### `PaymentPoller::isPending()` is false for `CREATED`
+
+`CREATED` means no payment method has been chosen yet: nothing is running. It used to count as
+pending. It is now a group of its own, `PaymentPoller::isCreated()`, neither pending nor
+terminal. `isTerminal()` now lists the final states instead of returning `!isPending()`, so a
+state the API adds later is in no group at all.
+
+A loop that waits on `isPending()` stops on `CREATED` at once. Before 1.7.0 the same loop kept
+polling a `CREATED` payment until the customer paid, or forever:
+
+```php
+do {
+    sleep(2);
+    $state = $sdk->getPaymentStatus($paymentId)->getState();
+} while (PaymentPoller::isPending($state));
+```
+
+Decide what the loop waits for:
+
+- **The customer is back from 3DS or the gateway.** The loop is right as it is: `CREATED` now
+  means they did not pay. Branch on `PaymentPoller::isCreated($state)` after it, next to
+  `isSuccessful()` and `isFailed()`, and offer the payment again.
+- **You wait for the outcome**, a QR payment for instance, which stays `CREATED` until the
+  transfer is credited. Wait for the `payments.paid` webhook, or poll for a terminal state with
+  a deadline:
+
+```php
+$deadline = time() + 600;
+do {
+    sleep(10);
+    $state = $sdk->getPaymentStatus($paymentId)->getState();
+} while (!PaymentPoller::isTerminal($state) && time() < $deadline);
+```
+
+---
+
 ## Silently upgradeable — no consumer code change needed
 
 | Change | Why it's invisible |
