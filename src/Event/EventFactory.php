@@ -81,9 +81,10 @@ final class EventFactory
 
             /** @var GoPayEvent */
             return ObjectSerializer::deserialize($event, $model);
-        } catch (\Exception $e) {
-            // ObjectSerializer raises InvalidArgumentException on an enum value it does not know
-            // and DateTime an Exception on a malformed instant. Neither belongs to the caller.
+        } catch (\Throwable $e) {
+            // ObjectSerializer raises InvalidArgumentException on an enum value it does not know,
+            // DateTime an Exception on a malformed instant, and settype() an Error on an object
+            // where a string belongs (`"payment_id": {}`). None of them belongs to the caller.
             throw new \UnexpectedValueException('an event field does not parse', 0, $e);
         }
     }

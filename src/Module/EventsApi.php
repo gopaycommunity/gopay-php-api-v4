@@ -70,8 +70,12 @@ final class EventsApi
     public function iterateEvents(string $goid, array $params = []): \Generator
     {
         $gid = $this->requirePathSegment($goid, 'goid');
-        $page = $this->page($gid, self::query($params));
+        $query = self::query($params);
+        /** @var array<string, true> $fetched the queries already sent, against a cursor that does not move */
+        $fetched = [];
         while (true) {
+            $fetched[$query] = true;
+            $page = $this->page($gid, $query, $fetched);
             // One by one: `yield from` would restart the keys at 0 on every page.
             foreach ($page->getItems() as $event) {
                 yield $event;
@@ -81,22 +85,29 @@ final class EventsApi
                 return;
             }
             // Checked when the page was read, so it has a query.
-            $page = $this->page($gid, (string) self::nextPageQuery($next));
+            $query = (string) self::nextPageQuery($next);
         }
     }
 
-    private function page(string $gid, string $query): EventPage
+    /**
+     * @param array<string, true>|null $fetched When paging: the queries already sent. A page that
+     *                                          points back at one of them, or that is empty and
+     *                                          still has a next page, would page forever.
+     */
+    private function page(string $gid, string $query, ?array $fetched = null): EventPage
     {
         return $this->client->getObjectAs(
             "/eshops/{$gid}/events" . ($query !== '' ? "?{$query}" : ''),
-            fn(\stdClass $page): EventPage => $this->readPage($page),
+            fn(\stdClass $page): EventPage => $this->readPage($page, $fetched),
         );
     }
 
     /**
      * Runs while its request is the one in flight, so an error raised here carries its ids.
+     *
+     * @param array<string, true>|null $fetched
      */
-    private function readPage(\stdClass $page): EventPage
+    private function readPage(\stdClass $page, ?array $fetched): EventPage
     {
         $items = $page->items ?? null;
         $next = $page->next_page_url ?? null;
@@ -109,6 +120,12 @@ final class EventsApi
             || ($next !== null && (!is_string($next) || self::nextPageQuery($next) === null))
         ) {
             $this->client->emitError(self::unexpected());
+        }
+        if ($fetched !== null && $next !== null && ($items === [] || isset($fetched[(string) self::nextPageQuery($next)]))) {
+            $this->client->emitError(new GoPaySdkException(
+                '[GoPaySDK] Failed to read the events response: next_page_url does not move past the page it came with, so paging would never end.',
+                ErrorCode::UnexpectedResponse,
+            ));
         }
         $events = [];
         foreach ($items as $item) {
@@ -130,6 +147,8 @@ final class EventsApi
 
     /**
      * RFC 3986 encoding, so the `+` of a time zone offset arrives as `%2B` and not as a space.
+     * Instants keep their milliseconds: the API orders events by them, and an instant cut to
+     * the second would move an `occurred_after` bound back.
      *
      * @param ListEventsParams $params
      */
@@ -141,7 +160,7 @@ final class EventsApi
                 continue;
             }
             $values[$name] = $value instanceof \DateTimeInterface
-                ? $value->format(\DateTimeInterface::RFC3339)
+                ? $value->format(\DateTimeInterface::RFC3339_EXTENDED)
                 : (string) $value;
         }
 

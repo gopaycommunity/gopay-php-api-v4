@@ -44,14 +44,14 @@ final class EventsApiTest extends ModuleTestCase
         $page = $this->api->listEvents('8123456789', [
             'max_items'      => 3,
             'type'           => 'payments.*,refunds.failed',
-            'occurred_after' => new \DateTimeImmutable('2026-10-01T00:00:00+02:00'),
+            'occurred_after' => new \DateTimeImmutable('2026-10-01T00:00:00.123+02:00'),
             'related_type'   => null,
         ]);
 
         $request = $this->lastRequest();
         $this->assertSame('/eshops/8123456789/events', $request->getUri()->getPath());
         $this->assertSame(
-            'max_items=3&type=payments.%2A%2Crefunds.failed&occurred_after=2026-10-01T00%3A00%3A00%2B02%3A00',
+            'max_items=3&type=payments.%2A%2Crefunds.failed&occurred_after=2026-10-01T00%3A00%3A00.123%2B02%3A00',
             $request->getUri()->getQuery(),
         );
         $this->assertInstanceOf(EventPage::class, $page);
@@ -238,6 +238,99 @@ final class EventsApiTest extends ModuleTestCase
         $this->assertSame([0, 1, 2], array_keys($events));
         $this->assertSame(['e3', 'e2', 'e1'], array_map(static fn($e) => (string) $e->getId(), $events));
         $this->assertCount(2, $this->mockClient->getRequests(), 'an empty next_page_url ends the paging');
+    }
+
+    #[Test]
+    public function an_instant_keeps_its_milliseconds_and_offset(): void
+    {
+        $this->queueJson(['items' => []]);
+
+        $this->api->listEvents('8123456789', [
+            'occurred_after'  => new \DateTimeImmutable('2026-11-05T06:54:39.123Z'),
+            'occurred_before' => new \DateTime('2026-11-05T07:54:39.999+01:00'),
+        ]);
+
+        $this->assertSame(
+            'occurred_after=2026-11-05T06%3A54%3A39.123%2B00%3A00&occurred_before=2026-11-05T07%3A54%3A39.999%2B01%3A00',
+            $this->lastRequest()->getUri()->getQuery(),
+        );
+    }
+
+    #[Test]
+    public function paging_stops_when_next_page_url_points_at_the_page_it_came_with(): void
+    {
+        $this->queueJson([
+            'items' => [self::event('e2', 'cards.deleted', ['card_id' => 'k'])],
+            'next_page_url' => '/x/events?type=cards.%2A&prev_item=e2',
+        ]);
+        $this->queueJson([
+            'items' => [self::event('e1', 'cards.deleted', ['card_id' => 'k'])],
+            'next_page_url' => '/x/events?type=cards.%2A&prev_item=e2',
+        ]);
+
+        $seen = [];
+        $e = $this->catch(function () use (&$seen): void {
+            foreach ($this->api->iterateEvents('8123456789', ['type' => 'cards.*']) as $event) {
+                $seen[] = $event->getId();
+            }
+        });
+
+        $this->assertSame(['e2'], $seen, 'the page that loops is refused before its events are handed out');
+        $this->assertSame(ErrorCode::UnexpectedResponse, $e->errorCode);
+        $this->assertSame($this->lastRequest()->getHeaderLine('X-GoPay-Trace-Id'), $e->traceId);
+        $this->assertCount(2, $this->mockClient->getRequests());
+    }
+
+    #[Test]
+    public function paging_stops_when_next_page_url_points_back_at_the_first_page(): void
+    {
+        $this->queueJson([
+            'items' => [self::event('e2', 'cards.deleted', ['card_id' => 'k'])],
+            'next_page_url' => '/x/events?type=cards.%2A&prev_item=e2',
+        ]);
+        $this->queueJson([
+            'items' => [self::event('e1', 'cards.deleted', ['card_id' => 'k'])],
+            'next_page_url' => '/x/events?type=cards.%2A',
+        ]);
+
+        $e = $this->catch(fn() => iterator_to_array($this->api->iterateEvents('8123456789', ['type' => 'cards.*'])));
+
+        $this->assertSame(ErrorCode::UnexpectedResponse, $e->errorCode);
+        $this->assertCount(2, $this->mockClient->getRequests());
+    }
+
+    #[Test]
+    public function paging_stops_on_an_empty_page_that_still_has_a_next_one(): void
+    {
+        $this->queueJson(['items' => [], 'next_page_url' => '/x/events?prev_item=e9']);
+
+        $e = $this->catch(fn() => iterator_to_array($this->api->iterateEvents('8123456789')));
+
+        $this->assertSame(ErrorCode::UnexpectedResponse, $e->errorCode);
+        $this->assertSame($this->lastRequest()->getHeaderLine('X-GoPay-Trace-Id'), $e->traceId);
+        $this->assertCount(1, $this->mockClient->getRequests());
+    }
+
+    #[Test]
+    public function a_single_list_events_call_returns_an_empty_page_with_a_next_one_as_it_is(): void
+    {
+        $this->queueJson(['items' => [], 'next_page_url' => '/x/events?prev_item=e9']);
+
+        $page = $this->api->listEvents('8123456789');
+
+        $this->assertSame([], $page->getItems());
+        $this->assertSame('/x/events?prev_item=e9', $page->getNextPageUrl());
+    }
+
+    #[Test]
+    public function an_object_where_an_id_belongs_is_an_unexpected_response_not_an_error(): void
+    {
+        $this->queueJson(self::event('e1', 'payments.canceled', ['payment_id' => ['nested' => true]]));
+
+        $e = $this->catch(fn() => $this->api->getEvent('8123456789', 'e1'));
+
+        $this->assertSame(ErrorCode::UnexpectedResponse, $e->errorCode);
+        $this->assertInstanceOf(\Error::class, $e->getPrevious()?->getPrevious());
     }
 
     #[Test]

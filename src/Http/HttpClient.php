@@ -673,9 +673,10 @@ final class HttpClient
 
     /**
      * ObjectSerializer raises a bare InvalidArgumentException for an enum value the model does
-     * not list — a state added to the API after this SDK was generated — and DateTime an
-     * Exception for a malformed instant. Both would escape past every `catch` written for this
-     * SDK's own exceptions, and past onError, so they are reported as an unexpected response.
+     * not list — a state added to the API after this SDK was generated — DateTime an Exception
+     * for a malformed instant, and settype() an Error for an object where a scalar belongs. All
+     * would escape past every `catch` written for this SDK's own exceptions, and past onError,
+     * so they are reported as an unexpected response.
      *
      * @template T of ModelInterface
      *
@@ -688,7 +689,7 @@ final class HttpClient
         try {
             /** @var T */
             return ObjectSerializer::deserialize($data, $type);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->emitError(new GoPaySdkException(
                 '[GoPaySDK] Failed to read the API response: a field does not match the SDK\'s model.',
                 ErrorCode::UnexpectedResponse,
