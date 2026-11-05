@@ -685,6 +685,9 @@ final class GoPayClient
      *
      * @param string|list<string>|null $signatureHeader
      *
+     * Neither error reaches `onError`: anyone who can reach the endpoint can cause either, with a
+     * forged request or a made-up key id. A failed fetch of the keys does, once per attempt.
+     *
      * @throws GoPaySdkException `WebhookInvalid` (answer 4xx: not from GoPay, a retry carries the
      *                           same bytes) or `WebhookKeysUnavailable` (answer 5xx: not checked,
      *                           GoPay delivers it again)

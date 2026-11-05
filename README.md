@@ -579,8 +579,11 @@ http_response_code(204);
   `CardDeletedEvent`, … — with the IDs in `getData()`. A type GoPay adds after your SDK version
   arrives as an `UnknownEvent` (its `getData()` is the decoded JSON), not as an error: ignore it.
 - **The keys are fetched once and kept by `kid`** for the life of the `GoPayClient`, refetched
-  after an hour or when a webhook names a key not seen yet (at most once every 10 seconds). With
-  PHP-FPM, a client built per request fetches them per webhook.
+  after an hour or when a webhook names a key not seen yet — at most once every 10 seconds, and a
+  failed refresh is tried again after those 10 seconds. With PHP-FPM, a client built per request
+  fetches them per webhook.
+- **`onError` hears neither `WebhookInvalid` nor `WebhookKeysUnavailable`**: anyone who can reach
+  your endpoint can cause both. It does hear a failed fetch of the keys, once per attempt.
 
 ```php
 // One page, newest first; filters: type, related_type + related_id, occurred_after,

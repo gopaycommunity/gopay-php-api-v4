@@ -25,9 +25,10 @@ use GoPay\Payments\Webhook\RsaJwk;
 final class WebhooksApi
 {
     /**
-     * An unknown `kid` refetches the keys at most this often: anyone can send a request naming a
-     * made-up key, and each one must not become a call to GoPay. Short, because a real webhook
-     * signed with a newly rotated-in key waits it out as a 5xx that GoPay retries.
+     * The keys are fetched at most this often: anyone can send a request naming a made-up key,
+     * and each one must not become a call to GoPay. Short, because a real webhook signed with a
+     * newly rotated-in key waits it out as a 5xx that GoPay retries — and a failed refresh is
+     * tried again after it, not after another hour of trusting the old set.
      */
     private const REFETCH_INTERVAL_SECONDS = 10.0;
 
@@ -39,8 +40,13 @@ final class WebhooksApi
     /** @var array<string, \OpenSSLAsymmetricKey> */
     private array $keys = [];
 
+    /** When the keys were last fetched successfully: what the max age counts from. */
     private ?float $fetchedAt = null;
 
+    /** When a fetch was last tried, successful or not: what the refetch interval counts from. */
+    private ?float $attemptedAt = null;
+
+    /** Why the last fetch failed; kept as the cause until a fetch succeeds. */
     private ?\Throwable $lastFailure = null;
 
     /** @var \Closure(): float */
@@ -63,6 +69,10 @@ final class WebhooksApi
      *
      * @param string|list<string>|null $signatureHeader
      *
+     * Neither error goes to onError. WebhookInvalid is whatever anyone who can reach the endpoint
+     * sends, and so is WebhookKeysUnavailable: a made-up `kid` within the refetch interval gets
+     * one. A key fetch that really failed is reported by the HTTP client, once per attempt.
+     *
      * @throws GoPaySdkException WebhookInvalid (answer 4xx) or WebhookKeysUnavailable (answer 5xx)
      *
      * @return GoPayEvent
@@ -72,21 +82,21 @@ final class WebhooksApi
         try {
             $signature = DetachedJws::parse($signatureHeader);
         } catch (\UnexpectedValueException $e) {
-            $this->client->emitError(self::invalid($e->getMessage()));
+            throw self::invalid($e->getMessage());
         }
 
         $key = $this->keyFor($signature->kid);
         if ($key === null) {
-            $this->client->emitError(self::invalid('it is signed with a key GoPay does not publish'));
+            throw self::invalid('it is signed with a key GoPay does not publish');
         }
         if (!$signature->verify($key, $rawBody)) {
-            $this->client->emitError(self::invalid('the signature does not match the body'));
+            throw self::invalid('the signature does not match the body');
         }
 
         try {
             return EventFactory::fromDecoded(json_decode($rawBody));
         } catch (\UnexpectedValueException $e) {
-            $this->client->emitError(self::invalid('the body is not an event', $e));
+            throw self::invalid('the body is not an event', $e);
         }
     }
 
@@ -107,11 +117,12 @@ final class WebhooksApi
      */
     private function keyFor(string $kid): ?\OpenSSLAsymmetricKey
     {
-        $fetchedAt = $this->fetchedAt;
-        $age = $fetchedAt === null ? INF : ($this->clock)() - $fetchedAt;
-        $known = isset($this->keys[$kid]);
+        $now = ($this->clock)();
+        $due = !isset($this->keys[$kid])
+            || $this->fetchedAt === null
+            || $now - $this->fetchedAt >= self::KEYS_MAX_AGE_SECONDS;
         $checked = false;
-        if ($age >= self::KEYS_MAX_AGE_SECONDS || (!$known && $age >= self::REFETCH_INTERVAL_SECONDS)) {
+        if ($due && ($this->attemptedAt === null || $now - $this->attemptedAt >= self::REFETCH_INTERVAL_SECONDS)) {
             $this->load();
             $checked = true;
         }
@@ -120,8 +131,11 @@ final class WebhooksApi
         if ($key !== null) {
             return $key;
         }
-        if (!$checked || $this->lastFailure !== null) {
-            $this->client->emitError(self::keysUnavailable($this->lastFailure, $checked));
+        if ($this->lastFailure !== null) {
+            throw self::keysUnavailable($this->lastFailure);
+        }
+        if (!$checked) {
+            throw self::keysNotYetRefetched();
         }
 
         return null;
@@ -144,10 +158,13 @@ final class WebhooksApi
             }
             $this->keys = $next;
             $this->lastFailure = null;
+            $this->fetchedAt = ($this->clock)();
         } catch (GoPaySdkException|GoPayHttpException $e) {
+            // Already reported to onError by the client, once for this attempt; the webhooks
+            // that find it standing must not report it again.
             $this->lastFailure = $e;
         } finally {
-            $this->fetchedAt = ($this->clock)();
+            $this->attemptedAt = ($this->clock)();
         }
     }
 
@@ -161,14 +178,16 @@ final class WebhooksApi
         );
     }
 
-    private static function keysUnavailable(?\Throwable $cause, bool $checked): GoPaySdkException
+    private static function keysNotYetRefetched(): GoPaySdkException
     {
-        if (!$checked) {
-            return new GoPaySdkException(
-                '[GoPaySDK] The webhook names a signing key the SDK has not loaded, and the keys were fetched moments ago, so it was not verified yet.',
-                ErrorCode::WebhookKeysUnavailable,
-            );
-        }
+        return new GoPaySdkException(
+            '[GoPaySDK] The webhook names a signing key the SDK has not loaded, and the keys were fetched moments ago, so it was not verified yet.',
+            ErrorCode::WebhookKeysUnavailable,
+        );
+    }
+
+    private static function keysUnavailable(\Throwable $cause): GoPaySdkException
+    {
         $hint = $cause instanceof GoPayHttpException && $cause->status === 403
             ? ' The access token needs the shared:read scope.'
             : '';

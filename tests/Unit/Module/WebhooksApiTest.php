@@ -354,29 +354,83 @@ final class WebhooksApiTest extends ModuleTestCase
     }
 
     #[Test]
-    public function on_error_sees_a_refused_webhook(): void
+    public function a_failed_refresh_is_retried_after_ten_seconds_not_after_another_hour(): void
+    {
+        $this->queueJson(self::jwks('k1'));
+        $this->api->verifyWebhook(self::EVENT, self::sign(self::EVENT, 'k1'));
+        $this->mockClient->addResponse(new Response(500, [], '{"errors":[]}'));
+
+        $this->now += 3600;
+        // The refresh fails: the last set keeps verifying meanwhile.
+        $this->api->verifyWebhook(self::EVENT, self::sign(self::EVENT, 'k1'));
+        $this->now += 9;
+        $this->api->verifyWebhook(self::EVENT, self::sign(self::EVENT, 'k1'));
+        $this->assertCount(2, $this->mockClient->getRequests(), 'not retried within ten seconds');
+
+        // GoPay withdrew k1: the retry ten seconds later learns it, not an hour later.
+        $this->queueJson(self::jwks('k2'));
+        $this->now += 1;
+        $this->assertInvalid(
+            fn() => $this->api->verifyWebhook(self::EVENT, self::sign(self::EVENT, 'k1')),
+            'it is signed with a key GoPay does not publish',
+        );
+        $this->assertCount(3, $this->mockClient->getRequests());
+    }
+
+    #[Test]
+    public function within_ten_seconds_of_a_failed_fetch_the_cause_and_scope_hint_stay(): void
+    {
+        $this->mockClient->addResponse(new Response(403, [], '{"errors":[{"error_code":"FORBIDDEN"}]}'));
+        $this->catch(fn() => $this->api->verifyWebhook(self::EVENT, self::sign(self::EVENT, 'k1')));
+
+        $this->now += 5;
+        $e = $this->catch(fn() => $this->api->verifyWebhook(self::EVENT, self::sign(self::EVENT, 'k1')));
+
+        $this->assertSame(ErrorCode::WebhookKeysUnavailable, $e->errorCode);
+        $this->assertStringContainsString('shared:read', $e->getMessage());
+        $previous = $e->getPrevious();
+        $this->assertInstanceOf(GoPayHttpException::class, $previous);
+        $this->assertSame(403, $previous->status);
+        $this->assertCount(1, $this->mockClient->getRequests());
+    }
+
+    #[Test]
+    public function on_error_hears_neither_a_forged_webhook_nor_unavailable_keys_only_the_failed_fetch_once(): void
     {
         $seen = [];
-        $http = new HttpClient(
-            config: new Config(
-                environment: Environment::Sandbox,
-                baseUrl: 'https://mock.example.com',
-                onError: static function (\Throwable $e) use (&$seen): void {
-                    $seen[] = $e;
-                },
-            ),
-            client: $this->mockClient,
-            requestFactory: $this->factory,
-            streamFactory: $this->factory,
-        );
-        $api = new WebhooksApi($http);
+        $api = new WebhooksApi($this->clientReportingTo($seen), fn(): float => $this->now);
 
-        try {
-            $api->verifyWebhook(self::EVENT, null);
-            $this->fail('expected an exception');
-        } catch (GoPaySdkException $e) {
-            $this->assertSame([$e], $seen);
-        }
+        // Forged: anyone can send one.
+        $this->catch(fn() => $api->verifyWebhook(self::EVENT, null));
+        $this->assertSame([], $seen);
+
+        // The keys do not load: the fetch is reported, once; WebhookKeysUnavailable is not.
+        $this->mockClient->addResponse(new Response(403, [], '{}'));
+        $this->catch(fn() => $api->verifyWebhook(self::EVENT, self::sign(self::EVENT, 'k1')));
+        $this->assertCount(1, $seen);
+        $this->assertInstanceOf(GoPayHttpException::class, $seen[0]);
+
+        // A made-up kid within the interval: unavailable, and not reported again.
+        $this->now += 1;
+        $this->catch(fn() => $api->verifyWebhook(self::EVENT, self::sign(self::EVENT, 'made-up')));
+        $this->assertCount(1, $seen);
+    }
+
+    #[Test]
+    public function a_failed_hourly_refresh_is_reported_once_even_when_the_cached_key_verifies(): void
+    {
+        $seen = [];
+        $api = new WebhooksApi($this->clientReportingTo($seen), fn(): float => $this->now);
+        $this->queueJson(self::jwks('k1'));
+        $api->verifyWebhook(self::EVENT, self::sign(self::EVENT, 'k1'));
+        $this->mockClient->addResponse(new Response(503, [], ''));
+
+        $this->now += 3600;
+        $api->verifyWebhook(self::EVENT, self::sign(self::EVENT, 'k1'));
+        $api->verifyWebhook(self::EVENT, self::sign(self::EVENT, 'k1'));
+
+        $this->assertCount(1, $seen, 'the refresh failed once, so it is heard once');
+        $this->assertInstanceOf(GoPayHttpException::class, $seen[0]);
     }
 
     #[Test]
@@ -394,6 +448,28 @@ final class WebhooksApiTest extends ModuleTestCase
     // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
+
+    /**
+     * @param list<\Throwable> $seen
+     */
+    private function clientReportingTo(array &$seen): HttpClient
+    {
+        $http = new HttpClient(
+            config: new Config(
+                environment: Environment::Sandbox,
+                baseUrl: 'https://mock.example.com',
+                onError: static function (\Throwable $e) use (&$seen): void {
+                    $seen[] = $e;
+                },
+            ),
+            client: $this->mockClient,
+            requestFactory: $this->factory,
+            streamFactory: $this->factory,
+        );
+        $http->getTokenStore()->setToken('test-token', 3600);
+
+        return $http;
+    }
 
     private function assertInvalid(callable $call, string $reason, bool $freshClock = false): void
     {
