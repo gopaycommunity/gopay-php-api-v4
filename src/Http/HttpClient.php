@@ -112,7 +112,7 @@ final class HttpClient
     public function delete(string $path, ?RequestOptions $options = null): void
     {
         $request = $this->buildRequest('DELETE', $path, null, $options);
-        $this->exchange($request, $options, static fn(): null => null);
+        $this->exchange($request, $options, static fn() => null);
     }
 
     /**
