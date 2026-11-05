@@ -46,6 +46,22 @@ final class PaymentsApiTest extends ModuleTestCase
     }
 
     #[Test]
+    public function anObjectWhereTheModelWantsAStringIsAnUnexpectedResponseNotAnError(): void
+    {
+        // settype() raises an \Error here, not an \Exception: a catch narrower than \Throwable
+        // lets it past onError and every catch written for this SDK's exceptions.
+        $this->queueJson($this->paymentDetailsJson(['id' => ['x' => 1]]));
+
+        try {
+            $this->payments->getPaymentStatus('pay-001');
+            $this->fail('expected a GoPaySdkException');
+        } catch (GoPaySdkException $e) {
+            $this->assertSame(ErrorCode::UnexpectedResponse, $e->errorCode);
+            $this->assertInstanceOf(\Error::class, $e->getPrevious());
+        }
+    }
+
+    #[Test]
     public function aListItemTheModelCannotReadIsAnUnexpectedResponse(): void
     {
         $this->queueJson([['id' => 'r1', 'state' => 'ADDED_LATER', 'amount' => 100, 'currency' => 'CZK']]);
