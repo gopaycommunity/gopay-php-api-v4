@@ -46,6 +46,14 @@ do {
 } while (!PaymentPoller::isTerminal($state) && time() < $deadline);
 ```
 
+#### `return_url` is gone from charge responses
+
+`PaymentChargeResponse` and `PaymentChargeStatusResponse` no longer have `getReturnUrl()` and
+`setReturnUrl()`. The gateway never returned a value there, so the getter always gave `null`, and
+the field is gone from the API description. Where the customer goes back to is the
+`callback.return_url` you pass to `createPayment()`: take it from your own records, keyed by the
+payment ID.
+
 ---
 
 ## Silently upgradeable — no consumer code change needed
