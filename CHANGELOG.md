@@ -1,3 +1,23 @@
+## [1.7.0](https://github.com/gopaycommunity/gopay-php-api-v4/compare/1.6.1...1.7.0) (2026-11-06)
+
+### Features
+
+* send User-Agent and request ids, and return them on errors GPOMA-2704 ([3dbf24c](https://github.com/gopaycommunity/gopay-php-api-v4/commit/3dbf24cbfe7f58b579edc6538fc37a3e9634d973))
+* **webhooks:** verify webhooks and read the eshop's events GPOMA-2704 ([c7f5b42](https://github.com/gopaycommunity/gopay-php-api-v4/commit/c7f5b42402d28e22ee550cea498d67357d243ba6))
+
+### Bug Fixes
+
+* **events:** keep milliseconds in instants, stop paging that does not move, read every bad field as UnexpectedResponse GPOMA-2704 ([a49f8c4](https://github.com/gopaycommunity/gopay-php-api-v4/commit/a49f8c407718d12deed79cca61ab229b2d1f4665))
+* **events:** keep request ids on unreadable pages, and every parameter and event across pages GPOMA-2704 ([69c4144](https://github.com/gopaycommunity/gopay-php-api-v4/commit/69c414486f8f38cdb4d5a2aecc938219f7c5364e))
+* keep the HTTP client loadable on PHP 8.1, which has no standalone null type GPOMA-2704 ([36667c9](https://github.com/gopaycommunity/gopay-php-api-v4/commit/36667c950bd54166de4073638c912095efd24525))
+* **payments:** charge responses no longer carry return_url, which the gateway never filled GPOMA-2704 ([e012dce](https://github.com/gopaycommunity/gopay-php-api-v4/commit/e012dceb631a653e4218d44955fbda56aa85d364))
+* **poller:** isPending() is false for CREATED, use isCreated() or wait for isTerminal() GPOMA-2704 ([34fa237](https://github.com/gopaycommunity/gopay-php-api-v4/commit/34fa2371560c2392bb46a4fcaff7c3dbe065fc85))
+* **poller:** stop counting CREATED as a payment in progress GPOMA-2704 ([27b0063](https://github.com/gopaycommunity/gopay-php-api-v4/commit/27b0063358dfa33718564a79075e56372e22a327))
+* resolve SonarCloud issues in the webhook, events and correlation code GPOMA-2704 ([5a93dc1](https://github.com/gopaycommunity/gopay-php-api-v4/commit/5a93dc169454b551557491443ef7f9503a5e9d3d))
+* update api from next spec GPOMA-2704 ([26195e0](https://github.com/gopaycommunity/gopay-php-api-v4/commit/26195e0d97567dcf047d0699693bd570ecdc86a1))
+* **webhooks:** count a key set with no usable key as a failed fetch, refuse a trailing newline in the signature GPOMA-2704 ([353ef1a](https://github.com/gopaycommunity/gopay-php-api-v4/commit/353ef1ad3b055d7b18425292ac00b345136e3555))
+* **webhooks:** retry a failed key refresh after 10 s, keep forged webhooks out of onError GPOMA-2704 ([cd385b9](https://github.com/gopaycommunity/gopay-php-api-v4/commit/cd385b94942114d0fbf7800cabecb6d8c0001697))
+
 ## [1.6.1](https://github.com/gopaycommunity/gopay-php-api-v4/compare/1.6.0...1.6.1) (2026-10-15)
 
 ### Bug Fixes
